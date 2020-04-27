@@ -15,7 +15,7 @@ AL-DIC(Augmented Lagrangian DIC) is a fast, parallel-computing hybrid DIC algori
   
 
 <p align="center">
-  <img width="460" height="300" src="https://github.com/jyang526843/2D_ALDIC_v1/blob/master/aldic_logo.png">
+  <img width="673" height="377" src="https://github.com/jyang526843/2D_ALDIC_v1/blob/master/aldic_logo.png">
 </p>
 
 
