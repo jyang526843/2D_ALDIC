@@ -13,6 +13,6 @@ AL-DIC(Augmented Lagrangian DIC) is a fast, parallel-computing hybrid DIC algori
 * [1] Yang, J. (2019, March 6). 2D_ALDIC (Version 1.0). CaltechDATA. https://doi.org/10.22002/d1.1188
 * [2] Yang, J. and Bhattacharya, K. Augmented Lagrangian Digital Image Correlation. Exp.Mech. 59: 187, 2018. https://doi.org/10.1007/s11340-018-00457-0.
 
-![AL-DIC](https://lh4.googleusercontent.com/D8YbPIpBkONe8R92G7okQgG-RKtKEOlG9slZ-OSKTC9gMzbzc-6-RF_I-zCKViP51uPGmeZFsW3AkBxclkadgKw7CvtB4WMLerB99AcTYBYSWAa9Eg=w673 "")
+![AL-DIC](https://lh4.googleusercontent.com/D8YbPIpBkONe8R92G7okQgG-RKtKEOlG9slZ-OSKTC9gMzbzc-6-RF_I-zCKViP51uPGmeZFsW3AkBxclkadgKw7CvtB4WMLerB99AcTYBYSWAa9Eg=w673.jpg "")
 
 
