@@ -6,27 +6,27 @@
         
         figure(3); if DICpara.OrigDICImgTransparency == 0, colormap jet; caxis auto; end
         %colormap(coolwarm(128)); caxis auto; 
-        print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_DispU'],'-djpeg','-r100');
+        print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_DispU'],'-djpeg','-r300');
         figure(4); if DICpara.OrigDICImgTransparency == 0, colormap jet; caxis auto; end
         %colormap(coolwarm(128)); 
         caxis auto;
-        print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_DispV'],'-djpeg','-r100');
+        print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_DispV'],'-djpeg','-r300');
         figure(5); if DICpara.OrigDICImgTransparency == 0, colormap jet; caxis([-0.025,0.025]); end
         %colormap(coolwarm(128)); 
         caxis auto; %caxis([-0.03,0.06]);
-        print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_exx'],'-djpeg','-r100')
+        print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_exx'],'-djpeg','-r300')
         figure(6); if DICpara.OrigDICImgTransparency == 0, colormap jet; caxis([-0.025,0.025]); end
         %colormap(coolwarm(128)); 
         caxis auto; %caxis([-0.04,0.04]);
-        print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_exy'],'-djpeg','-r100')
+        print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_exy'],'-djpeg','-r300')
         figure(7); if DICpara.OrigDICImgTransparency == 0, colormap jet; caxis([-0.015,0.015]); end
         %colormap(coolwarm(128)); 
         caxis auto; %caxis([-0.025,0.025]);
-        print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_eyy'],'-djpeg','-r100') 
+        print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_eyy'],'-djpeg','-r300') 
         figure(8); if DICpara.OrigDICImgTransparency == 0, colormap jet;  caxis([0,0.025]); end
         %colormap(coolwarm(128)); 
         caxis auto; %caxis([0,0.04]);
-        print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_maxshear'],'-djpeg','-r100')
+        print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_maxshear'],'-djpeg','-r300')
         
     elseif DICpara.MethodToSaveFig == 2 % pdf
         filename = [imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_DispU']; figure(3); if DICpara.OrigDICImgTransparency == 0, colormap jet; caxis auto; end
