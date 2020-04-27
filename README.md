@@ -1,5 +1,13 @@
 # 2D_ALDIC_v1
-AL-DIC(Augmented Lagrangian DIC) is a fast, parallel-computing DIC algorithm, which combines advantages of Local Subset DIC (fast, compute in parallel) and Global DIC (guarantee kinematic compatibility). 
+AL-DIC(Augmented Lagrangian DIC) is a fast, parallel-computing hybrid DIC algorithm, which combines advantages of local subset DIC method (fast computation speed, and parallel computing) and finite-element-based global DIC method (guarantee global kinematic compatibility and decrease noise).  
+
+Here I highlight some advantages of AL-DIC algorithm:
+•	It’s a fast algorithm using distributed parallel computing.
+•	Global kinematic compatibility is added as a global constraint in the form of augmented Lagrangian, and solved using Alternating Direction Method of Multipliers scheme.
+•	Both displacement fields and affine deformation gradients are correlated at the same time.
+•	No need of much manual experience about choosing displacement smoothing filters.
+•	It works well with compressed DIC images and adaptive mesh. See our paper: Yang, J. & Bhattacharya, K. Exp Mech (2019). https://doi.org/10.1007/s11340-018-00459-y;
+•	Both accumulative and incremental DIC modes are implemented to deal with image sequences, which is especially quite useful for very large deformations.
 
 Cite this record as:
 [1] Yang, J. (2019, March 6). 2D_ALDIC (Version 1.0). CaltechDATA. https://doi.org/10.22002/d1.1188
