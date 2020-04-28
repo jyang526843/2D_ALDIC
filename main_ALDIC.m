@@ -12,7 +12,7 @@ fprintf('------------ Section 1 Start ------------ \n')
 setenv('MW_MINGW64_LOC','C:\TDM-GCC-64')
 % % cd("./Splines_interp/lib_matlab"); CompileLib; cd("../../");  % % mex bi-cubic spline interpolations
 % % addpath("./Splines_interp/lib_matlab"); % dbstop if error % % Old version codes.
-%mex -O ba_interp2.cpp; 
+mex -O ba_interp2.cpp; 
 addpath("./func"); addpath("./src"); addpath("./plotFiles/"); addpath("./plotFiles/export_fig-d966721/");
 % addpath("./YOUR IMAGE FOLDER"); 
 fprintf('------------ Section 1 Done ------------ \n \n')
@@ -272,7 +272,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
     ALSolveStep = 1; tol2 = 1e-4; UpdateY = 1e4; CrackOrNot = 0; CrackPath1 = [0,0]; CrackPath2 = [0,0]; CrackTip = [0,0]; 
     HPar = cell(21,1); for tempj = 1:21, HPar{tempj} = HtempPar(:,tempj); end
 
-    while (ALSolveStep < 6)
+    while (ALSolveStep < 5)
         ALSolveStep = ALSolveStep + 1;  % Update using the last step
         %%%%%%%%%%%%%%%%%%%%%%% Subproblem 1 %%%%%%%%%%%%%%%%%%%%%%%%%
         disp(['***** Start step',num2str(ALSolveStep),' Subproblem1 *****'])
