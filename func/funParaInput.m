@@ -76,7 +76,7 @@ switch paraName
             
         
     case 'SaveFigFormat'
-        fprintf('Save figures into different format: \n ');
+        fprintf('Save figures into different format: \n');
         fprintf('    1: jpeg(Choose transparency 0~1) \n');
         fprintf('    2: pdf(Choose transparency = 1) \n'); 
         fprintf('    3: Others: Edit codes in ./plotFiles/SaveFigFiles.m \n'); 
