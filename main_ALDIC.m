@@ -56,7 +56,8 @@ for ImgSeqNum = 2:length(ImgNormalized)
     while NewFFTSearchCheck == 0 
     if ImgSeqNum == 2 || DICpara.NewFFTSearch == 1
         % ====== Integer Search ======
-        [DICpara.SizeOfFFTSearchRegion,x0temp,y0temp,u,v,cc]= IntegerSearch(fNormalized,gNormalized,file_name,DICpara);
+        % Old version: [DICpara.SizeOfFFTSearchRegion,x0temp,y0temp,u,v,cc]= IntegerSearch(fNormalized,gNormalized,file_name,DICpara);
+        [x0temp,y0temp,u,v,cc]= IntegerSearchMg(fNormalized,gNormalized,file_name,DICpara);
         % ====== FEM mesh set up ======
         [DICmesh] = MeshSetUp(x0temp,y0temp,DICpara); clear x0temp y0temp;
         % ====== Initial Value ======
