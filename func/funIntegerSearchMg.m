@@ -33,7 +33,7 @@ if gridx_g(1) < borderGapx, temp=gridx_g(1); gridx_g(1) = borderGapx; gridx_f(1)
 if gridy_g(1) < borderGapy, temp=gridy_g(1); gridy_g(1) = borderGapy; gridy_f(1) = gridy_f(1)+borderGapy-temp; end
 if gridx_g(2) > size(f,1)-borderGapx, temp=gridx_g(2); gridx_g(2) = size(f,1)-borderGapx; gridx_f(2) = gridx_f(2)+((size(f,1)-borderGapx)-temp); end
 if gridy_g(2) > size(f,2)-borderGapy, temp=gridy_g(2); gridy_g(2) = size(f,2)-borderGapy; gridy_f(2) = gridy_f(2)+(size(f,2)-borderGapy)-temp; end
-% Make image width/length odd number
+% Make sure image width/length odd number
 if mod((gridx_f(2)-gridx_f(1)),2)==1, gridx_f(2)=gridx_f(2)-1; gridx_g(2)=gridx_g(2)-1; end
 if mod((gridy_f(2)-gridy_f(1)),2)==1, gridy_f(2)=gridy_f(2)-1; gridy_g(2)=gridy_g(2)-1; end
 
@@ -55,7 +55,25 @@ utempCurr = ceil(utemp); vtempCurr = ceil(vtemp);
 
 %% Level >1
 levelNo=1; clear gridx_fNew gridx_gNew gridy_fNew gridy_gNew utempNew vtempNew qfactors
-TotalNo = 3*(gridx(2)-gridx(1))*(gridy(2)-gridy(1))/winsize^2; IterNo=0;
+TotalNo = 1; gridxWidthNewtemp = gridxWidthCurr; gridyWidthNewtemp = gridyWidthCurr;
+while gridxWidthNewtemp/gridyWidthNewtemp > 0
+   if gridxWidthNewtemp/gridyWidthNewtemp > 2 % split gridx only 
+       gridxWidthNewtemp = gridxWidthNewtemp/2; gridyWidthNewtemp = gridyWidthNewtemp; 
+       TotalNo = TotalNo*2;
+   elseif gridxWidthNewtemp/gridyWidthNewtemp < 0.5 % split gridy only
+       gridxWidthNewtemp = gridxWidthNewtemp; gridyWidthNewtemp = gridyWidthNewtemp/2;
+       TotalNo = TotalNo*2;
+   else
+       gridxWidthNewtemp = gridxWidthNewtemp/2; gridyWidthNewtemp = gridyWidthNewtemp/2;
+       TotalNo = TotalNo*4;
+   end
+   if ( gridxWidthNewtemp<winsize && gridyWidthNewtemp<winsize )
+        break
+   end
+end
+
+%TotalNo = 3*(gridx(2)-gridx(1))*(gridy(2)-gridy(1))/winsize^2; 
+IterNo=0;
 hbar = waitbar(0,'FFT initial guess, it is fast and please wait.');
 
 while gridxyRatioCurr > 0
@@ -234,6 +252,14 @@ tempu=utempNew'; tempv=vtempNew'; tempPhi=Phitemp';
 qf_1 = cc.qfactors(:,1)'; qf_2 = cc.qfactors(:,2)';
 % figure, plot3(tempx,tempy,tempu,'.');
 % figure, plot3(tempx,tempy,tempv,'.');
+
+%% Update image domain
+borderGapx = ceil(1+(1*winsize)+max(abs(tempu(:)))); 
+borderGapy = ceil(1+(1*winsize)+max(abs(tempv(:))));
+if gridx(1) < borderGapx, gridx(1) = borderGapx; end
+if gridy(1) < borderGapy, gridy(1) = borderGapy; end
+if gridx(2) > size(f,1)-borderGapx, gridx(2) = size(f,1)-borderGapx; end
+if gridy(2) > size(f,2)-borderGapy, gridy(2) = size(f,2)-borderGapy; end
 
 %% Interpolate
 try xList=[gridx(1):winstepsize(1):gridx(2)]; catch, xList=[gridx(1):winstepsize:gridx(2)]; end
