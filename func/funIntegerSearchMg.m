@@ -133,7 +133,6 @@ while gridxyRatioCurr > 0
         for tempi = 1:size(gridx_fCurr,1)
             tempj=tempi; tempInd = tempj ;
             if ( (gridx_fCurr(tempInd,2)-gridx_fCurr(tempInd,1) > winsize) && (gridy_fCurr(tempInd,2)-gridy_fCurr(tempInd,1) > winsize) )
-                
                 gridx_fNew(4*tempInd-3:4*tempInd,1:2) = repmat([ gridx_fCurr(tempInd,1), 0.5*sum(gridx_fCurr(tempInd,:));
                     0.5*sum(gridx_fCurr(tempInd,:)), gridx_fCurr(tempInd,2)], 2,1);
                 gridx_gNew(4*tempInd-3:4*tempInd,1:2) = repmat([ gridx_gCurr(tempInd,1), 0.5*sum(gridx_gCurr(tempInd,:));
@@ -252,21 +251,26 @@ qf_1 = cc.qfactors(:,1)'; qf_2 = cc.qfactors(:,2)';
 % figure, plot3(tempx,tempy,tempv,'.');
 
 %% Update image domain
-borderGapx = ceil(1+(1*winsize)+max(abs(tempu(:)))); 
-borderGapy = ceil(1+(1*winsize)+max(abs(tempv(:))));
-if gridx(1) < borderGapx, gridx(1) = borderGapx; end
-if gridy(1) < borderGapy, gridy(1) = borderGapy; end
-if gridx(2) > size(f,1)-borderGapx, gridx(2) = size(f,1)-borderGapx; end
-if gridy(2) > size(f,2)-borderGapy, gridy(2) = size(f,2)-borderGapy; end
+[~,indx1]=min(tempx); [~,indx2]=max(tempx);
+[~,indy1]=min(tempy); [~,indy2]=max(tempy);
+borderGapx1=ceil(1+(1.25*winsize)+((tempu(indx1)))); borderGapx2=ceil(1+(1.25*winsize)+((tempu(indx2)))); 
+borderGapy1=ceil(1+(1.25*winsize)+((tempv(indy1)))); borderGapy2=ceil(1+(1.25*winsize)+((tempv(indy2))));
+if gridx(1) < borderGapx1, gridx(1) = borderGapx1; end
+if gridy(1) < borderGapy1, gridy(1) = borderGapy1; end
+if gridx(2) > size(f,1)-borderGapx2+1, gridx(2) = size(f,1)-borderGapx2+1; end
+if gridy(2) > size(f,2)-borderGapy2+1, gridy(2) = size(f,2)-borderGapy2+1; end
 
 %% Interpolate
 try xList=[gridx(1):winstepsize(1):gridx(2)]; catch, xList=[gridx(1):winstepsize:gridx(2)]; end
 try yList=[gridy(1):winstepsize(2):gridy(2)]; catch, yList=[gridy(1):winstepsize:gridy(2)]; end
-[uGrid,xGrid,yGrid] = gridfit(tempx,tempy,tempu,xList,yList,'regularizer','springs');
-[vGrid,~,~] = gridfit(tempx,tempy,tempv,xList,yList,'regularizer','springs');
-[PhiGrid,~,~] = gridfit(tempx,tempy,tempPhi,xList,yList,'regularizer','springs');
-[qf_1Grid,~,~] = gridfit(tempx,tempy,qf_1,xList,yList,'regularizer','springs');
-[qf_2Grid,~,~] = gridfit(tempx,tempy,qf_2,xList,yList,'regularizer','springs');
+[indx]=find(tempx>min(xList) & tempx<max(xList));
+[indy]=find(tempy>min(yList) & tempy<max(yList));
+[indxy] = intersect(indx,indy);
+[uGrid,xGrid,yGrid] = gridfit(tempx(indxy),tempy(indxy),tempu(indxy),xList,yList,'regularizer','springs');
+[vGrid,~,~] = gridfit(tempx(indxy),tempy(indxy),tempv(indxy),xList,yList,'regularizer','springs');
+[PhiGrid,~,~] = gridfit(tempx(indxy),tempy(indxy),tempPhi(indxy),xList,yList,'regularizer','springs');
+[qf_1Grid,~,~] = gridfit(tempx(indxy),tempy(indxy),qf_1(indxy),xList,yList,'regularizer','springs');
+[qf_2Grid,~,~] = gridfit(tempx(indxy),tempy(indxy),qf_2(indxy),xList,yList,'regularizer','springs');
 cc.max = PhiGrid; cc.A = []; cc.qfactors =[qf_1Grid(:),qf_2Grid(:)]; 
 % figure, surf(xGrid,yGrid,uGrid,'edgecolor','none')
 % figure, surf(xGrid,yGrid,vGrid,'edgecolor','none')
