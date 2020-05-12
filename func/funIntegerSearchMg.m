@@ -73,9 +73,7 @@ while gridxWidthNewtemp/gridyWidthNewtemp > 0
 end
 
 %TotalNo = 3*(gridx(2)-gridx(1))*(gridy(2)-gridy(1))/winsize^2; 
-IterNo=0;
-hbar = waitbar(0,'FFT initial guess, it is fast and please wait.');
-
+IterNo=0; hbar = waitbar(0,'FFT initial guess, it is fast and please wait.');
 while gridxyRatioCurr > 0
     levelNo=levelNo+1;
     clear utempNew vtempNew Phitemp
@@ -84,7 +82,7 @@ while gridxyRatioCurr > 0
         gridxWidthNew = gridxWidthCurr/2; gridyWidthNew = gridyWidthCurr;
         for tempi = 1:size(gridx_fCurr,1)
             tempj=tempi; tempInd = tempj ;
-            if ( (gridx_fCurr(tempInd,2)-gridx_fCurr(tempInd,1) > winsize) && (gridy_fCurr(tempInd,2)-gridy_fCurr(tempInd,1) > winsize) )
+            if ( (gridx_fCurr(tempInd,2)-gridx_fCurr(tempInd,1) > winsize)   )
                 
                 gridx_fNew(2*tempInd-1:2*tempInd,1:2) = [ gridx_fCurr(tempInd,1), 0.5*sum(gridx_fCurr(tempInd,:));
                     0.5*sum(gridx_fCurr(tempInd,:)), gridx_fCurr(tempInd,2)];
@@ -109,7 +107,7 @@ while gridxyRatioCurr > 0
         gridxWidthNew = gridxWidthCurr; gridyWidthNew = gridyWidthCurr/2;
         for tempi = 1:size(gridx_fCurr,1)
             tempj=tempi; tempInd = tempj ;
-            if ( (gridx_fCurr(tempInd,2)-gridx_fCurr(tempInd,1) > winsize) && (gridy_fCurr(tempInd,2)-gridy_fCurr(tempInd,1) > winsize) )
+            if (  (gridy_fCurr(tempInd,2)-gridy_fCurr(tempInd,1) > winsize) )
                 
                 gridx_fNew(2*tempInd-1:2*tempInd,1:2) = repmat( gridx_fCurr(tempInd,1:2), 2,1);
                 gridx_gNew(2*tempInd-1:2*tempInd,1:2) = repmat( gridx_gCurr(tempInd,1:2), 2,1);
@@ -219,7 +217,7 @@ while gridxyRatioCurr > 0
                 gridy_f(tempi,2) = gridy_f(tempi,2)+(size(f,2)-borderGapy)-temp;
             end
         end
-        % Make image width/length odd number
+        % Make sure: image width/length odd number
         for tempi = 1:size(gridx_g,1)
             if mod(gridx_f(tempi,2)-gridx_f(tempi,1),2)==1
                 gridx_f(tempi,2)=gridx_f(tempi,2)-1;
@@ -243,7 +241,7 @@ while gridxyRatioCurr > 0
 end
 
 close(hbar);
-%IterNo/TotalNo
+ 
 
 %%
 tempx=0.5*(gridx_fNew(:,1)+gridx_fNew(:,2));
