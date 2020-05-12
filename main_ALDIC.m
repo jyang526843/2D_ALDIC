@@ -5,8 +5,7 @@
 % 2015.04,06,07; 2016.03,04
 % ---------------------------------------------
 
-%% Section 1
-% ====== Clear MATLAB environment & mex set up Spline interpolation ======
+%% Section 1: Clear MATLAB environment & mex set up Spline interpolation  
 close all; clear; clc; 
 fprintf('------------ Section 1 Start ------------ \n')
 setenv('MW_MINGW64_LOC','C:\TDM-GCC-64')
@@ -18,8 +17,7 @@ addpath("./func"); addpath("./src"); addpath("./plotFiles/"); addpath("./plotFil
 fprintf('------------ Section 1 Done ------------ \n \n')
 
 
-%% Section 2
-% Load DIC parameters and set up DIC parameters 
+%% Section 2: Load DIC parameters and set up DIC parameters 
 fprintf('------------ Section 2 Start ------------ \n')
 % ====== Read images ======
 [file_name,Img,DICpara] = ReadImage; close all;
@@ -56,12 +54,14 @@ for ImgSeqNum = 2:length(ImgNormalized)
     while NewFFTSearchCheck == 0 
     if ImgSeqNum == 2 || DICpara.NewFFTSearch == 1
         % ====== Integer Search ======
-        % Old version: [DICpara.SizeOfFFTSearchRegion,x0temp,y0temp,u,v,cc]= IntegerSearch(fNormalized,gNormalized,file_name,DICpara);
-        [x0temp,y0temp,u,v,cc]= IntegerSearchMg(fNormalized,gNormalized,file_name,DICpara);
+        % Old version: 
+        [DICpara.SizeOfFFTSearchRegion,x0temp,y0temp,u,v,cc]= IntegerSearch(fNormalized,gNormalized,file_name,DICpara);
+        % New version: adaptive search initial guess
+        % [x0temp,y0temp,u,v,cc]= IntegerSearchMg(fNormalized,gNormalized,file_name,DICpara);
         % ====== FEM mesh set up ======
         [DICmesh] = MeshSetUp(x0temp,y0temp,DICpara); clear x0temp y0temp;
         % ====== Initial Value ======
-        U0 = Init(u,v,cc.max,DICmesh.x0,DICmesh.y0,0); %PlotuvInit; 
+        U0 = Init(u,v,cc.max,DICmesh.x0,DICmesh.y0,0); %PlotuvInit; [x0temp,y0temp,u,v,cc]= IntegerSearchMg(fNormalized,gNormalized,file_name,DICpara);
         % ====== Deal with incremental mode ======
         fNormalizedNewIndex = ImgSeqNum-mod(ImgSeqNum-2,DICpara.ImgSeqIncUnit)-1;
         if DICpara.ImgSeqIncUnit == 1, fNormalizedNewIndex = fNormalizedNewIndex-1; end
