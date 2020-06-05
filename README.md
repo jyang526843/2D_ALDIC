@@ -17,12 +17,12 @@ AL-DIC MATLAB code was tested on MATLAB versions later than R2018a. Both single 
 * [2] Yang, J. and Bhattacharya, K. Augmented Lagrangian Digital Image Correlation. Exp.Mech. 59: 187, 2018. https://doi.org/10.1007/s11340-018-00457-0.   or 
 * Full text can be requested at: www.researchgate.net/publication/329456141_Augmented_Lagrangian_Digital_Image_Correlation  
 
-## Contact
+
+## Contact and support
 Jin Yang (Caltech solid mechanics, PhD '19): jyang526@wisc.edu  -or-  aldicdvc@gmail.com
 
-## License
-cc-zero
 
+ 
 <p align="center">
   <img width="538" height="301" src="https://github.com/jyang526843/2D_ALDIC_v3/blob/master/logo_aldic.png">
   <img width="245" height="176" src="https://github.com/jyang526843/2D_ALDIC_v3/blob/master/Example_aldic_foam_compression_strain_eyy.gif">
