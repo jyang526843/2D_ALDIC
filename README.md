@@ -21,7 +21,7 @@ AL-DIC MATLAB code was tested on MATLAB versions later than R2018a. Both single 
 ## Contact and support
 Jin Yang (Caltech solid mechanics, PhD '19): jyang526@wisc.edu  -or-  aldicdvc@gmail.com
 
-
+##
  
 <p align="center">
   <img width="538" height="301" src="https://github.com/jyang526843/2D_ALDIC_v3/blob/master/logo_aldic.png">
