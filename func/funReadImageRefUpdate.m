@@ -13,15 +13,16 @@ function [gridxy] = funReadImageRefUpdate(filename)
 % ==============================================
 % Choose ZOI
 fprintf('***** Update incremental reference image ***** \n');
-disp('--- Choose ZOI two boundary points from the left-top to the right-bottom ---')
+disp('--- Define ROI corner points at the top-left and the bottom-right ---')
 imshow( (imread(filename)));
+title('Click top-left and the bottom-right corner points','fontweight','normal','fontsize',16);
 
 gridx = zeros(1,2); gridy = zeros(1,2);
 [gridx(1), gridy(1)] = ginput(1);
-fprintf('The left-top coordinates are (%4.3f,%4.3f)\n',gridx(1), gridy(1))
+fprintf('Coordinates of top-left corner point are (%4.3f,%4.3f)\n',gridx(1), gridy(1))
 
 [gridx(2), gridy(2)] = ginput(1);
-fprintf('The right-bottom coordinates are (%4.3f,%4.3f)\n',gridx(2), gridy(2))
+fprintf('Coordinates of bottom-right corner point are (%4.3f,%4.3f)\n',gridx(2), gridy(2))
 
 gridxy.gridx = round(gridx); gridxy.gridy = round(gridy);
 
