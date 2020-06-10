@@ -41,7 +41,7 @@ switch LoadImgMethod
         file_name = struct2cell(file_name);
     otherwise
         % ==============================================
-        disp('--- Please load First image ---')
+        disp('--- Please load first image ---')
         file_name{1,1} = uigetfile('*.tif','Select reference Image (Deformed)');
         disp('--- Please load next image ---')
         file_name{1,2} = uigetfile('*.tif','Select deformed Image (Reference)');
@@ -103,15 +103,16 @@ end
 % Decide DIC subset parameters
 % Choose ZOI
 fprintf('\n');
-disp('--- Choose ROI two boundary points from the left-top to the right-bottom ---')
-imshow( (imread(file_name{1})));
+disp('--- Define ROI corner points at the top-left and the bottom-right ---')
+imshow( (imread(file_name{1}))); 
+title('Click top-left and the bottom-right corner points','fontweight','normal','fontsize',16);
 
 gridx = zeros(1,2); gridy = zeros(1,2);
 [gridx(1), gridy(1)] = ginput(1);
-fprintf('The left-top coordinates are (%4.3f,%4.3f)\n',gridx(1), gridy(1))
+fprintf('Coordinates of top-left corner point are (%4.3f,%4.3f)\n',gridx(1), gridy(1))
 
 [gridx(2), gridy(2)] = ginput(1);
-fprintf('The right-bottom coordinates are (%4.3f,%4.3f)\n',gridx(2), gridy(2))
+fprintf('Coordinates of bottom-right corner point are (%4.3f,%4.3f)\n',gridx(2), gridy(2))
 
 gridxy.gridx = round(gridx); gridxy.gridy = round(gridy);
 
