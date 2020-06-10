@@ -6,7 +6,7 @@
 % ---------------------------------------------
 
 %% Section 1: Clear MATLAB environment & mex set up Spline interpolation  
-close all; clear; clc; 
+close all; clear; clc; clearvars -global
 fprintf('------------ Section 1 Start ------------ \n')
 setenv('MW_MINGW64_LOC','C:\TDM-GCC-64')
 % % cd("./Splines_interp/lib_matlab"); CompileLib; cd("../../");  % % mex bi-cubic spline interpolations
@@ -269,14 +269,14 @@ for ImgSeqNum = 2:length(ImgNormalized)
     % This section is to run ADMM iteration: Subproblem 1 & 2
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
-    % ==================== Global AL Loop ==========================
+    % ==================== ADMM AL Loop ==========================
     ALSolveStep = 1; tol2 = 1e-4; UpdateY = 1e4; CrackOrNot = 0; CrackPath1 = [0,0]; CrackPath2 = [0,0]; CrackTip = [0,0]; 
     HPar = cell(21,1); for tempj = 1:21, HPar{tempj} = HtempPar(:,tempj); end
 
     while (ALSolveStep < 5)
         ALSolveStep = ALSolveStep + 1;  % Update using the last step
         %%%%%%%%%%%%%%%%%%%%%%% Subproblem 1 %%%%%%%%%%%%%%%%%%%%%%%%%
-        disp(['***** Start step',num2str(ALSolveStep),' Subproblem1 *****'])
+        disp(['***** Start step',num2str(ALSolveStep),' Subproblem1 *****']);
         tic;[USubpb1,~,ALSub1Timetemp,ConvItPerEletemp,LocalICGNBadPtNumtemp] = Subpb1(USubpb2,FSubpb2,udual,vdual,DICmesh.coordinatesFEM,...
         Df,fNormalized,gNormalized,mu,beta,HPar,ALSolveStep,DICpara,'GaussNewton',tol);
         FSubpb1 = FSubpb2; toc 
@@ -525,7 +525,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
     % ------ Smooth displacements ------
     %prompt = 'Do you want to smooth displacement? (0-yes; 1-no)';
     %DoYouWantToSmoothOnceMore = input(prompt); 
-    DispFilterSize=0; DispFilterStd=0; SmoothTimes = 0;
+    SmoothTimes = 0;
     try
         while DoYouWantToSmoothOnceMore == 0 && SmoothTimes < 3
             ULocal = funSmoothDisp(ULocal,DICmesh,DICpara);
