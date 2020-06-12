@@ -13,7 +13,7 @@ AL-DIC(Augmented Lagrangian DIC) is a fast, parallel-computing hybrid DIC algori
 AL-DIC MATLAB code was tested on MATLAB versions later than R2018a. Both single thread and parallel computing features are included in AL-DIC code. Please download and unzip the code to the MATLAB working path. Then, execute the mail file main_ALDIC.m.
 
 ## Citation
-* [1] Yang, J. (2019, March 6). 2D_ALDIC (Version 3.0). CaltechDATA. https://data.caltech.edu/records/1443
+* [1] Yang, J. (2019, March 6). 2D_ALDIC (Version 3.3). CaltechDATA. https://data.caltech.edu/records/1443
 * [2] Yang, J. and Bhattacharya, K. Augmented Lagrangian Digital Image Correlation. Exp.Mech. 59: 187, 2018. https://doi.org/10.1007/s11340-018-00457-0.   or 
 * Full text can be requested at: www.researchgate.net/publication/329456141_Augmented_Lagrangian_Digital_Image_Correlation  
 
