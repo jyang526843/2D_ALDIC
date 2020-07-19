@@ -18,6 +18,11 @@ switch DICpara.MethodToComputeStrain
         temp = reshape(temp,M,N); temp2 = temp(Rad+1:M-Rad, Rad+1:N-Rad);
         temp2 = reshape(temp2, (M-2*Rad)*(N-2*Rad),1);
         
+        temp3 = zeros(4*(M-2*Rad)*(N-2*Rad),1);
+        for i = 1:(M-2*Rad)*(N-2*Rad)
+            temp3(4*i-3:4*i) = [4*temp2(i)-3; 4*temp2(i)-2; 4*temp2(i)-1; 4*temp2(i)];
+        end
+        
     case 1
         % Compute strain method I: Use Finite difference operator or FEM solver
         %if Subpb2FDOrFEM == 1 %FD
