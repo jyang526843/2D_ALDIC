@@ -16,8 +16,8 @@ u0 = reshape(u,M+2*Rad,N+2*Rad); v0 = reshape(v,M+2*Rad,N+2*Rad);
 u = u0(1+Rad:end-Rad,1+Rad:end-Rad); v = v0(1+Rad:end-Rad,1+Rad:end-Rad);
 
 % imagesc([x(1,1) x(end,1)], [y(1,1) y(1,end)], flipud(g)); hold on;
-if M < 9,x2 = x(:,1)'; else x2 = interp(x(:,1)',4); end
-if N < 9,y2 = y(1,:); else y2 = interp(y(1,:),4); end
+if M < 9 || (x(2)-x(1)<4), x2 = x(:,1)'; else x2 = interp(x(:,1)',4); end
+if N < 9 || (y(1,2)-y(1,1)<4) ,y2 = y(1,:); else y2 = interp(y(1,:),4); end
 
 
 
