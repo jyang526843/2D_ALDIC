@@ -30,3 +30,6 @@ b = colorbar; b.TickLabelInterpreter = 'latex';
 
 colormap jet
 box on
+
+
+

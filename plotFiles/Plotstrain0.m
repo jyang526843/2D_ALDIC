@@ -10,8 +10,8 @@ u_x = reshape(u_x,M,N); v_x = reshape(v_x,M,N);
 u_y = reshape(u_y,M,N); v_y = reshape(v_y,M,N);
 
 % imagesc([x(1,1) x(end,1)], [y(1,1) y(1,end)], flipud(g)); hold on;
-if M < 9 || (x(2)-x(1)<4) ,x2 = x(:,1)'; else x2 = interp(x(:,1)',4); end
-if N < 9 || (y(1,2)-y(1,1)<4), y2 = y(1,:); else y2 = interp(y(1,:),4); end
+if M < 9, x2 = x(:,1)'; else x2 = linspace(x(1,1),x(end,1),4*(length(x(:,1))-1)+1); x2=x2(:)'; end % x2 = interp(x(:,1)',4);
+if N < 9, y2 = y(1,:); else y2 = linspace(y(1,1),y(1,end),4*(length(y(1,:))-1)+1); y2=y2(:)'; end % y2 = interp(y(1,:),4);
 
 z_exx = gridfit(reshape(x,M*N,1),reshape(y,M*N,1),reshape(u_x,M*N,1),x2,y2);
 
