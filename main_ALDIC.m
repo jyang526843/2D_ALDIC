@@ -286,12 +286,12 @@ for ImgSeqNum = 2:length(ImgNormalized)
         % disp('--- Start to manually remove bad points --- \n')
         % disp('    Comment codes here if you do not have bad local points \n')
         % % Comment START
-        % close all; Plotuv(USubpb1,x0,y0);
+        % close all; Plotuv(USubpb1,DICmesh.x0,DICmesh.y0);
         % u = reshape(USubpb1(1:2:end),M,N); v = reshape(USubpb1(2:2:end),M,N);
         % [u,v,~,Subpb1_BadptRow,Subpb1_BadptCol] = funRemoveOutliers(u',v',[],0.5,100,Local_BadptRow,Local_BadptCol); u=u';v=v';
         % disp('--- Remove bad points done ---')
-        % USubpb1(1:2:end) = reshape(u,size(elements,1),1); USubpb1(2:2:end) = reshape(v,size(elements,1),1);
-        % close all; Plotuv(USubpb1,x0,y0); Plotdisp_show(USubpb1,coordinatesFEM,elementsFEM);
+        % USubpb1(1:2:end) = reshape(u,size(DICmesh.coordinatesFEM,1),1); USubpb1(2:2:end) = reshape(v,size(DICmesh.coordinatesFEM,1),1);
+        % close all; Plotuv(USubpb1,DICmesh.x0,DICmesh.y0); Plotdisp_show(USubpb1,DICmesh.coordinatesFEM,DICmesh.elementsFEM);
         % Comment END
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         save(['Subpb1_step',num2str(ALSolveStep)],'USubpb1','FSubpb1');
@@ -527,7 +527,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
     %DoYouWantToSmoothOnceMore = input(prompt); 
     SmoothTimes = 0;
     try
-        while DoYouWantToSmoothOnceMore == 0 && SmoothTimes < 3
+        while DICpara.DoYouWantToSmoothOnceMore == 0 && SmoothTimes < 3
             ULocal = funSmoothDisp(ULocal,DICmesh,DICpara);
             %close all; Plotuv(ULocal,x0,y0); %DoYouWantToSmoothOnceMore = input(prompt);
             SmoothTimes = SmoothTimes + 1;
