@@ -21,7 +21,7 @@ AL-DIC MATLAB code was tested on MATLAB versions later than R2018a. Both single 
 ## Contact and support
 Jin Yang (Caltech solid mechanics, PhD '19): jyang526@wisc.edu  -or-  aldicdvc@gmail.com
 
-Welcome to give ALDIC code ratings and comments at MATLAB File Exchange community: [![View Augmented Lagrangian Digital Image Correlation and Tracking on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://www.mathworks.com/matlabcentral/fileexchange/70499-augmented-lagrangian-digital-image-correlation-and-tracking)
+Welcome to give the ALDIC code ratings and comments in the MATLAB File Exchange community: [![View Augmented Lagrangian Digital Image Correlation and Tracking on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://www.mathworks.com/matlabcentral/fileexchange/70499-augmented-lagrangian-digital-image-correlation-and-tracking)
 
 ##
  
