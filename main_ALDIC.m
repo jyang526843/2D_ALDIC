@@ -139,8 +139,8 @@ for ImgSeqNum = 2:length(ImgNormalized)
     % ------ Plot ------
     USubpb1World = USubpb1; USubpb1World(2:2:end) = -USubpb1(2:2:end); 
     FSubpb1World = FSubpb1; % FSubpb1World(2:2:end) = -FSubpb1(2:2:end);
-    %close all; Plotuv(USubpb1World,x0,y0World); Plotdisp_show(USubpb1World,coordinatesFEMWorld,elementsFEM);
-    %Plotstrain_show(FSubpb1World,coordinatesFEMWorld,elementsFEM);
+    %close all; Plotuv(USubpb1World,DICmesh.x0,DICmesh.y0World); Plotdisp_show(USubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
+    %Plotstrain_show(FSubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
     save(['Subpb1_step',num2str(ALSolveStep)],'USubpb1','FSubpb1');
     fprintf('------------ Section 4 Done ------------ \n \n')
 
@@ -198,9 +198,9 @@ for ImgSeqNum = 2:length(ImgNormalized)
         USubpb2temp = (tempAMatrixSub2) \ (beta*D'*atemp + mu*btemp) ;
         USubpb2 = USubpb1; USubpb2(temp4) = USubpb2temp;
         waitbar(1); close(hbar);
-		%%%%%%%%%%%%%% End of using finite difference approximation %%%%%%%%%%%%%%
+        %%%%%%%%%%%%%% End of using finite difference approximation %%%%%%%%%%%%%%
         
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
 	else %Subpb2FDOrFEM: Using FE method
         M = size(DICmesh.x0,1); N = size(DICmesh.x0,2); GaussPtOrder = 2; alpha = 0;
         close all; hbar = waitbar(0,'Please wait for Subproblem 2 global step!');  
@@ -247,7 +247,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
     % ------ Plot ------
     USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end); FSubpb2World = FSubpb2;  
     close all; Plotuv(USubpb2World,DICmesh.x0,DICmesh.y0World); Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
-    %Plotstrain_show(FSubpb2World,coordinatesFEMWorld,elementsFEM);
+    %Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
 
     % ======= Update dual variables =======
     if DICpara.Subpb2FDOrFEM == 1 %FD
@@ -381,7 +381,7 @@ USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end);
 FSubpb2World = FSubpb2; % FSubpb1World(2:2:end) = -FSubpb1(2:2:end);
 close all; Plotuv(USubpb2World,DICmesh.x0,DICmesh.y0World); 
 Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
-% Plotstrain_show(FSubpb2World,coordinatesFEMWorld,elementsFEM);
+% Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
 
 %% ------ Save results ------
 % Find img name and save all the results 
