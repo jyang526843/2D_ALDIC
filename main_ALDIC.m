@@ -51,12 +51,12 @@ for ImgSeqNum = 2:length(ImgNormalized)
     % fNormalized = ImgNormalized{ImgSeqNum-mod(ImgSeqNum-1,ImgSeqIncUnit)};
     gNormalized = ImgNormalized{ImgSeqNum}; NewFFTSearchCheck = 0; DICpara.NewFFTSearch = 0;
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    while NewFFTSearchCheck == 0 
+    % while NewFFTSearchCheck == 0 
     if ImgSeqNum == 2 || DICpara.NewFFTSearch == 1
         % ====== Integer Search ======
         % Old version: search a subset of img1 in a larger region of img2 
         [DICpara.SizeOfFFTSearchRegion,x0temp,y0temp,u,v,cc]= IntegerSearch(fNormalized,gNormalized,file_name,DICpara);
-        % New version: multiscale search initial guess
+        % New version: adaptive search initial guess
         % [x0temp,y0temp,u,v,cc]= IntegerSearchMg(fNormalized,gNormalized,file_name,DICpara);
         % ====== FEM mesh set up ======
         [DICmesh] = MeshSetUp(x0temp,y0temp,DICpara); clear x0temp y0temp;
@@ -129,18 +129,18 @@ for ImgSeqNum = 2:length(ImgNormalized)
     % You won't use these codes now. Please ignore all the codes related
     % with NewFFTSearchCheck and don't change them.
     % --- --- Check: need redo FFT search or not ------
-    %if (LocalICGNBadPtNumtemp/size(DICmesh.coordinatesFEM,1) > 0.1) %&& (mod(ImgSeqNum-2,DICpara.ImgSeqIncUnit) == 0) % 10% bad points
+    % if (LocalICGNBadPtNumtemp/size(DICmesh.coordinatesFEM,1) > 0.1) %&& (mod(ImgSeqNum-2,DICpara.ImgSeqIncUnit) == 0) % 10% bad points
     %    DICpara.NewFFTSearch = 1;
-    %else
-        NewFFTSearchCheck = 1; %DICpara.NewFFTSearch = 0;
-    %end
-    end % Please ignore this while-loop now.   
+    % else
+    %     NewFFTSearchCheck = 1; %DICpara.NewFFTSearch = 0;
+    % end
+    %end % Please ignore this while-loop now.   
     
     % ------ Plot ------
     USubpb1World = USubpb1; USubpb1World(2:2:end) = -USubpb1(2:2:end); 
     FSubpb1World = FSubpb1; % FSubpb1World(2:2:end) = -FSubpb1(2:2:end);
-    %close all; Plotuv(USubpb1World,DICmesh.x0,DICmesh.y0World); Plotdisp_show(USubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
-    %Plotstrain_show(FSubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
+    %close all; Plotuv(USubpb1World,x0,y0World); Plotdisp_show(USubpb1World,coordinatesFEMWorld,elementsFEM);
+    %Plotstrain_show(FSubpb1World,coordinatesFEMWorld,elementsFEM);
     save(['Subpb1_step',num2str(ALSolveStep)],'USubpb1','FSubpb1');
     fprintf('------------ Section 4 Done ------------ \n \n')
 
@@ -198,9 +198,9 @@ for ImgSeqNum = 2:length(ImgNormalized)
         USubpb2temp = (tempAMatrixSub2) \ (beta*D'*atemp + mu*btemp) ;
         USubpb2 = USubpb1; USubpb2(temp4) = USubpb2temp;
         waitbar(1); close(hbar);
-        %%%%%%%%%%%%%% End of using finite difference approximation %%%%%%%%%%%%%%
+		%%%%%%%%%%%%%% End of using finite difference approximation %%%%%%%%%%%%%%
         
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
 	else %Subpb2FDOrFEM: Using FE method
         M = size(DICmesh.x0,1); N = size(DICmesh.x0,2); GaussPtOrder = 2; alpha = 0;
         close all; hbar = waitbar(0,'Please wait for Subproblem 2 global step!');  
@@ -246,8 +246,9 @@ for ImgSeqNum = 2:length(ImgNormalized)
 
     % ------ Plot ------
     USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end); FSubpb2World = FSubpb2;  
-    close all; Plotuv(USubpb2World,DICmesh.x0,DICmesh.y0World); Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
-    %Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
+    close all; Plotuv(USubpb2World,DICmesh.x0,DICmesh.y0World); 
+    Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
+    %Plotstrain_show(FSubpb2World,coordinatesFEMWorld,elementsFEM);
 
     % ======= Update dual variables =======
     if DICpara.Subpb2FDOrFEM == 1 %FD
@@ -285,7 +286,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
         % ------  Manually find some bad points from Local Subset ICGN step ------
         % disp('--- Start to manually remove bad points --- \n')
         % disp('    Comment codes here if you do not have bad local points \n')
-        % % Comment START
+        % Comment START
         % close all; Plotuv(USubpb1,DICmesh.x0,DICmesh.y0);
         % u = reshape(USubpb1(1:2:end),M,N); v = reshape(USubpb1(2:2:end),M,N);
         % [u,v,~,Subpb1_BadptRow,Subpb1_BadptCol] = funRemoveOutliers(u',v',[],0.5,100,Local_BadptRow,Local_BadptCol); u=u';v=v';
@@ -373,6 +374,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
     ResultDisp{ImgSeqNum-1}.ALSub1BadPtNum = ALSub1BadPtNum;
     ResultDefGrad{ImgSeqNum-1}.F = full(FSubpb2); % tempFoamAL;
     
+    
 end    
 
 
@@ -381,7 +383,7 @@ USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end);
 FSubpb2World = FSubpb2; % FSubpb1World(2:2:end) = -FSubpb1(2:2:end);
 close all; Plotuv(USubpb2World,DICmesh.x0,DICmesh.y0World); 
 Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
-% Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
+% Plotstrain_show(FSubpb2World,coordinatesFEMWorld,elementsFEM);
 
 %% ------ Save results ------
 % Find img name and save all the results 
@@ -444,6 +446,7 @@ end
 
 % ------ clear temp variables ------
 clear a ALSub1BadPtNum ALSub1Timetemp atemp b btemp cc ConvItPerEletemp hbar Hbar 
+
 
 %% Section 8
 fprintf('------------ Section 8 Start ------------ \n')
@@ -557,15 +560,10 @@ for ImgSeqNum = 2:length(ImgNormalized)
     SaveFigFiles;
     
 end
-% ------ Save movies ------
+% ------ END of for-loop {ImgSeqNum = 2:length(ImgNormalized)} ------
 fprintf('------------ Section 8 Done ------------ \n \n')
 
-%% ------- Store images ------
-% imgNo = 0570;
-% mean(FStraintemp(1:4:end)) % -0.0029(57939_WS20ST10) -0.0029(57939_WS40ST10) -5.03e-4(57383_WS20ST10)  -5.02e-4(57383_WS40ST10)
-% mean(FStraintemp(4:4:end)) % 0.0056(57939_WS20ST10) 0.0056(57939_WS40ST10) 3.804e-4(57383_WS20ST10)  3.85e-4(57383_WS20ST10)
-% 0.5*(mean(FStraintemp(2:4:end))+mean(FStraintemp(3:4:end))) % -5.7438e-4(57939_WS20ST10)  -5.7665e-4(57939_WS40ST10) -1.06e-4(57383_WS20ST10)  -1.0456e-4(57383_WS40ST10)
-
+ 
 %% Save data again including strain solve method
 results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
 save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultStrain','ResultFEMesh',...
