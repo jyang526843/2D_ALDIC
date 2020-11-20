@@ -2,27 +2,42 @@ function paraInput = funParaInput(paraName)
 
 switch paraName
     
-    case 'NewFFTSearch'
+    case 'InitFFTSearchMethod' % FFT-solver to compute the initial guess
+        fprintf('\n');
+        fprintf('--- Method to compute an initial guess of displacements --- \n');
+        fprintf('    0: Multigrid search based on an image pyramid  \n');
+        fprintf('    1: Whole field search for all the subsets  \n');
+        fprintf('    2: Search near manually clicked seeds and then interpolate for the full-field  \n');
+        prompt = 'Input here: '; InitFFTSearchMethod = input(prompt); paraInput = InitFFTSearchMethod;
+        fprintf('\n');
+    
+        
+    case 'NewFFTSearch' % For an image sequence: re-run FFT for an initial guess or not?
         fprintf('\n'); 
-        fprintf('Since we are dealing with image sequences, for each new frame,   \n')
+        fprintf('Since we are dealing with an image sequence, for each new frame,   \n')
         fprintf('do we use last frame result as the initial guess or   \n')
-        fprintf('Redo FFT initial guess for every new frame? \n    0: Use last frame (by default); \n    1: Redo initial guess.  \n')
+        fprintf('Redo FFT initial guess for every new frame? \n')
+        fprintf('    0: Use last frame (by default); \n');
+        fprintf('    1: Redo initial guess.  \n');
         prompt = 'Input here: '; StillFFTSearch = input(prompt); paraInput = StillFFTSearch;
         fprintf('\n');
+        
         
     case 'Subpb2FDOrFEM'
         fprintf('\n'); 
         fprintf('--- Method to solve ALDIC global step Subproblem 2 ---    \n')
-        fprintf('    1: Finite difference(Recommended)   \n    2: Finite element method  \n')
+        fprintf('    1: Finite difference(Recommended)   \n')
+        fprintf('    2: Finite element method  \n')
         prompt = 'Input here: ';
         Subpb2FDOrFEM = input(prompt); paraInput = Subpb2FDOrFEM;
         
-    case 'ClusterNo'
+        
+    case 'ClusterNo' % Parallel threads #
         fprintf('\n'); disp('--- Set up Parallel pool ---');
         fprintf('How many parallel pools to open? (Put in 1 if no parallel computing) \n');
         prompt = 'Input here: ';
         ClusterNo = input(prompt);
-        % if ClusterNo > 1
+        % if ClusterNo > 1 % Backup codes
         %     delete(gcp); myCluster = parcluster('local'); delete(myCluster.Jobs);
         %     parpool(ClusterNo,'SpmdEnabled',false);
         % end
@@ -34,6 +49,7 @@ switch paraName
         DoYouWantToSmoothOnceMore = input(prompt);
         paraInput = DoYouWantToSmoothOnceMore;
     
+        
     case 'StrainMethodOp' % Choose strain computation method  
         fprintf('What method to use to compute strain? \n');
         fprintf('    0: Direct output from ALDIC; \n');
@@ -54,6 +70,7 @@ switch paraName
         end
         paraInput = [MethodToComputeStrain];
           
+        
     case 'StrainType' % Choose strain computation method again
         fprintf('Infinitesimal stran or finite strain? \n');
         fprintf('    0: Infinitesimal stran; \n');
@@ -72,22 +89,31 @@ switch paraName
             prompt = 'Input here: ';
             StrainType = input(prompt);
         end
-        paraInput = [StrainType];
+        paraInput = StrainType;
             
         
-    case 'SaveFigFormat'
-        fprintf('Save figures into different format: \n');
-        fprintf('    1: jpeg(Choose transparency 0~1) \n');
+    case 'Image2PlotResults' % Choose image to plot results (first only, second and next images) ------
+        fprintf('Over which image(s) you want to plot the results? \n');
+        fprintf('    0: First image only (if you are using only two images); \n');
+        fprintf('    1: Second and next images; \n');
+        prompt = 'Input here: '; Image2PlotResults = input(prompt);
+		paraInput = Image2PlotResults;
+        
+        
+    case 'SaveFigFormat' % Finally saved figure format
+        fprintf('Save figures into the format: \n');
+        fprintf('    1: jpg(Choose transparency 0~1) \n');
         fprintf('    2: pdf(Choose transparency = 1) \n'); 
         fprintf('    3: Others: Edit codes in ./plotFiles/SaveFigFiles.m \n'); 
         prompt = 'Input here: '; MethodToSaveFig = input(prompt);
         paraInput = MethodToSaveFig;
         
-    case 'OrigDICImgTransparency'
+        
+    case 'OrigDICImgTransparency' 
         fprintf('Define transparency for overlaying original images: \n')
         fprintf('Input a real number between 0(Only original images) \n')
         fprintf('and 1(Non-transparent deformation results).\n')
-        prompt = 'Input here(e.g. 0.5): '; OrigDICImgTransparency = input(prompt);
+        prompt = 'Input here(e.g., 0.5): '; OrigDICImgTransparency = input(prompt);
         paraInput = OrigDICImgTransparency;
         
         

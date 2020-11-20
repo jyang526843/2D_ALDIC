@@ -236,7 +236,6 @@ while gridxyRatioCurr > 0
         
     end
     
-    
 end
 
 close(hbar);

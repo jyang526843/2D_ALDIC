@@ -2,7 +2,8 @@
 
 function [x,y,u,v,cc] = funIntegerSearch(f,g,tempSizeOfSearchRegion,gridx,gridy,winsize,winstepsize,tempNoOfInitPt,varargin)
 
-%(f,g,tempSizeOfSearchRegion,gridx,gridy,winsize,winstepsize)
+if length(winsize)==1, winsize = winsize*[1,1]; end
+if length(winstepsize)==1, winstepsize = winstepsize*[1,1]; end
 
 switch tempNoOfInitPt % 0- whole field; 1- several seeds points;
     case 0 % 0- whole field;
@@ -10,16 +11,16 @@ switch tempNoOfInitPt % 0- whole field; 1- several seeds points;
         gridxBackup = gridx; gridyBackup = gridy;
         
         % may lose boundary regions
-        while gridx(1)-tempSizeOfSearchRegion(1)-0.5*winsize < 1
+        while gridx(1)-tempSizeOfSearchRegion(1)-0.5*winsize(1) < 1
             gridx(1) = gridx(1) +1;
         end
-        while gridy(1)-tempSizeOfSearchRegion(1)-0.5*winsize < 1
+        while gridy(1)-tempSizeOfSearchRegion(2)-0.5*winsize(2) < 1
             gridy(1) = gridy(1) +1;
         end
-        while gridx(end)+1.5*winsize+tempSizeOfSearchRegion(2) > size(f,1)
+        while gridx(end)+1.5*winsize(1)+tempSizeOfSearchRegion(1) > size(f,1)
             gridx(end) = gridx(end)-1;
         end
-        while gridy(end)+1.5*winsize+tempSizeOfSearchRegion(2) > size(f,2) 
+        while gridy(end)+1.5*winsize(2)+tempSizeOfSearchRegion(2) > size(f,2) 
             gridy(end) = gridy(end)-1;
         end
        
@@ -37,23 +38,23 @@ switch tempNoOfInitPt % 0- whole field; 1- several seeds points;
         seedPtCoords = varargin{1}; uSeedPt = zeros(size(seedPtCoords,1),1); vSeedPt = uSeedPt; PhiSeedPt = uSeedPt;
         for tempi = 1:length(seedPtCoords)
             
-            if ceil(seedPtCoords(tempi,1)-winsize/2)-tempSizeOfSearchRegion < 1 || ...
-                    floor(seedPtCoords(tempi,1)+winsize/2)+tempSizeOfSearchRegion > size(g,1) || ...
-                    ceil(seedPtCoords(tempi,2)-winsize/2)-tempSizeOfSearchRegion < 1 || ...
-                    floor(seedPtCoords(tempi,2)+winsize/2)+tempSizeOfSearchRegion > size(g,2)
+            if ( ceil(seedPtCoords(tempi,1)-winsize(1)/2)-tempSizeOfSearchRegion(1) < 1) || ...
+                    (floor(seedPtCoords(tempi,1)+winsize(1)/2)+tempSizeOfSearchRegion(1) > size(g,1)) || ...
+                    (ceil(seedPtCoords(tempi,2)-winsize(2)/2)-tempSizeOfSearchRegion(2) < 1) || ...
+                    (floor(seedPtCoords(tempi,2)+winsize(2)/2)+tempSizeOfSearchRegion(2) > size(g,2))
                 continue;
             else
             
-                C = f(ceil(seedPtCoords(tempi,1)-winsize/2):floor(seedPtCoords(tempi,1)+winsize/2), ...
-                      ceil(seedPtCoords(tempi,2)-winsize/2):floor(seedPtCoords(tempi,2)+winsize/2));
-                D = g(ceil(seedPtCoords(tempi,1)-winsize/2)-tempSizeOfSearchRegion:floor(seedPtCoords(tempi,1)+winsize/2)+tempSizeOfSearchRegion, ...
-                     ceil(seedPtCoords(tempi,2)-winsize/2)-tempSizeOfSearchRegion:floor(seedPtCoords(tempi,2)+winsize/2)+tempSizeOfSearchRegion);  
+                C = f(ceil(seedPtCoords(tempi,1)-winsize(1)/2):floor(seedPtCoords(tempi,1)+winsize(1)/2), ...
+                      ceil(seedPtCoords(tempi,2)-winsize(2)/2):floor(seedPtCoords(tempi,2)+winsize(2)/2));
+                D = g(ceil(seedPtCoords(tempi,1)-winsize(1)/2)-tempSizeOfSearchRegion(1):floor(seedPtCoords(tempi,1)+winsize(1)/2)+tempSizeOfSearchRegion(1), ...
+                      ceil(seedPtCoords(tempi,2)-winsize(2)/2)-tempSizeOfSearchRegion(2):floor(seedPtCoords(tempi,2)+winsize(2)/2)+tempSizeOfSearchRegion(2));  
 
                 XCORRF2OfCD0 = normxcorr2(C,D);
 
-                [v1temp, u1temp, max_f] = findpeak(XCORRF2OfCD0(winsize:end-winsize+1,winsize:end-winsize+1),1);
+                [v1temp, u1temp, max_f] = findpeak(XCORRF2OfCD0(winsize(1):end-winsize(1)+1, winsize(2):end-winsize(2)+1),1);
 
-                zero_disp = ceil(size(XCORRF2OfCD0(winsize:end-winsize+1,winsize:end-winsize+1))/2);
+                zero_disp = ceil(size(XCORRF2OfCD0(winsize(1):end-winsize(1)+1,winsize(2):end-winsize(2)+1))/2);
 
                 uSeedPt(tempi) = u1temp-zero_disp(1);
                 vSeedPt(tempi) = v1temp-zero_disp(2);
@@ -62,15 +63,15 @@ switch tempNoOfInitPt % 0- whole field; 1- several seeds points;
             
         end
         
-        xList = gridx(1):winstepsize:gridx(end); yList = gridy(1):winstepsize:gridy(end);
+        xList = gridx(1):winstepsize(1):gridx(end); yList = gridy(1):winstepsize(2):gridy(end);
         [x,y] = meshgrid(xList,yList);
         %bc = Spline2D('bicubic',X,Y,ZZ);
         u = gridfit(seedPtCoords(:,1),seedPtCoords(:,2),uSeedPt,xList,yList,...
-            'smooth',100,'interp','bicubic','regularizer','springs');
+            'smooth',100,'interp','bilinear','regularizer','springs');
         v = gridfit(seedPtCoords(:,1),seedPtCoords(:,2),vSeedPt,xList,yList,...
-            'smooth',100,'interp','bicubic','regularizer','springs');
+            'smooth',100,'interp','bilinear','regularizer','springs');
         cc.max = gridfit(seedPtCoords(:,1),seedPtCoords(:,2),PhiSeedPt,xList,yList,...
-            'smooth',100,'interp','bicubic','regularizer','springs');
+            'smooth',100,'interp','bilinear','regularizer','springs');
         
     otherwise
         disp('wrong input in IntegerSearch!');
@@ -82,12 +83,8 @@ function [x,y,u,v,cc] = funIntegerSearchWholeField(f,g,tempSizeOfSearchRegion,gr
 
 %cj1 = 1; ci1 = 1; % index to count main loop
 
-if length(winstepsize)==1 
-    winstepsize = repmat(winstepsize,1,2);
-end
-if length(winsize)==1 
-    winsize = repmat(winsize,1,2);
-end
+if length(winstepsize)==1, winstepsize = repmat(winstepsize,1,2); end
+if length(winsize)==1, winsize = repmat(winsize,1,2); end
 
 % disp('Assemble point position sequence.');
 XList = [gridx(1) : winstepsize(1) : gridx(2)-winstepsize(1)];
