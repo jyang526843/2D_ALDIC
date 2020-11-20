@@ -69,7 +69,7 @@ hold on; ax2=axes; h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2
 set(gca,'fontSize',18); view(2); box on; caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
-colormap(jet); caxis([-0.025,0.025]); 
+% colormap(jet); caxis([-0.025,0.025]); 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 linkaxes([ax1,ax2]);  %%Link them together
@@ -98,7 +98,7 @@ hold on; ax2=axes; h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
-colormap(jet); caxis([-0.025,0.025]); 
+% colormap(jet); caxis([-0.025,0.025]); 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 linkaxes([ax1,ax2]);  %%Link them together
@@ -127,7 +127,7 @@ hold on; ax2=axes; h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
-colormap(jet); caxis([-0.015,0.015]); 
+% colormap(jet); caxis([-0.015,0.015]); 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 linkaxes([ax1,ax2]);  %%Link them together
@@ -156,7 +156,7 @@ hold on; ax2=axes; h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
-colormap(jet); % caxis([-0.025,0.025]); 
+% colormap(jet); % caxis([-0.025,0.025]); 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 linkaxes([ax1,ax2]);  %%Link them together
@@ -185,7 +185,7 @@ hold on; ax2=axes; h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
-colormap(jet); % caxis([-0.025,0.025]); 
+% colormap(jet); % caxis([-0.025,0.025]); 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 linkaxes([ax1,ax2]);  %%Link them together
@@ -214,7 +214,7 @@ hold on; ax2=axes; h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
-colormap(jet); % caxis([-0.025,0.025]); 
+% colormap(jet); % caxis([-0.025,0.025]); 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 linkaxes([ax1,ax2]);  %%Link them together
@@ -242,7 +242,7 @@ hold on; ax2=axes; h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2
 set(gca,'fontSize',18); view(2); box on;  caxis auto;  
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
-colormap(jet); % caxis([-0.025,0.025]); 
+% colormap(jet); % caxis([-0.025,0.025]); 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 linkaxes([ax1,ax2]);  %%Link them together
