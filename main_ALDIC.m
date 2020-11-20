@@ -8,10 +8,10 @@
 %% Section 1: Clear MATLAB environment & mex set up Spline interpolation  
 close all; clear; clc; clearvars -global
 fprintf('------------ Section 1 Start ------------ \n')
-setenv('MW_MINGW64_LOC','C:\TDM-GCC-64')
+setenv('MW_MINGW64_LOC','C:\TDM-GCC-64');
 % % cd("./Splines_interp/lib_matlab"); CompileLib; cd("../../");  % % mex bi-cubic spline interpolations
 % % addpath("./Splines_interp/lib_matlab"); % dbstop if error % % Old version codes.
-mex -O ba_interp2.cpp; 
+try mex -O ba_interp2.cpp; catch; end
 addpath("./func"); addpath("./src"); addpath("./plotFiles/"); addpath("./plotFiles/export_fig-d966721/");
 % addpath("./YOUR IMAGE FOLDER"); 
 fprintf('------------ Section 1 Done ------------ \n \n')
@@ -21,17 +21,20 @@ fprintf('------------ Section 1 Done ------------ \n \n')
 fprintf('------------ Section 2 Start ------------ \n')
 % ====== Read images ======
 [file_name,Img,DICpara] = ReadImage; close all;
-% %%%%%% Uncomment the line below to change the DIC computing ROI manually %%%%%%
+% %%%%%% Uncomment the line below to change the DIC computing region (ROI) manually %%%%%%
 %gridxROIRange = [gridxROIRange1,gridxROIRange2]; gridyROIRange = [Val1, Val2];
 %gridxROIRange = [224,918]; gridyROIRange = [787,1162];
-% ====== Normalize images ======
-[ImgNormalized,DICpara.gridxyROIRange] = funNormalizeImg(Img,DICpara.gridxyROIRange);  
+
+% ====== Normalize images: fNormalized = (f-f_avg)/(f_std) ======
+[ImgNormalized,DICpara.gridxyROIRange] = funNormalizeImg(Img,DICpara.gridxyROIRange); 
+
 % ====== Initialize variable storage ======
 ResultDisp = cell(length(ImgNormalized)-1,1); 
 ResultDefGrad = cell(length(ImgNormalized)-1,1);
 ResultStrain = cell(length(ImgNormalized)-1,1);
 ResultFEMesh = cell(ceil((length(ImgNormalized)-1)/DICpara.ImgSeqIncUnit),1); % For incremental DIC mode
 fprintf('------------ Section 2 Done ------------ \n \n')
+
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Start each frame in an image sequence
@@ -44,20 +47,18 @@ for ImgSeqNum = 2:length(ImgNormalized)
     %% Section 3:
     fprintf('\n'); fprintf('------------ Section 3 Start ------------ \n')
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % This section is to find or update initial guess for ALDIC
-    % The key idea is to either to use FFT peak fitting, or use last frame
-    % results for the next new frame;
-    % Particularly in incremental mode, the reference image can also be updated.
+    % This section is to find or update an initial guess of displacements
+    % The key idea is to either to use a new FFT-based cross correlation peak fitting, 
+    % or use the results from the last frame as the new initial guess for the next frame;
+    % Particularly in incremental mode DIC, the reference image can also be updated, e.g.:
     % fNormalized = ImgNormalized{ImgSeqNum-mod(ImgSeqNum-1,ImgSeqIncUnit)};
     gNormalized = ImgNormalized{ImgSeqNum}; NewFFTSearchCheck = 0; DICpara.NewFFTSearch = 0;
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % while NewFFTSearchCheck == 0 
+    % while NewFFTSearchCheck == 0  % Please ignore this line for now.
+    
     if ImgSeqNum == 2 || DICpara.NewFFTSearch == 1
         % ====== Integer Search ======
-        % Old version: search a subset of img1 in a larger region of img2 
-        % [DICpara.SizeOfFFTSearchRegion,x0temp,y0temp,u,v,cc]= IntegerSearch(fNormalized,gNormalized,file_name,DICpara);
-        % New version: multiscale search initial guess
-        [x0temp,y0temp,u,v,cc]= IntegerSearchMg(fNormalized,gNormalized,file_name,DICpara);
+        [DICpara,x0temp,y0temp,u,v,cc]= IntegerSearch(fNormalized,gNormalized,file_name,DICpara);
         % ====== FEM mesh set up ======
         [DICmesh] = MeshSetUp(x0temp,y0temp,DICpara); clear x0temp y0temp;
         % ====== Initial Value ======
@@ -457,8 +458,13 @@ DICpara.DoYouWantToSmoothOnceMore = funParaInput('SmoothDispOrNot');
 DICpara.MethodToComputeStrain = funParaInput('StrainMethodOp'); 
 % ------ Choose strain type (infinitesimal, Eulerian, Green-Lagrangian) ------
 DICpara.StrainType = funParaInput('StrainType');
+% ------ Choose image to plot (first only, second and next images) ------
+if length(ImgNormalized)==2, DICpara.Image2PlotResults = funParaInput('Image2PlotResults');
+else DICpara.Image2PlotResults = 1; % Plot over current, deformed image by default
+end
 % ------ Save fig format ------
 DICpara.MethodToSaveFig = funParaInput('SaveFigFormat');
+% ------ Choose overlay image transparency ------
 DICpara.OrigDICImgTransparency = 1; 
 if DICpara.MethodToSaveFig == 1  
     DICpara.OrigDICImgTransparency = funParaInput('OrigDICImgTransparency');         
@@ -544,12 +550,17 @@ for ImgSeqNum = 2:length(ImgNormalized)
     % ------ Plot disp and strain ------
     if DICpara.OrigDICImgTransparency == 0
         Plotdisp_show(UWorld,coordinatesFEMWorld,elementsFEM);
-        Plotstrain0(FStraintemp,x0(1+Rad:M-Rad,1+Rad:N-Rad),y0(1+Rad:M-Rad,1+Rad:N-Rad),size(ImgNormalized{1}),...
-        file_name{1,ImgSeqNum},DICpara.OrigDICImgTransparency); 
-    else
-        Plotdisp(UWorld,x0,y0,size(ImgNormalized{1}),file_name{1,ImgSeqNum},DICpara.OrigDICImgTransparency);
-        Plotstrain(UWorld,Rad,FStraintemp,x0(1+Rad:M-Rad,1+Rad:N-Rad),y0(1+Rad:M-Rad,1+Rad:N-Rad),size(ImgNormalized{1}),...
-        file_name{1,ImgSeqNum},DICpara.OrigDICImgTransparency); 
+        Plotstrain0(FStraintemp,x0(1+Rad:M-Rad,1+Rad:N-Rad),y0(1+Rad:M-Rad,1+Rad:N-Rad),size(ImgNormalized{1})); 
+    else % Plot over raw DIC images
+        if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image	
+            Plotdisp(UWorld,x0,y0,size(ImgNormalized{1}),file_name{1,1},DICpara);
+            Plotstrain(UWorld,Rad,FStraintemp,x0(1+Rad:M-Rad,1+Rad:N-Rad),y0(1+Rad:M-Rad,1+Rad:N-Rad), ...
+                size(ImgNormalized{1}),file_name{1,1},DICpara); 
+        else % Plot over second or next deformed images
+            Plotdisp(UWorld,x0,y0,size(ImgNormalized{1}),file_name{1,ImgSeqNum},DICpara);
+            Plotstrain(UWorld,Rad,FStraintemp,x0(1+Rad:M-Rad,1+Rad:N-Rad),y0(1+Rad:M-Rad,1+Rad:N-Rad), ...
+                size(ImgNormalized{1}),file_name{1,ImgSeqNum},DICpara); 
+        end
     end
 
     ResultStrain{ImgSeqNum-1}.Strain = FStraintemp;
@@ -566,6 +577,9 @@ fprintf('------------ Section 8 Done ------------ \n \n')
 results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
 save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultStrain','ResultFEMesh',...
     'ALSub1Time','ALSub2Time','ALSolveStep');
+
+
+
 
 
 
