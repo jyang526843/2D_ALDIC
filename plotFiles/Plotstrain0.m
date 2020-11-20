@@ -13,7 +13,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%
-function Plotstrain0(FSubpb3,x,y,sizeOfImg,CurrentImg,OrigDICImgTransparency)
+function Plotstrain0(FSubpb3,x,y,sizeOfImg)
   
 warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
 
