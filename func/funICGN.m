@@ -37,7 +37,7 @@ H2(1,3) = sum(sum( XXYY.*DfDxSq ));     H2(1,4) = sum(sum( XXYY.*DfDxDfDy ));
 H2(1,5) = sum(sum( (XX-x0).*DfDxSq ));  H2(1,6) = sum(sum( (XX-x0).*DfDxDfDy ));
 H2(2,2) = sum(sum(XXSq.*DfDySq));       H2(2,3) = H2(1,4);
 H2(2,4) = sum(sum( XXYY.*DfDySq ));     H2(2,5) = H2(1,6);
-H2(2,6) = sum(sum( (XX-x0).*DfDxDfDy ));H2(3,3) = sum(sum( YYSq.*DfDxSq ));
+H2(2,6) = sum(sum( (XX-x0).*DfDySq ));  H2(3,3) = sum(sum( YYSq.*DfDxSq ));
 H2(3,4) = sum(sum( YYSq.*DfDxDfDy ));   H2(3,5) = sum(sum( (YY-y0).*DfDxSq ));
 H2(3,6) = sum(sum( (YY-y0).*DfDxDfDy ));H2(4,4) = sum(sum( YYSq.*DfDySq ));
 H2(4,5) = H2(3,6);  H2(4,6) = sum(sum((YY-y0).*DfDySq)); H2(5,5) = sum(sum(DfDxSq));
