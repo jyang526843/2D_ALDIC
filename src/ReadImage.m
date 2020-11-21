@@ -119,12 +119,13 @@ gridxy.gridx = round(gridx); gridxy.gridy = round(gridy);
 % Choose subset size
 fprintf('\n');
 fprintf('--- What is the subset size? --- \n');
-prompt = 'Input here: ';
+fprintf('Each subset has an area of [-winsize/2:winsize/2, -winsize/2:winsize/2] \n');
+prompt = 'Input an even number: ';
 winsize = input(prompt);
 
 % Choose subset size
 fprintf('--- What is the subset step? --- \n');
-prompt = 'Input here: ';
+prompt = 'Input an integer: ';
 winstepsize = input(prompt);
  
 
