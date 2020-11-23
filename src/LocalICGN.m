@@ -13,6 +13,7 @@ F11tempPar = temp; F21tempPar = temp; F12tempPar = temp; F22tempPar = temp;% F11
 HtempPar = zeros(size(coordinatesFEM,1),21);
 ConvItPerEle = zeros(size(coordinatesFEM,1),1);
 
+%%
 disp('--- Set up Parallel pool ---'); tic;
 % -------- How to change parallel pools ---------
 % myCluster = parcluster('local');
@@ -23,8 +24,8 @@ disp('--- Set up Parallel pool ---'); tic;
 % Go to the Parallel menu, then select Manage Cluster Profiles.
 % Select the "local" profile, and change NumWorkers to 4.
 % -----------------------------------------------
-switch ClusterNo
-case 0 || 1
+if (ClusterNo == 0) || (ClusterNo == 1)
+
     h = waitbar(0,'Please wait for Subproblem 1 IC-GN iterations!'); tic;
      
     for tempj = 1:size(coordinatesFEM,1)  % tempj is the element index
@@ -33,6 +34,7 @@ case 0 || 1
             [Utemp, Ftemp, ConvItPerEle(tempj), HtempPar(tempj,:)] = funICGN(U0(2*tempj-1:2*tempj), ...
                     x0temp,y0temp,Df,imgfNormalizedbc,imggNormalizedbc,winsize,tol,ICGNmethod);
             % disp(['ele ',num2str(tempj),' converge step is ',num2str(ConvItPerEle(tempj)),' (>0-converged; 0-unconverged)']);
+            
             % ------ Store solved deformation gradients ------
             UtempPar(tempj) = Utemp(1); VtempPar(tempj) = Utemp(2); 
             F11tempPar(tempj) = Ftemp(1); F21tempPar(tempj) = Ftemp(2); F12tempPar(tempj) = Ftemp(3); F22tempPar(tempj) = Ftemp(4);
@@ -45,7 +47,8 @@ case 0 || 1
     end
     close(h); LocalTime = toc;
     
-otherwise
+else
+    
     % Start parallel computing
     % ****** This step needs to be careful: may be out of memory ******
     tic;
