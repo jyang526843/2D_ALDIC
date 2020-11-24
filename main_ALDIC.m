@@ -11,7 +11,9 @@ fprintf('------------ Section 1 Start ------------ \n')
 setenv('MW_MINGW64_LOC','C:\TDM-GCC-64');
 % % cd("./Splines_interp/lib_matlab"); CompileLib; cd("../../");  % % mex bi-cubic spline interpolations
 % % addpath("./Splines_interp/lib_matlab"); % dbstop if error % % Old version codes.
-try mex -O ba_interp2.cpp; catch; end
+mex -O ba_interp2.cpp; 
+% Comment: If your MATLAB has just been crashed, and this line reports error but it works before the crash, 
+% Change this line to: "try mex -O ba_interp2.cpp; catch; end"
 addpath("./func"); addpath("./src"); addpath("./plotFiles/"); addpath("./plotFiles/export_fig-d966721/");
 % addpath("./YOUR IMAGE FOLDER"); 
 fprintf('------------ Section 1 Done ------------ \n \n')
@@ -29,9 +31,8 @@ fprintf('------------ Section 2 Start ------------ \n')
 [ImgNormalized,DICpara.gridxyROIRange] = funNormalizeImg(Img,DICpara.gridxyROIRange); 
 
 % ====== Initialize variable storage ======
-ResultDisp = cell(length(ImgNormalized)-1,1); 
-ResultDefGrad = cell(length(ImgNormalized)-1,1);
-ResultStrain = cell(length(ImgNormalized)-1,1);
+ResultDisp = cell(length(ImgNormalized)-1,1);   ResultDefGrad = cell(length(ImgNormalized)-1,1);
+ResultStrain = cell(length(ImgNormalized)-1,1); ResultStress = cell(length(ImgNormalized)-1,1);
 ResultFEMesh = cell(ceil((length(ImgNormalized)-1)/DICpara.ImgSeqIncUnit),1); % For incremental DIC mode
 fprintf('------------ Section 2 Done ------------ \n \n')
 
@@ -44,7 +45,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
     
     disp(['Current image frame #: ', num2str(ImgSeqNum),'/',num2str(length(ImgNormalized))]);
     
-    %% Section 3:
+    %% Section 3: Compute an initial guess of the unknown displacement field
     fprintf('\n'); fprintf('------------ Section 3 Start ------------ \n')
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % This section is to find or update an initial guess of displacements
@@ -91,7 +92,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
     fprintf('------------ Section 3 Done ------------ \n \n')
 
     
-    %% Section 4
+    %% Section 4: Subproblem 1 -or- Local ICGN Subset DIC
     fprintf('------------ Section 4 Start ------------ \n')
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % This section is to solve first local step in ALDIC: Subproblem 1
@@ -146,7 +147,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
     fprintf('------------ Section 4 Done ------------ \n \n')
 
    
-    %% Section 5
+    %% Section 5: Subproblem 2 -or- solve the global compatible displacement field
     fprintf('------------ Section 5 Start ------------ \n')
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % This section is to solve global step in ALDIC: Subproblem 2
@@ -264,7 +265,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
 
 
     %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% Section 6
+    %% Section 6: ADMM iterations
     fprintf('------------ Section 6 Start ------------ \n')
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % This section is to run ADMM iteration: Subproblem 1 & 2
@@ -384,15 +385,15 @@ close all; Plotuv(USubpb2World,DICmesh.x0,DICmesh.y0World);
 Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
 % Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
 
-
-%% ------ Save results ------
+% ------ Save results ------
 % Find img name and save all the results 
 [~,imgname,imgext] = fileparts(file_name{1,end});
 results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
-save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh');
+save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh','ALSub1Time','ALSub2Time','ALSolveStep');
 
-  
-%% Section 7
+ 
+
+%% Section 7: Check convergence
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % This section is to check convergence of ADMM
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -447,13 +448,15 @@ end
 % ------ clear temp variables ------
 clear a ALSub1BadPtNum ALSub1Timetemp atemp b btemp cc ConvItPerEletemp hbar Hbar 
 
-%% Section 8
+
+
+%% Section 8: Compute strains
 fprintf('------------ Section 8 Start ------------ \n')
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% This section is to compute strain and plot figures
+% This section is to compute strain fields and plot figures
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ------ Smooth displacements ------
-DICpara.DoYouWantToSmoothOnceMore = funParaInput('SmoothDispOrNot');
+DICpara.DoYouWantToSmoothOnceMore = funParaInput('SmoothDispOrNot');                 
 % ------ Choose strain computation method ------
 DICpara.MethodToComputeStrain = funParaInput('StrainMethodOp'); 
 % ------ Choose strain type (infinitesimal, Eulerian, Green-Lagrangian) ------
@@ -536,7 +539,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
     try
         while DICpara.DoYouWantToSmoothOnceMore == 0 && SmoothTimes < 3
             ULocal = funSmoothDisp(ULocal,DICmesh,DICpara);
-            %close all; Plotuv(ULocal,x0,y0); %DoYouWantToSmoothOnceMore = input(prompt);
+            %close all; Plotuv(ULocal,x0,y0); %DICpara.DoYouWantToSmoothOnceMore = input(prompt);
             SmoothTimes = SmoothTimes + 1;
         end
     catch
@@ -550,35 +553,109 @@ for ImgSeqNum = 2:length(ImgNormalized)
     % ------ Plot disp and strain ------
     if DICpara.OrigDICImgTransparency == 0
         Plotdisp_show(UWorld,coordinatesFEMWorld,elementsFEM);
-        Plotstrain0(FStraintemp,x0(1+Rad:M-Rad,1+Rad:N-Rad),y0(1+Rad:M-Rad,1+Rad:N-Rad),size(ImgNormalized{1})); 
+        [strainxCoord,strainyCoord,dispu,dispv,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy,strain_principal_max, ...
+            strain_principal_min,strain_maxshear,strain_vonMises]  =  Plotstrain0( ...
+            FStraintemp,x0(1+Rad:M-Rad,1+Rad:N-Rad),y0(1+Rad:M-Rad,1+Rad:N-Rad),size(ImgNormalized{1})); 
     else % Plot over raw DIC images
         if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image	
             Plotdisp(UWorld,x0,y0,size(ImgNormalized{1}),file_name{1,1},DICpara);
-            Plotstrain(UWorld,Rad,FStraintemp,x0(1+Rad:M-Rad,1+Rad:N-Rad),y0(1+Rad:M-Rad,1+Rad:N-Rad), ...
-                size(ImgNormalized{1}),file_name{1,1},DICpara); 
+            [strainxCoord,strainyCoord,dispu,dispv,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy,strain_principal_max, ...
+            strain_principal_min,strain_maxshear,strain_vonMises]  =  Plotstrain( ...
+            UWorld,FStraintemp,Rad,x0,y0,size(ImgNormalized{1}),file_name{1,1},DICpara); 
         else % Plot over second or next deformed images
             Plotdisp(UWorld,x0,y0,size(ImgNormalized{1}),file_name{1,ImgSeqNum},DICpara);
-            Plotstrain(UWorld,Rad,FStraintemp,x0(1+Rad:M-Rad,1+Rad:N-Rad),y0(1+Rad:M-Rad,1+Rad:N-Rad), ...
-                size(ImgNormalized{1}),file_name{1,ImgSeqNum},DICpara); 
+            [strainxCoord,strainyCoord,dispu,dispv,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy,strain_principal_max, ...
+            strain_principal_min,strain_maxshear,strain_vonMises]  =  Plotstrain( ...
+            UWorld,FStraintemp,Rad,x0,y0,size(ImgNormalized{1}),file_name{1,ImgSeqNum},DICpara); 
         end
     end
 
-    ResultStrain{ImgSeqNum-1}.Strain = FStraintemp;
+    % ----- Save strain results ------
+    ResultStrain{ImgSeqNum-1} = struct('strainxCoord',strainxCoord,'strainyCoord',strainyCoord, ...
+            'dispu',dispu,'dispv',dispv,'dudx',dudx,'dvdx',dvdx,'dudy',dudy,'dvdy',dvdy, ...
+            'strain_exx',strain_exx,'strain_exy',strain_exy,'strain_eyy',strain_eyy, ...
+            'strain_principal_max',strain_principal_max,'strain_principal_min',strain_principal_min, ...
+            'strain_maxshear',strain_maxshear,'strain_vonMises',strain_vonMises);
+     
+    % ------ Save figures for tracked displacement and strain fields ------
+    SaveFigFilesDispAndStrain;
     
-    % ------ Save figures ------
-    SaveFigFiles;
     
 end
 % ------ END of for-loop {ImgSeqNum = 2:length(ImgNormalized)} ------
 fprintf('------------ Section 8 Done ------------ \n \n')
 
  
-%% Save data again including strain solve method
+% ------ Save data again including solved strain fields ------
 results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
-save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultStrain','ResultFEMesh',...
-    'ALSub1Time','ALSub2Time','ALSolveStep');
+save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh',...
+                   'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrain');
 
 
+
+%% Section 9: Compute stress
+fprintf('------------ Section 9 Start ------------ \n')
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This section is to compute stress fields and plot figures
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ------ Choose material model ------ 
+DICpara.MaterialModel = funParaInput('MaterialModel');
+% ------ Define parameters in material models ------
+if (DICpara.MaterialModel == 1) || (DICpara.MaterialModel == 2) % Linear elasticity
+    fprintf('Define Linear elasticity parameters \n')
+    fprintf("Young's modulus (unit: Pa). "); prompt = 'Input here: '; 
+    DICpara.MaterialModelPara.YoungsModulus = input(prompt); 
+    fprintf("Poisson's ratio. "); prompt = 'Input here: '; 
+    DICpara.MaterialModelPara.PoissonsRatio = input(prompt);
+    fprintf('------------------------------------- \n');
+end
+
+% ------ Start main part ------
+for ImgSeqNum = 2:length(ImgNormalized)
+    
+    disp(['Current image frame #: ', num2str(ImgSeqNum),'/',num2str(length(ImgNormalized))]); close all;
+     
+    % ------ Plot disp and strain ------
+    if DICpara.OrigDICImgTransparency == 0
+        [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
+                stress_principal_min_xyplane, stress_maxshear_xyplane, ...
+                stress_maxshear_xyz3d, stress_vonMises]  =  Plotstress0( ...
+            DICpara,ResultStrain{ImgSeqNum-1},size(ImgNormalized{1})); 
+    else % Plot over raw DIC images
+        if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image	
+            [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
+                stress_principal_min_xyplane, stress_maxshear_xyplane, ...
+                stress_maxshear_xyz3d, stress_vonMises] = Plotstress( ...
+                DICpara,ResultStrain{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,1}); 
+
+        else % Plot over second or next deformed images
+           [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
+                stress_principal_min_xyplane, stress_maxshear_xyplane, ...
+                stress_maxshear_xyz3d, stress_vonMises] = Plotstress( ...
+                DICpara,ResultStrain{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,ImgSeqNum}); 
+ 
+        end
+    end
+    
+    
+    % ------ Save figures for computed stress fields ------
+    SaveFigFilesStress;
+    
+    % ----- Save strain results ------
+    ResultStress{ImgSeqNum-1} = struct('stressxCoord',ResultStrain{ImgSeqNum-1}.strainxCoord,'stressyCoord',ResultStrain{ImgSeqNum-1}.strainyCoord, ...
+            'stress_sxx',stress_sxx,'stress_sxy',stress_sxy,'stress_syy',stress_syy, ...
+            'stress_principal_max_xyplane',stress_principal_max_xyplane, 'stress_principal_min_xyplane',stress_principal_min_xyplane, ...
+            'stress_maxshear_xyplane',stress_maxshear_xyplane,'stress_maxshear_xyz3d',stress_maxshear_xyz3d, ...
+            'stress_vonMises',stress_vonMises);
+        
+end
+% ------ END of for-loop {ImgSeqNum = 2:length(ImgNormalized)} ------
+fprintf('------------ Section 9 Done ------------ \n \n')
+
+% ------ Save data again including solved stress fields ------
+results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
+save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh',...
+                   'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrain','ResultStress');
 
 
 
