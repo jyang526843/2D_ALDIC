@@ -48,7 +48,8 @@ switch paraName
         prompt = 'Do you want to smooth displacement? (0-yes; 1-no)';
         DoYouWantToSmoothOnceMore = input(prompt);
         paraInput = DoYouWantToSmoothOnceMore;
-    
+        fprintf('------------------------------------- \n');
+        
         
     case 'StrainMethodOp' % Choose strain computation method  
         fprintf('What method to use to compute strain? \n');
@@ -69,7 +70,8 @@ switch paraName
             MethodToComputeStrain = input(prompt);
         end
         paraInput = [MethodToComputeStrain];
-          
+        fprintf('------------------------------------- \n');
+        
         
     case 'StrainType' % Choose strain computation method again
         fprintf('Infinitesimal stran or finite strain? \n');
@@ -90,7 +92,8 @@ switch paraName
             StrainType = input(prompt);
         end
         paraInput = StrainType;
-            
+        fprintf('------------------------------------- \n');
+        
         
     case 'Image2PlotResults' % Choose image to plot results (first only, second and next images) ------
         fprintf('Over which image(s) you want to plot the results? \n');
@@ -98,6 +101,7 @@ switch paraName
         fprintf('    1: Second and next images; \n');
         prompt = 'Input here: '; Image2PlotResults = input(prompt);
 		paraInput = Image2PlotResults;
+        fprintf('------------------------------------- \n');
         
         
     case 'SaveFigFormat' % Finally saved figure format
@@ -107,6 +111,7 @@ switch paraName
         fprintf('    3: Others: Edit codes in ./plotFiles/SaveFigFiles.m \n'); 
         prompt = 'Input here: '; MethodToSaveFig = input(prompt);
         paraInput = MethodToSaveFig;
+        fprintf('------------------------------------- \n');
         
         
     case 'OrigDICImgTransparency' 
@@ -115,6 +120,17 @@ switch paraName
         fprintf('and 1(Non-transparent deformation results).\n')
         prompt = 'Input here(e.g., 0.5): '; OrigDICImgTransparency = input(prompt);
         paraInput = OrigDICImgTransparency;
+        fprintf('------------------------------------- \n');
+        
+        
+    case 'MaterialModel'
+        fprintf('\n'); fprintf('Material model to compute Cauchy stress fields: \n');
+        fprintf('    1: Linear elasticity -- Plane stress \n');
+        fprintf('    2: Linear elasticity -- Plane strain \n');
+        fprintf('    3: Others: User needs to edit codes in ./plotFiles/Plotstress.m   \n');
+        prompt = 'Input here: '; MaterialModel = input(prompt);
+        paraInput = MaterialModel;
+        fprintf('------------------------------------- \n');
         
         
     otherwise
