@@ -1,28 +1,57 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% To plot DIC solved strain components on the original DIC images
-%   1) strain exx
-%   2) strain exy
-%   3) strain eyy
-%   4) principal strain max
-%   5) principal strain min
-%   6) max shear
-%   7) equivalent von Mises strain
+function [x2,y2,disp_u,disp_v,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy, ...
+    strain_principal_max,strain_principal_min,strain_maxshear,strain_vonMises] = Plotstrain( ...
+    U,F,Rad,x0,y0,sizeOfImg,CurrentImg,DICpara)
+%PLOTSTRAIN: to compute and plot DIC solved strain fields on the original DIC images
+%   [x2,y2,disp_u,disp_v,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy, ...
+%   strain_principal_max,strain_principal_min,strain_maxshear,strain_vonMises] = Plotstrain( ...
+%   U,Rad,F,x0,y0,sizeOfImg,CurrentImg,DICpara)
 %
-% Author: Jin Yang  
+%   INPUT: U                DIC solved displacement fields
+%          F                DIC solved deformation gradient tensor
+%          Rad              Parameter used to compute the final F. If we use the direct
+%                           output from the ALDIC code, Rad=0. If we apply a finite  
+%                           difference or plane fitting of the U to compute the F, Rad>0.
+%          x0,y0            x and y coordinates of each points on the image domain
+%          SizeOfImg        Size of the DIC raw image
+%          CurrentImg       File name of current deformed image
+%          DICpara          DIC para in the ALDIC code
+%
+%   OUTPUT: x2,y2                   x- and y-coordinates of points whose strain values are computed
+%           disp_u,disp_v           Interpolated dispu and dispv at points {x2,y2}
+%           dudx,dvdx,dudy,dvdy     E.g., dudx = d(disp_u)/dx at points {x2,y2}
+%           strain_exx              strain xx-compoent
+%           strain_exy              strain xy-compoent
+%           strain_eyy              strain yy-compoent
+%           strain_principal_max    max principal strain on the xy-plane
+%           strain_principal_min    min principal strain on the xy-plane
+%           strain_maxshear         max shear strain on the xy-plane
+%           strain_vonMises         equivalent von Mises strain
+%
+%   Plots:       
+%       1) strain sxx
+%       2) strain sxy
+%       3) strain syy
+%       4) max principal strain on the xy-plane 
+%       5) min principal strain on the xy-plane
+%       6) max shear strain on the xy-plane
+%       7) equivalent von Mises strain
+%
+%
+% Author: Jin Yang  (jyang526@wisc.edu)
 % Last date modified: 2020.11.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%
-function Plotstrain(U,Rad,FSubpb3,x,y,sizeOfImg,CurrentImg,DICpara)
-
 warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
-
 OrigDICImgTransparency = DICpara.OrigDICImgTransparency; % Original raw DIC image transparency
 Image2PlotResults = DICpara.Image2PlotResults; % Choose image to plot over (first only, second and next images)
-  
+
+x = x0(1+Rad:end-Rad,1+Rad:end-Rad); 
+y = y0(1+Rad:end-Rad,1+Rad:end-Rad);
+
 M = size(x,1); N = size(x,2);
-u_x = FSubpb3(1:4:end); v_x = FSubpb3(2:4:end);
-u_y = FSubpb3(3:4:end); v_y = FSubpb3(4:4:end);
+u_x = F(1:4:end); v_x = F(2:4:end);
+u_y = F(3:4:end); v_y = F(4:4:end);
  
 u_x = reshape(u_x,M,N); v_x = reshape(v_x,M,N);
 u_y = reshape(u_y,M,N); v_y = reshape(v_y,M,N);
@@ -42,9 +71,14 @@ disp_v = gridfit(reshape(x,M*N,1),reshape(y,M*N,1),reshape(v,M*N,1),x2,y2);
  
 
 %% Compute strain components
-strain_exx = gridfit(reshape(x,M*N,1),reshape(y,M*N,1),reshape(u_x,M*N,1),x2,y2);
-strain_exy = gridfit(reshape(x,M*N,1),reshape(y,M*N,1),reshape(0.5*(v_x+u_y),M*N,1),x2,y2);
-strain_eyy = gridfit(reshape(x,M*N,1),reshape(y,M*N,1),reshape(v_y,M*N,1),x2,y2);
+dudx = gridfit(reshape(x,M*N,1),reshape(y,M*N,1),reshape(u_x,M*N,1),x2,y2);
+dvdx = gridfit(reshape(x,M*N,1),reshape(y,M*N,1),reshape(v_x,M*N,1),x2,y2);
+dudy = gridfit(reshape(x,M*N,1),reshape(y,M*N,1),reshape(u_y,M*N,1),x2,y2);
+dvdy = gridfit(reshape(x,M*N,1),reshape(y,M*N,1),reshape(v_y,M*N,1),x2,y2);
+
+strain_exx = dudx;
+strain_exy = 0.5*(dvdx + dudy);
+strain_eyy = dvdy;
 
 strain_maxshear = sqrt((0.5*(strain_exx-strain_eyy)).^2 + strain_exy.^2);
 % Principal strain
@@ -53,7 +87,7 @@ strain_principal_min = 0.5*(strain_exx+strain_eyy) - strain_maxshear;
 % equivalent von Mises strain
 strain_vonMises = sqrt(strain_principal_max.^2 + strain_principal_min.^2 - ...
              strain_principal_max.*strain_principal_min + 3*strain_maxshear.^2);
-
+ 
 % Please don't delete this line, to deal with the image and physical world coordinates       
 [x2,y2]=ndgrid(x2,y2); x2=x2'; y2=y2';
 
@@ -69,7 +103,7 @@ hold on; ax2=axes; h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2
 set(gca,'fontSize',18); view(2); box on; caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
-% colormap(jet); caxis([-0.025,0.025]); 
+% colormap(jet); %caxis([-0.025,0.025]); 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 linkaxes([ax1,ax2]);  %%Link them together
@@ -98,7 +132,7 @@ hold on; ax2=axes; h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
-% colormap(jet); caxis([-0.025,0.025]); 
+% colormap(jet); caxis([-0.008,0.008]); % caxis([-0.025,0.025]); 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 linkaxes([ax1,ax2]);  %%Link them together
@@ -127,7 +161,7 @@ hold on; ax2=axes; h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
-% colormap(jet); caxis([-0.015,0.015]); 
+% colormap(jet); caxis([-0.002,0.014]); %caxis([-0.015,0.015]); 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 linkaxes([ax1,ax2]);  %%Link them together
@@ -156,7 +190,7 @@ hold on; ax2=axes; h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
-% colormap(jet); % caxis([-0.025,0.025]); 
+%  colormap(jet); % caxis([-0.002,0.014]) % caxis([-0.025,0.025]); 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 linkaxes([ax1,ax2]);  %%Link them together
@@ -214,7 +248,7 @@ hold on; ax2=axes; h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
-% colormap(jet); % caxis([-0.025,0.025]); 
+% colormap(jet); caxis([-0.0,0.01]); % caxis([-0.025,0.025]); 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 linkaxes([ax1,ax2]);  %%Link them together
@@ -242,7 +276,7 @@ hold on; ax2=axes; h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2
 set(gca,'fontSize',18); view(2); box on;  caxis auto;  
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
-% colormap(jet); % caxis([-0.025,0.025]); 
+% colormap(jet); caxis([-0.0,0.022]) % caxis([-0.025,0.025]); 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 linkaxes([ax1,ax2]);  %%Link them together

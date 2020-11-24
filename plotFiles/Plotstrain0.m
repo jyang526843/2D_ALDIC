@@ -1,25 +1,45 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% To plot DIC solved strain components  
-%   1) strain exx
-%   2) strain exy
-%   3) strain eyy
-%   4) principal strain max
-%   5) principal strain min
-%   6) max shear
-%   7) equivalent von Mises strain
+function [x2,y2,u_x,v_x,u_y,v_y,strain_exx,strain_exy,strain_eyy, ...
+    strain_principal_max,strain_principal_min,strain_maxshear,strain_vonMises] = Plotstrain0(F,x,y,sizeOfImg)
+%PLOTSTRAIN0: to compute and plot DIC solved strain fields
+%   [x2,y2,disp_u,disp_v,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy, ...
+%   strain_principal_max,strain_principal_min,strain_maxshear,strain_vonMises] = Plotstrain( ...
+%   U,Rad,F,x0,y0,sizeOfImg,CurrentImg,DICpara)
 %
-% Author: Jin Yang  
+%   INPUT: F                DIC solved deformation gradient tensor
+%          x,y              x and y coordinates of each points on the image domain
+%          SizeOfImg        Size of the DIC raw image
+%
+%   OUTPUT: x2,y2                   x- and y-coordinates of points whose strain values are computed
+%           disp_u,disp_v           Interpolated dispu and dispv at points {x2,y2}
+%           dudx,dvdx,dudy,dvdy     E.g., dudx = d(disp_u)/dx at points {x2,y2}
+%           strain_exx              strain xx-compoent
+%           strain_exy              strain xy-compoent
+%           strain_eyy              strain yy-compoent
+%           strain_principal_max    max principal strain on the xy-plane
+%           strain_principal_min    min principal strain on the xy-plane
+%           strain_maxshear         max shear strain on the xy-plane
+%           strain_vonMises         equivalent von Mises strain
+%
+%   Plots:       
+%       1) strain sxx
+%       2) strain sxy
+%       3) strain syy
+%       4) max principal strain on the xy-plane 
+%       5) min principal strain on the xy-plane
+%       6) max shear strain on the xy-plane
+%       7) equivalent von Mises strain
+%
+%
+% Author: Jin Yang  (jyang526@wisc.edu)
 % Last date modified: 2020.11.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%
-function Plotstrain0(FSubpb3,x,y,sizeOfImg)
-  
 warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
 
 M = size(x,1); N = size(x,2);
-u_x = FSubpb3(1:4:end); v_x = FSubpb3(2:4:end);
-u_y = FSubpb3(3:4:end); v_y = FSubpb3(4:4:end);
+u_x = F(1:4:end); v_x = F(2:4:end);
+u_y = F(3:4:end); v_y = F(4:4:end);
  
 u_x = reshape(u_x,M,N); v_x = reshape(v_x,M,N);
 u_y = reshape(u_y,M,N); v_y = reshape(v_y,M,N);
@@ -138,4 +158,4 @@ a = gca; a.TickLabelInterpreter = 'latex';
 b = colorbar; b.TickLabelInterpreter = 'latex';
 
  
-
+end
