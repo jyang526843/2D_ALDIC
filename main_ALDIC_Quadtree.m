@@ -15,7 +15,7 @@ mex -O ba_interp2.cpp;
 % Comment: If your MATLAB has just been crashed, and this line reports error but it works before the crash, 
 % Change this line to: "try mex -O ba_interp2.cpp; catch; end"
 addpath("./func",'./src','./plotFiles','./func_quadtree','./func_quadtree/refinement','./plotFiles/export_fig-d966721/'); 
-% Also: addpath("./YOUR IMAGE FOLDER"); 
+addpath('./Images_ForQuadtree_Sample12/'); % Also: addpath("./YOUR IMAGE FOLDER"); 
 fprintf('------------ Section 1 Done ------------ \n \n')
 
 
@@ -99,7 +99,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
         % ====== Generate an image mask in the reference image ======
         GenerateImageMask;
         % ====== Generate Quadtree mesh ======
-        GenerateQuadtreeMesh;  fprintf('\n'); 
+        GenerateQuadtreeMesh; fprintf('\n'); 
     end
     
     %% Section 4: Subproblem 1 -or- Local ICGN Subset DIC
@@ -305,7 +305,7 @@ end
 
 %% ------ Plot ------
 % ------- Smooth strain field --------
-FSubpb2 = funSmoothStrainQuadtree(FSubpb2,DICmesh,DICpara);
+% FSubpb2 = funSmoothStrainQuadtree(FSubpb2,DICmesh,DICpara);
 USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end);
 FSubpb2World = FSubpb2; % FSubpb1World(2:2:end) = -FSubpb1(2:2:end);
 close all; Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4));
