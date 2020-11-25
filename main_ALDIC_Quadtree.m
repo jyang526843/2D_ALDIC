@@ -99,7 +99,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
         % ====== Generate an image mask in the reference image ======
         GenerateImageMask;
         % ====== Generate Quadtree mesh ======
-        GenerateQuadtreeMesh;
+        GenerateQuadtreeMesh;  fprintf('\n'); 
     end
     
     %% Section 4: Subproblem 1 -or- Local ICGN Subset DIC
