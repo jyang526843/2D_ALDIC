@@ -91,105 +91,15 @@ for ImgSeqNum = 2:length(ImgNormalized)
     fprintf('------------ Section 3 Done ------------ \n \n')
 
     
-    %% Section 3*: Generate an image mask and remove finite elements where there is a hole
-    
+    %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Section 3*: Generate an image mask and remove finite elements where there is a hole
+    % This section is to deal with the hole geometry
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if ImgSeqNum == 2 || DICpara.NewFFTSearch == 1
-        
         % ====== Generate an image mask in the reference image ======
-        ImgRef = (imread(file_name{1})); figure, imshow(ImgRef);  % Read reference image
-        title('Click >5 points around the hole boundary, then press -Enter- key','fontweight','normal');
-        fprintf('--- Click >5 points around the hole boundary --- \n');
-        fprintf('Then press -Enter- key. \n');
-        [gridx,gridy] = ginput(); ParHole =CircleFitByTaubin([gridx,gridy]); % ParHole = [xCenCoord, yCenCoord, rad]; ParHole=[194.146,542.51,52.072];
-
-        ImgRefGaussFilt = imgaussfilt(imgaussfilt(ImgRef,0.5),0.5); % Gaussian filter
-        
-        close all; figure, imshow(ImgRefGaussFilt);  % Read reference image
-        title('Click >3 points inside the hole, then press -Enter- key','fontweight','normal');
-        fprintf('--- Click >3 points inside the hole --- \n');
-        fprintf('Then press -Enter- key. \n'); 
-        [gridx,gridy] = ginput();  ImgRefMaskThre = 0;
-        for tempi = 1:length(gridx)
-            ImgRefMaskThre = ImgRefMaskThre + ImgRefGaussFilt(round(gridx(tempi)),round(gridy(tempi)));
-        end
-        ImgRefMaskThre = ImgRefMaskThre/length(gridx);
-        
-        ImgRefMask = logical(ImgRefGaussFilt>4+ImgRefMaskThre); figure, imshow(ImgRefMask); title('Image Mask')
-
-        % ====== Remove finite elements where there is a hole ====== 
-        coordinatesFEMQuadtree = DICmesh.coordinatesFEM;  
-        elementsFEMQuadtree = DICmesh.elementsFEM;  
-        irregular = zeros(0,3);
-
-        % Define circle
-        C = ParHole(1:2); % circle center
-        R = ParHole(3); % circle radius
-        h = 2; % minimize element size in the refined quadtree mesh
-
-        % Generate a Quadtree mesh
-        while 1
-            [~,mark4] = markCircle(coordinatesFEMQuadtree,[],elementsFEMQuadtree,C,R,h*2); % Don't delete this "*2"
-            mark4 = find(mark4);
-            [coordinatesFEMQuadtree,elementsFEMQuadtree,irregular] = QrefineR(coordinatesFEMQuadtree,elementsFEMQuadtree,irregular,mark4);
-            if isempty(mark4)
-                break
-            end
-        end
-
-        % Remove elements within the center hole
-        [~,markOutside4] = markCircleInside(coordinatesFEMQuadtree,elementsFEMQuadtree,C,R);
-        elementsFEMQuadtree = elementsFEMQuadtree(markOutside4,:);
-        [markEleHoleEdge4,markEleFarOutside4] = markCircleInside(coordinatesFEMQuadtree,elementsFEMQuadtree,C,R+10);
-        markCoordHoleEdge = unique(elementsFEMQuadtree(markEleHoleEdge4,:));
-        if markCoordHoleEdge(1)==0, markCoordHoleEdge=markCoordHoleEdge(2:end); end
-        
-        % Plot
-        clf; patch('Faces', elementsFEMQuadtree, 'Vertices', coordinatesFEMQuadtree, 'Facecolor','none','linewidth',1)
-        axis equal; axis tight; set(gca,'fontsize',20);
-
-        % Update mesh for considering hanging nodes
-        for tempj=1:size(irregular,1)
-            [Lia, Locb] = ismember( [irregular(tempj,1:2)], elementsFEMQuadtree(:,1:2), 'rows' );
-            if Lia>0, elementsFEMQuadtree(Locb,8)=irregular(tempj,3); end
-            [Lia, Locb] = ismember( [irregular(tempj,1:2)], elementsFEMQuadtree(:,2:3), 'rows' );
-            if Lia>0, elementsFEMQuadtree(Locb,5)=irregular(tempj,3); end
-            [Lia, Locb] = ismember( [irregular(tempj,1:2)], elementsFEMQuadtree(:,3:4), 'rows' );
-            if Lia>0, elementsFEMQuadtree(Locb,6)=irregular(tempj,3); end
-            [Lia, Locb] = ismember( [irregular(tempj,1:2)], elementsFEMQuadtree(:,[4,1]), 'rows' );
-            if Lia>0, elementsFEMQuadtree(Locb,7)=irregular(tempj,3); end
-
-            [Lia, Locb] = ismember( [irregular(tempj,1:2)], elementsFEMQuadtree(:,[2,1]), 'rows' );
-            if Lia>0, elementsFEMQuadtree(Locb,8)=irregular(tempj,3); end
-            [Lia, Locb] = ismember( [irregular(tempj,1:2)], elementsFEMQuadtree(:,[3,2]), 'rows' );
-            if Lia>0, elementsFEMQuadtree(Locb,5)=irregular(tempj,3); end
-            [Lia, Locb] = ismember( [irregular(tempj,1:2)], elementsFEMQuadtree(:,[4,3]), 'rows' );
-            if Lia>0, elementsFEMQuadtree(Locb,6)=irregular(tempj,3); end
-            [Lia, Locb] = ismember( [irregular(tempj,1:2)], elementsFEMQuadtree(:,[1,4]), 'rows' );
-            if Lia>0, elementsFEMQuadtree(Locb,7)=irregular(tempj,3); end
-        end
-
-
-        % Initialize variable U for the generated quadtree mesh
-        F_dispu = scatteredInterpolant( DICmesh.coordinatesFEM(:,1),DICmesh.coordinatesFEM(:,2),U0(1:2:end) );
-        F_dispv = scatteredInterpolant( DICmesh.coordinatesFEM(:,1),DICmesh.coordinatesFEM(:,2),U0(2:2:end) );
-
-        U0 = 0*coordinatesFEMQuadtree(:);
-        temp = F_dispu(coordinatesFEMQuadtree(:,1),coordinatesFEMQuadtree(:,2)); U0(1:2:end)=temp(:);
-        temp = F_dispv(coordinatesFEMQuadtree(:,1),coordinatesFEMQuadtree(:,2)); U0(2:2:end)=temp(:);
-
-        Plotdisp_show(U0,coordinatesFEMQuadtree,elementsFEMQuadtree(:,1:4));
-
-        DICmesh.coordinatesFEM = coordinatesFEMQuadtree;
-        DICmesh.elementsFEM = elementsFEMQuadtree;
-        DICmesh.elementMinSize = h;
-        DICmesh.coordinatesFEMWorld = [DICmesh.coordinatesFEM(:,1),size(ImgRefMask,1)+1-DICmesh.coordinatesFEM(:,2)];
-
-        Df.ImgRefMask = ImgRefMask'; % Generate image mask
-        Df.DfDx = (Df.DfDx) .* Df.ImgRefMask(Df.DfAxis(1):Df.DfAxis(2), Df.DfAxis(3):Df.DfAxis(4));
-        Df.DfDy = (Df.DfDy) .* Df.ImgRefMask(Df.DfAxis(1):Df.DfAxis(2), Df.DfAxis(3):Df.DfAxis(4));
-        % figure, surf((Df.DfDx)','edgecolor','none'); view(2); axis equal;
-        % axis tight; colormap gray; colorbar; caxis([-0.1,0.1])
-    
+        GenerateImageMask;
+        % ====== Generate Quadtree mesh ======
+        GenerateQuadtreeMesh;
     end
     
     %% Section 4: Subproblem 1 -or- Local ICGN Subset DIC
@@ -243,7 +153,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     disp(['***** Start step',num2str(ALSolveStep),' Subproblem2 *****'])
-    %Subpb2FDOrFEM: Using FE method
+    %Subpb2FDOrFEM = Using FE method for quadtree mesh
     M = size(DICmesh.x0,1); N = size(DICmesh.x0,2); GaussPtOrder = 2; alpha = 0;
     close all; % hbar = waitbar(0,'Please wait for Subproblem 2 global step!');
     % ====== Solver using finite element method ======
@@ -291,8 +201,8 @@ for ImgSeqNum = 2:length(ImgNormalized)
 
     % ------ Plot ------
     USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end); FSubpb2World = FSubpb2;  
-    close all; Plotdisp_show(USubpb2,DICmesh.coordinatesFEM,DICmesh.elementsFEM(:,1:4));
-    Plotstrain_show(FSubpb2,DICmesh.coordinatesFEM,DICmesh.elementsFEM(:,1:4));
+    close all; Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4));
+    Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4));
 
     % ======= Update dual variables =======
     udual = FSubpb2 - FSubpb1; vdual = USubpb2 - USubpb1;
