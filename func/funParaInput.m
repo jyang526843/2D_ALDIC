@@ -74,8 +74,8 @@ switch paraName
         
         
     case 'StrainType' % Choose strain computation method again
-        fprintf('Infinitesimal stran or finite strain? \n');
-        fprintf('    0: Infinitesimal stran; \n');
+        fprintf('Infinitesimal strain or finite strain? \n');
+        fprintf('    0: Infinitesimal strain; \n');
         fprintf('    1: Eulerian strain; \n');
         fprintf('    2: Green-Lagrangian strain; \n');
         fprintf('    3: Others: code by yourself; \n');
@@ -83,8 +83,8 @@ switch paraName
         StrainType = input(prompt);
         while (StrainType ~= 0) && (StrainType ~= 1) && (StrainType ~= 2) && (StrainType ~= 3)
             disp('****** Wrong input! ******')
-            fprintf('Infinitesimal stran or finite strain? \n');
-            fprintf('    0: Infinitesimal stran; \n');
+            fprintf('Infinitesimal strain or finite strain? \n');
+            fprintf('    0: Infinitesimal strain; \n');
             fprintf('    1: Eluerian strain; \n');
             fprintf('    2: Green-Lagrangian strain; \n');
             fprintf('    3: Others: code by yourself; \n');
