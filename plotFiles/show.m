@@ -1,4 +1,4 @@
-function show(elements3,elements4,coordinates,u,varargin)
+function h=show(elements3,elements4,coordinates,u,varargin)
 
 switch nargin
     case 5
@@ -21,9 +21,9 @@ for j = 1:size(elements3,1)
     Tric(1:3,j) = u(elements3(j,1:3));
 end
 if size(elements3,1) > 2e4 || strcmp(edgeColorOrNot,'NoEdgeColor')==1
-    patch(Trix,Triy,Tric,'facecolor','interp','edgecolor','none'); 
+    h=patch(Trix,Triy,Tric,'facecolor','interp','edgecolor','none'); 
 else
-    patch(Trix,Triy,Tric,'facecolor','interp');
+    h=patch(Trix,Triy,Tric,'facecolor','interp');
 end
     
 hold on;
@@ -37,12 +37,13 @@ for j = 1:size(elements4,1)
     Sqc(1:4,j) = u(elements4(j,1:4));
 end
 if size(elements4,1) > 2e4 || strcmp(edgeColorOrNot,'NoEdgeColor')==1
-    patch(Sqx,Sqy,Sqc,'facecolor','interp','edgecolor','none'); 
+    h=patch(Sqx,Sqy,Sqc,'facecolor','interp','edgecolor','none'); 
 else
-    patch(Sqx,Sqy,Sqc,'facecolor','interp'); 
+    h=patch(Sqx,Sqy,Sqc,'facecolor','interp'); 
 end
  
 hold off
 view(10,40); 
 % title('Solution of the Problem')
 box on
+
