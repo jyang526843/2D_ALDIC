@@ -101,7 +101,11 @@ H2 = H(5:6,5:6)*2/(bottomf^2) + [mu 0; 0 mu];
 %     H2 = H*2/(bottomf^2) + [beta 0 0 0 0 0; 0 beta 0 0 0 0; 0 0 beta 0 0 0; 0 0 0 beta 0 0 ; 0 0 0 0 mu 0; 0 0 0 0 0 mu];
 % end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if norm(diag(H)) > abs(eps)
+
 % --------------------------
 % Initialize while loop
 normOfWOld=2; normOfWNew=1; normOfWNewAbs=1; stepwithinwhile=0;
@@ -352,6 +356,15 @@ while( (stepwithinwhile<=100) && (normOfWNew>tol) && (normOfWNewAbs>tol) )
         end
     end  
 end % end of while
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+else % if norm(diag(H)) > abs(eps)
+    
+    stepwithinwhile = 102;
+    
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  
 U(1) = P(5); U(2) = P(6);
 % F(1) = P(1); F(2) = P(2); F(3) = P(3); F(4) = P(4);

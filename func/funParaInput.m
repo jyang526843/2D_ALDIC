@@ -124,7 +124,7 @@ switch paraName
         
         
     case 'MaterialModel'
-        fprintf('\n'); fprintf('Material model to compute Cauchy stress fields: \n');
+        fprintf('Material model to compute Cauchy stress fields: \n');
         fprintf('    1: Linear elasticity -- Plane stress \n');
         fprintf('    2: Linear elasticity -- Plane strain \n');
         fprintf('    3: Others: User needs to edit codes in ./plotFiles/Plotstress.m   \n');

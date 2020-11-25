@@ -1,7 +1,7 @@
 % ==============================================
 % function funSmoothDispCrack
 % ==============================================
-function FLocal = funSmoothStrain(FLocal,DICmesh,DICpara)
+function F = funSmoothStrain(F,DICmesh,DICpara)
 
 coordinatesFEM = DICmesh.coordinatesFEM;
 elementsFEM = DICmesh.elementsFEM;
@@ -55,13 +55,13 @@ SmoothTimes = 1;
 while (DoYouWantToSmoothOnceMore==0)
     Coordxnodes = [min(coordinatesFEM(:,1)):winstepsize/(2^(LevelNo-1)):max(coordinatesFEM(:,1))]'; 
     Coordynodes = [min(coordinatesFEM(:,2)):winstepsize/(2^(LevelNo-1)):max(coordinatesFEM(:,2))]';
-    Iblur_Top11 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), FLocal(1:4:end),Coordxnodes,Coordynodes,'regularizer','springs'); 
+    Iblur_Top11 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), F(1:4:end),Coordxnodes,Coordynodes,'regularizer','springs'); 
     Iblur_Top11=Iblur_Top11';
-    Iblur_Top22 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), FLocal(4:4:end),Coordxnodes,Coordynodes,'regularizer','springs');  
+    Iblur_Top22 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), F(4:4:end),Coordxnodes,Coordynodes,'regularizer','springs');  
     Iblur_Top22=Iblur_Top22';
-    Iblur_Top21 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), FLocal(2:4:end),Coordxnodes,Coordynodes,'regularizer','springs'); 
+    Iblur_Top21 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), F(2:4:end),Coordxnodes,Coordynodes,'regularizer','springs'); 
     Iblur_Top21=Iblur_Top21';
-    Iblur_Top12 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), FLocal(3:4:end),Coordxnodes,Coordynodes,'regularizer','springs');
+    Iblur_Top12 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), F(3:4:end),Coordxnodes,Coordynodes,'regularizer','springs');
     Iblur_Top12=Iblur_Top12';
     % Iblur_Top = nan(size(ULocal,1),1); Iblur_Top(2*CoordCrackTop-1) = ULocal(2*CoordCrackTop-1); Iblur_Top(2*CoordCrackTop) = ULocal(2*CoordCrackTop); 
     % Iblur_Top10 = reshape(Iblur_Top(1:2:end),M,N); Iblur_Top20 = reshape(Iblur_Top(2:2:end),M,N);
@@ -81,10 +81,10 @@ while (DoYouWantToSmoothOnceMore==0)
     for tempi = 1:size(coordinatesFEM,1)
         [row1,col1] = find(Coordxnodes==coordinatesFEM((tempi),1));
         [row2,col2] = find(Coordynodes==coordinatesFEM((tempi),2));
-        FLocal(4*(tempi)-3) = Iblur_Top1(row1,row2);
-        FLocal(4*(tempi))   = Iblur_Top4(row1,row2);
-        FLocal(4*(tempi)-2) = Iblur_Top2(row1,row2);
-        FLocal(4*(tempi)-1) = Iblur_Top3(row1,row2);
+        F(4*(tempi)-3) = Iblur_Top1(row1,row2);
+        F(4*(tempi))   = Iblur_Top4(row1,row2);
+        F(4*(tempi)-2) = Iblur_Top2(row1,row2);
+        F(4*(tempi)-1) = Iblur_Top3(row1,row2);
     end
     
     % close all; Plotuv(ULocal,x,y); % Plotting u and v
@@ -98,3 +98,4 @@ while (DoYouWantToSmoothOnceMore==0)
     end
     
 end
+

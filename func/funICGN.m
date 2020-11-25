@@ -1,6 +1,7 @@
 function [U, F, stepwithinwhile, HGlobal] = funICGN(U0, ...
     x0,y0,Df,imgfNormalizedbc,imggNormalizedbc,winsize,tol,method)
 
+warning('off');
 DfDxStartx = Df.DfAxis(1); DfDxStarty = Df.DfAxis(3);
 imgSize = Df.imgSize;
 
@@ -44,6 +45,8 @@ H2(4,5) = H2(3,6);  H2(4,6) = sum(sum((YY-y0).*DfDySq)); H2(5,5) = sum(sum(DfDxS
 H2(5,6) = sum(sum(DfDxDfDy)); H2(6,6) = sum(sum(DfDySq)); 
 H = H2 + H2' - diag(diag(H2));
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if norm(diag(H)) > abs(eps)
 % tempCoordx = XX(:); tempCoordy = YY(:);
 % for tempij = 1:size(tempCoordx,1)
 % 
@@ -257,6 +260,14 @@ while( (stepwithinwhile<=100) && (normOfWNew>tol) && (normOfWNewAbs>tol) )
     end  
 end % end of while
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+else % if norm(diag(H)) > abs(eps)
+    
+    stepwithinwhile = 102;
+    
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 U(1) = P(5); U(2) = P(6);
 F(1) = P(1); F(2) = P(2); F(3) = P(3); F(4) = P(4);
 
@@ -274,3 +285,4 @@ end
 
  
 end
+
