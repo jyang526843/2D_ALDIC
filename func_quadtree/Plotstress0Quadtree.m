@@ -112,7 +112,7 @@ end
 %% ====== 1) Stress sxx ======
 figure;  
 % surf(x2,sizeOfImg(2)+1-y2,stress_sxx,'EdgeColor','none','LineStyle','none')
-show([],elementsFEM(:,1:4),coordinatesFEMWorld,stress_sxx);
+show([],elementsFEM(:,1:4),coordinatesFEMWorld,stress_sxx,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('Stress $s_{xx}$','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
@@ -127,7 +127,7 @@ b = colorbar; b.TickLabelInterpreter = 'latex';
 %% ====== 2) Strain sxy ======
 figure;  
 % surf(x2,sizeOfImg(2)+1-y2,stress_sxy,'EdgeColor','none','LineStyle','none')
-show([],elementsFEM(:,1:4),coordinatesFEMWorld,stress_sxy);
+show([],elementsFEM(:,1:4),coordinatesFEMWorld,stress_sxy,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('Stress $s_{xy}$','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
@@ -143,7 +143,7 @@ b = colorbar; b.TickLabelInterpreter = 'latex';
 %% ====== 3) Strain syy ======
 figure;  
 % surf(x2,sizeOfImg(2)+1-y2,stress_syy,'EdgeColor','none','LineStyle','none')
-show([],elementsFEM(:,1:4),coordinatesFEMWorld,stress_syy);
+show([],elementsFEM(:,1:4),coordinatesFEMWorld,stress_syy,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('Stress $s_{yy}$','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
@@ -159,7 +159,7 @@ b = colorbar; b.TickLabelInterpreter = 'latex';
 %% ====== 4) Strain stress_principal_max_xyplane ======
 figure;  
 % surf(x2,sizeOfImg(2)+1-y2,stress_principal_max_xyplane,'EdgeColor','none','LineStyle','none')
-show([],elementsFEM(:,1:4),coordinatesFEMWorld,stress_principal_max_xyplane);
+show([],elementsFEM(:,1:4),coordinatesFEMWorld,stress_principal_max_xyplane,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('$xy$-plane principal stress $s_{\max}$','FontWeight','Normal','Interpreter','latex'); 
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
@@ -175,7 +175,7 @@ b = colorbar; b.TickLabelInterpreter = 'latex';
 %% ====== 5) Strain stress_principal_min_xyplane ======
 figure;  
 % surf(x2,sizeOfImg(2)+1-y2,stress_principal_min_xyplane,'EdgeColor','none','LineStyle','none')
-show([],elementsFEM(:,1:4),coordinatesFEMWorld,stress_principal_min_xyplane);
+show([],elementsFEM(:,1:4),coordinatesFEMWorld,stress_principal_min_xyplane,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('$xy$-plane principal stress $s_{\min}$','FontWeight','Normal','Interpreter','latex'); 
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
@@ -191,7 +191,7 @@ b = colorbar; b.TickLabelInterpreter = 'latex';
 %% ====== 6) Strain stress_maxshear_xyplane ======
 figure;  
 % surf(x2,sizeOfImg(2)+1-y2,stress_maxshear_xyplane,'EdgeColor','none','LineStyle','none')
-show([],elementsFEM(:,1:4),coordinatesFEMWorld,stress_maxshear_xyplane);
+show([],elementsFEM(:,1:4),coordinatesFEMWorld,stress_maxshear_xyplane,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('$xy$-plane max shear stress','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
@@ -208,7 +208,7 @@ b = colorbar; b.TickLabelInterpreter = 'latex';
 %% ====== 7) Strain stress_maxshear_xyz3d ======
 figure;  
 % surf(x2,sizeOfImg(2)+1-y2,stress_maxshear_xyz3d,'EdgeColor','none','LineStyle','none')
-show([],elementsFEM(:,1:4),coordinatesFEMWorld,stress_maxshear_xyz3d);
+show([],elementsFEM(:,1:4),coordinatesFEMWorld,stress_maxshear_xyz3d,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('$xyz$-3D max shear stress','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
@@ -224,7 +224,7 @@ b = colorbar; b.TickLabelInterpreter = 'latex';
 %% ====== 8) von Mises stress ======
 figure;  
 % surf(x2,sizeOfImg(2)+1-y2,stress_vonMises,'EdgeColor','none','LineStyle','none')
-show([],elementsFEM(:,1:4),coordinatesFEMWorld,stress_principal_max_xyplane);
+show([],elementsFEM(:,1:4),coordinatesFEMWorld,stress_principal_max_xyplane,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('von Mises equivalent stress','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');

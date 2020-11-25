@@ -122,7 +122,7 @@ end
 
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; % h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v),stress_sxx,'EdgeColor','none','LineStyle','none');
-h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_sxx);
+h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_sxx,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
@@ -153,7 +153,7 @@ end
 
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; % h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v),stress_sxy,'EdgeColor','none','LineStyle','none');
-h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_sxy);
+h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_sxy,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
@@ -184,7 +184,7 @@ end
 
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; % h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v),stress_syy,'EdgeColor','none','LineStyle','none');
-h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_syy);
+h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_syy,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
@@ -215,7 +215,7 @@ end
 
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; % h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v),stress_principal_max_xyplane,'EdgeColor','none','LineStyle','none');
-h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_principal_max_xyplane);
+h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_principal_max_xyplane,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
@@ -246,7 +246,7 @@ end
 
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; % h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v),stress_principal_min_xyplane,'EdgeColor','none','LineStyle','none');
-h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_principal_min_xyplane);
+h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_principal_min_xyplane,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
@@ -277,7 +277,7 @@ end
 
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; % h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v),stress_maxshear_xyplane,'EdgeColor','none','LineStyle','none');
-h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_maxshear_xyplane);
+h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_maxshear_xyplane,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
@@ -307,7 +307,7 @@ end
 
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; % h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v),stress_maxshear_xyz3d,'EdgeColor','none','LineStyle','none');
-h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_maxshear_xyz3d);
+h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_maxshear_xyz3d,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
@@ -337,7 +337,7 @@ end
 
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2);  set(gca,'ydir','normal');
 hold on; ax2=axes; % h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v),stress_vonMises,'EdgeColor','none','LineStyle','none');
-h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_vonMises);
+h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_vonMises,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on;  caxis auto;  
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
