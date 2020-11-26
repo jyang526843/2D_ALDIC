@@ -69,4 +69,14 @@ DICmesh.coordinatesFEM = coordinatesFEMQuadtree;
 DICmesh.elementsFEM = elementsFEMQuadtree;
 DICmesh.elementMinSize = h;
 DICmesh.coordinatesFEMWorld = [DICmesh.coordinatesFEM(:,1),size(ImgRefMask,1)+1-DICmesh.coordinatesFEM(:,2)];
+ 
 
+ResultFEMesh{1+floor(fNormalizedNewIndex/DICpara.ImgSeqIncUnit)} = ... % To save first mesh info
+    struct( 'coordinatesFEM',DICmesh.coordinatesFEM,'elementsFEM',DICmesh.elementsFEM, ...
+    'winsize',DICpara.winsize,'winstepsize',DICpara.winstepsize,'gridxyROIRange',DICpara.gridxyROIRange, ...
+    'coordinatesFEMWorld',DICmesh.coordinatesFEMWorld,'elementMinSize',DICmesh.elementMinSize);
+
+        
+        
+        
+        
