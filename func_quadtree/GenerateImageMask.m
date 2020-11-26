@@ -7,9 +7,9 @@ try ImgRef = rgb2gray(ImgRef); catch; end % Change the image to grayscale image 
 
 %% ====== Find center of the hole ======
 figure, imshow(ImgRef);  % Read reference image
-title('Click more than 5 points around the hole boundary, then press -Enter- key','fontweight','normal');
+title('Click more than 5 points along the hole boundary, then press -Enter- key','fontweight','normal');
 fprintf('--- Define hole geometry ---  \n');
-fprintf('Click more than 5 points around the hole boundary,  \n');
+fprintf('Click more than 5 points along the hole boundary,  \n');
 fprintf('then press -Enter- key. \n');
 [gridx,gridy] = ginput(); ParHole = CircleFitByTaubin([gridx,gridy]); % ParHole = [xCenCoord, yCenCoord, rad]; ParHole=[194.146,542.51,52.072];
 fprintf('--- Define hole geometry: Done! ---  \n');
