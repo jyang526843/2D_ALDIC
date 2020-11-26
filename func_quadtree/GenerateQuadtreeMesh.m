@@ -10,7 +10,7 @@ irregular = zeros(0,3);
 % Define circle
 C = ParHole(1:2); % circle center
 R = ParHole(3); % circle radius
-h = 2; % minimize element size in the refined quadtree mesh
+h = DICmesh.elementMinSize; % 2; % minimize element size in the refined quadtree mesh
 
 % Generate a Quadtree mesh
 while 1
@@ -30,7 +30,7 @@ markCoordHoleEdge = unique(elementsFEMQuadtree(markEleHoleEdge4,:));
 if markCoordHoleEdge(1)==0, markCoordHoleEdge=markCoordHoleEdge(2:end); end
 
 % Plot
-clf; patch('Faces', elementsFEMQuadtree, 'Vertices', coordinatesFEMQuadtree, 'Facecolor','none','linewidth',1)
+figure; patch('Faces', elementsFEMQuadtree, 'Vertices', coordinatesFEMQuadtree, 'Facecolor','none','linewidth',1)
 axis equal; axis tight; set(gca,'fontsize',20);
 
 % Update mesh for considering hanging nodes

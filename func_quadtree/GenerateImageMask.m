@@ -2,7 +2,11 @@
 
 %%
 % ====== Generate an image mask in the reference image ======
-ImgRef = (imread(file_name{1})); figure, imshow(ImgRef);  % Read reference image
+ImgRef = (imread(file_name{1})); 
+try ImgRef = rgb2gray(ImgRef); catch; end % Change the image to grayscale image if it is rgb image
+
+%% ====== Find center of the hole ======
+figure, imshow(ImgRef);  % Read reference image
 title('Click more than 5 points around the hole boundary, then press -Enter- key','fontweight','normal');
 fprintf('--- Define hole geometry ---  \n');
 fprintf('Click more than 5 points around the hole boundary,  \n');
@@ -11,7 +15,7 @@ fprintf('then press -Enter- key. \n');
 fprintf('--- Define hole geometry: Done! ---  \n');
 
 
-% ======
+%% ====== Get the grayscale value threshold and construct the image mask ======
 ImgRefGaussFilt = imgaussfilt(imgaussfilt(ImgRef,0.5),0.5); % Gaussian filter
 
 close all; figure, imshow(ImgRefGaussFilt);  % Read reference image
@@ -49,14 +53,19 @@ elseif HoleDarkerOrBrighter == 1
     ImgRefMask = logical(ImgRefGaussFilt < 0.5*(ImgRefMaskThresholdInside+ImgRefMaskThresholdOutside));
 end
 
-
+[tempxx,tempyy] = ndgrid(1:size(ImgRefMask,1), 1:size(ImgRefMask,2));
+dist2HoleCenter = sqrt( (tempxx-ParHole(2)).^2 + (tempyy-ParHole(1)).^2 );
+[row,col] = find(dist2HoleCenter < ParHole(3));
+for tempi = 1:length(row)
+   ImgRefMask(row(tempi),col(tempi)) = 0; 
+end
 figure, imshow(ImgRefMask); title('Image Mask')
 
 removeobjradius =  round(0.2*ParHole(3)); % remove all object containing fewer than hole Rad
 se = strel('disk',removeobjradius); ImgRefMask = imclose(ImgRefMask,se); imshow(ImgRefMask);
 
 
-
+%% ====== Update Df for image gradients ======
 Df.ImgRefMask = ImgRefMask'; % Generate image mask
 Df.DfDx = (Df.DfDx) .* Df.ImgRefMask(Df.DfAxis(1):Df.DfAxis(2), Df.DfAxis(3):Df.DfAxis(4));
 Df.DfDy = (Df.DfDy) .* Df.ImgRefMask(Df.DfAxis(1):Df.DfAxis(2), Df.DfAxis(3):Df.DfAxis(4));
