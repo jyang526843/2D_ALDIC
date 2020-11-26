@@ -117,7 +117,7 @@ switch paraName
     case 'OrigDICImgTransparency' 
         fprintf('Define transparency for overlaying original images: \n')
         fprintf('Input a real number between 0(Only original images) \n')
-        fprintf('and 1(Non-transparent deformation results).\n')
+        fprintf('and 0.99 (Non-transparent deformation results).\n')
         prompt = 'Input here(e.g., 0.5): '; OrigDICImgTransparency = input(prompt);
         paraInput = OrigDICImgTransparency;
         fprintf('------------------------------------- \n');
