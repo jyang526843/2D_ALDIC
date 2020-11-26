@@ -99,8 +99,10 @@ for ImgSeqNum = 2:length(ImgNormalized)
         % ====== Generate an image mask in the reference image ======
         GenerateImageMask;
         % ====== Generate Quadtree mesh ======
+        DICmesh.elementMinSize = 2; % min element size in the refined quadtree mesh
         GenerateQuadtreeMesh; fprintf('\n'); 
     end
+    
     
     %% Section 4: Subproblem 1 -or- Local ICGN Subset DIC
     fprintf('------------ Section 4 Start ------------ \n')
@@ -468,7 +470,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
 
     % ------ Plot disp and strain ------
     close all;
-    if DICpara.OrigDICImgTransparency == 2
+    if DICpara.OrigDICImgTransparency == 1
          Plotdisp_show(UWorld,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4));
         [strain_exx,strain_exy,strain_eyy,strain_principal_max,strain_principal_min,strain_maxshear,strain_vonMises] = ...
                    Plotstrain0Quadtree(FStraintemp,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4));

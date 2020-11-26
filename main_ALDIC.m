@@ -551,7 +551,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
     %Plotstrain_Fij;
 
     % ------ Plot disp and strain ------
-    if DICpara.OrigDICImgTransparency == 0
+    if DICpara.OrigDICImgTransparency == 1
         Plotdisp_show(UWorld,coordinatesFEMWorld,elementsFEM);
         [strainxCoord,strainyCoord,dispu,dispv,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy,strain_principal_max, ...
             strain_principal_min,strain_maxshear,strain_vonMises]  =  Plotstrain0( ...
