@@ -5,21 +5,22 @@
 % 2015.04,06,07; 2016.03,04; 2020.11
 % ---------------------------------------------
 
-%% Section 1: Clear MATLAB environment & mex set up Spline interpolation  
+%% Section 1: Clear MATLAB environment & mex set up Spline interpolation
 close all; clear; clc; clearvars -global
 fprintf('------------ Section 1 Start ------------ \n')
 setenv('MW_MINGW64_LOC','C:\TDM-GCC-64');
-% % cd("./Splines_interp/lib_matlab"); CompileLib; cd("../../");  % % mex bi-cubic spline interpolations
-% % addpath("./Splines_interp/lib_matlab"); % dbstop if error % % Old version codes.
-mex -O ba_interp2.cpp; 
-% Comment: If your MATLAB has just been crashed, and this line reports error but it works before the crash, 
+try mex -O ba_interp2.cpp; catch; end
+% Comment 1: If your MATLAB has just been crashed, and this line reports error but it works before the crash,
 % Change this line to: "try mex -O ba_interp2.cpp; catch; end"
-addpath("./func"); addpath("./src"); addpath("./plotFiles/"); addpath("./plotFiles/export_fig-d966721/");
-% addpath("./YOUR IMAGE FOLDER"); 
+% Comment 2: To use slower bi-cubic spline interpolation instead of ba_interp2 (bi-cubic)
+% % cd("./Splines_interp/lib_matlab"); CompileLib; cd("../../");  % This line is to mex bi-cubic spline interpolations
+% % addpath("./Splines_interp/lib_matlab"); % dbstop if error % % Old version codes.
+addpath("./func",'./src','./plotFiles','./func_quadtree','./func_quadtree/refinement','./plotFiles/export_fig-d966721/');
+addpath('./Images_ForQuadtree_Sample12/'); % Also: addpath("./YOUR IMAGE FOLDER");
 fprintf('------------ Section 1 Done ------------ \n \n')
 
 
-%% Section 2: Load DIC parameters and set up DIC parameters 
+%% Section 2: Load DIC parameters and set up DIC parameters
 fprintf('------------ Section 2 Start ------------ \n')
 % ====== Read images ======
 [file_name,Img,DICpara] = ReadImage; close all;
@@ -28,11 +29,16 @@ fprintf('------------ Section 2 Start ------------ \n')
 %gridxROIRange = [224,918]; gridyROIRange = [787,1162];
 
 % ====== Normalize images: fNormalized = (f-f_avg)/(f_std) ======
-[ImgNormalized,DICpara.gridxyROIRange] = funNormalizeImg(Img,DICpara.gridxyROIRange); 
+[ImgNormalized,DICpara.gridxyROIRange] = funNormalizeImg(Img,DICpara.gridxyROIRange);
+fNormalized = ImgNormalized{1}; % Referece image frame
+
+% ====== Compute image gradients ======
+Df = funImgGradient(fNormalized,fNormalized); % Finite difference to compute image grayscale gradients;
 
 % ====== Initialize variable storage ======
 ResultDisp = cell(length(ImgNormalized)-1,1);   ResultDefGrad = cell(length(ImgNormalized)-1,1);
 ResultStrain = cell(length(ImgNormalized)-1,1); ResultStress = cell(length(ImgNormalized)-1,1);
+ResultFEMeshEachFrame = cell(length(ImgNormalized)-1,1); % Needs future improvment: to store FE-mesh for each frame
 ResultFEMesh = cell(ceil((length(ImgNormalized)-1)/DICpara.ImgSeqIncUnit),1); % For incremental DIC mode
 fprintf('------------ Section 2 Done ------------ \n \n')
 
@@ -40,7 +46,6 @@ fprintf('------------ Section 2 Done ------------ \n \n')
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Start each frame in an image sequence
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-fNormalized = ImgNormalized{1}; 
 for ImgSeqNum = 2:length(ImgNormalized)
     
     disp(['Current image frame #: ', num2str(ImgSeqNum),'/',num2str(length(ImgNormalized))]);
@@ -49,13 +54,12 @@ for ImgSeqNum = 2:length(ImgNormalized)
     fprintf('\n'); fprintf('------------ Section 3 Start ------------ \n')
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % This section is to find or update an initial guess of displacements
-    % The key idea is to either to use a new FFT-based cross correlation peak fitting, 
+    % The key idea is to either to use a new FFT-based cross correlation peak fitting,
     % or use the results from the last frame as the new initial guess for the next frame;
     % Particularly in incremental mode DIC, the reference image can also be updated, e.g.:
     % fNormalized = ImgNormalized{ImgSeqNum-mod(ImgSeqNum-1,ImgSeqIncUnit)};
-    gNormalized = ImgNormalized{ImgSeqNum}; NewFFTSearchCheck = 0; DICpara.NewFFTSearch = 0;
+    gNormalized = ImgNormalized{ImgSeqNum}; NewFFTSearchCheck = 0; % DICpara.NewFFTSearch = 0;
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % while NewFFTSearchCheck == 0  % Please ignore this line for now.
     
     if ImgSeqNum == 2 || DICpara.NewFFTSearch == 1
         % ====== Integer Search ======
@@ -70,7 +74,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
         ResultFEMesh{1+floor(fNormalizedNewIndex/DICpara.ImgSeqIncUnit)} = ... % To save first mesh info
             struct( 'coordinatesFEM',DICmesh.coordinatesFEM,'elementsFEM',DICmesh.elementsFEM, ...
             'winsize',DICpara.winsize,'winstepsize',DICpara.winstepsize,'gridxyROIRange',DICpara.gridxyROIRange );
-       
+        
     elseif mod(ImgSeqNum-2,DICpara.ImgSeqIncUnit) == 0 % TO update ref image in incremental mode
         fNormalizedNewIndex = ImgSeqNum-mod(ImgSeqNum-2,DICpara.ImgSeqIncUnit)-1;
         if DICpara.ImgSeqIncUnit == 1,  fNormalizedNewIndex = fNormalizedNewIndex-1; end
@@ -81,16 +85,15 @@ for ImgSeqNum = 2:length(ImgNormalized)
             struct( 'coordinatesFEM',DICmesh.coordinatesFEM,'elementsFEM',DICmesh.elementsFEM, ...
             'winsize',DICpara.winsize,'winstepsize',DICpara.winstepsize,'gridxyROIRange',DICpara.gridxyROIRange );
     else
-        U0 = ResultDisp{ImgSeqNum-2}.U;
+        U0 = ResultDisp{ImgSeqNum-2}.U; % Plotdisp_show(U0,[DICmesh.coordinatesFEM(:,1),size(fNormalized,2)+1-DICmesh.coordinatesFEM(:,2)],DICmesh.elementsFEM); % Plot initial values
+        
     end
-    %Plotdisp_show(U0,[coordinatesFEM(:,1),size(fNormalized,2)+1-coordinatesFEM(:,2)],elementsFEM); % Plot initial values
-    % ====== Spline interpolation images ======
-    %[imgfNormalizedbc,imggNormalizedbc,imgSize,DfAxis] = funImgGradient(fNormalized,gNormalized);
-    Df = funImgGradient(fNormalized,gNormalized); % % using finite difference;
+    
     % ====== Compute f(X)-g(x+u) ======
     % PlotImgDiff(x0,y0,u,v,fNormalized,gNormalized);
+    ResultFEMeshEachFrame{ImgSeqNum-1} = struct( 'coordinatesFEM',DICmesh.coordinatesFEM,'elementsFEM',DICmesh.elementsFEM);
     fprintf('------------ Section 3 Done ------------ \n \n')
-
+    
     
     %% Section 4: Subproblem 1 -or- Local ICGN Subset DIC
     fprintf('------------ Section 4 Start ------------ \n')
@@ -99,7 +102,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     % ====== ALStep 1 Subproblem1: Local Subset DIC ======
-    mu = 0; beta = 0; tol = 1e-2; ALSolveStep = 1; ALSub1Time = zeros(6,1); ALSub2Time = zeros(6,1); 
+    mu = 0; beta = 0; tol = 1e-2; ALSolveStep = 1; ALSub1Time = zeros(6,1); ALSub2Time = zeros(6,1);
     ConvItPerEle = zeros(size(DICmesh.coordinatesFEM,1),6); ALSub1BadPtNum = zeros(6,1);
     disp(['***** Start step',num2str(ALSolveStep),' Subproblem1 *****'])
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -111,7 +114,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
     % ------  Manually find some bad points from Local Subset ICGN step ------
     % Comment these lines below if you don't have local bad points
     % Comment START
-    close all; USubpb1World = USubpb1; USubpb1World(2:2:end) = -USubpb1(2:2:end); 
+    close all; USubpb1World = USubpb1; USubpb1World(2:2:end) = -USubpb1(2:2:end);
     Plotuv(USubpb1World,DICmesh.x0,DICmesh.y0World);
     disp('--- Start to manually remove bad points ---')
     u = reshape(USubpb1(1:2:end),size(DICmesh.x0,1),size(DICmesh.x0,2)); v = reshape(USubpb1(2:2:end),size(DICmesh.x0,1),size(DICmesh.x0,2));
@@ -136,53 +139,53 @@ for ImgSeqNum = 2:length(ImgNormalized)
     %else
     %    NewFFTSearchCheck = 1; %DICpara.NewFFTSearch = 0;
     %end
-    % end % Please ignore this while-loop now.   
+    % end % Please ignore this while-loop now.
     
     % ------ Plot ------
-    USubpb1World = USubpb1; USubpb1World(2:2:end) = -USubpb1(2:2:end); 
+    USubpb1World = USubpb1; USubpb1World(2:2:end) = -USubpb1(2:2:end);
     FSubpb1World = FSubpb1; % FSubpb1World(2:2:end) = -FSubpb1(2:2:end);
     %close all; Plotuv(USubpb1World,DICmesh.x0,DICmesh.y0World); Plotdisp_show(USubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
     %Plotstrain_show(FSubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
     save(['Subpb1_step',num2str(ALSolveStep)],'USubpb1','FSubpb1');
     fprintf('------------ Section 4 Done ------------ \n \n')
-
-   
+    
+    
     %% Section 5: Subproblem 2 -or- solve the global compatible displacement field
     fprintf('------------ Section 5 Start ------------ \n')
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % This section is to solve global step in ALDIC: Subproblem 2
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-     
+    
     % ======= ALStep 1 Subproblem 2: Global constraint =======
     % ------ Smooth displacements for better F ------
     DICpara.DispFilterSize=0; DICpara.DispFilterStd=0; DICpara.StrainFilterSize=0; DICpara.StrainFilterStd=0; LevelNo=1;
     FSubpb1 = funSmoothStrain(FSubpb1,DICmesh,DICpara);
     
-	% ====== Define penalty parameter ======
-    mu = 1e-3; udual = 0*FSubpb1; vdual = 0*USubpb1; 
-    betaList = [1e-3,sqrt(1e-5),1e-2,sqrt(1e-3),1e-1,sqrt(1e-1)]*mean(DICpara.winstepsize).^2.*mu; % Tune beta in the betaList 
+    % ====== Define penalty parameter ======
+    mu = 1e-3; udual = 0*FSubpb1; vdual = 0*USubpb1;
+    betaList = [1e-3,sqrt(1e-5),1e-2,sqrt(1e-3),1e-1,sqrt(1e-1)]*mean(DICpara.winstepsize).^2.*mu; % Tune beta in the betaList
     Err1 = zeros(length(betaList),1); Err2 = Err1;
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     disp(['***** Start step',num2str(ALSolveStep),' Subproblem2 *****'])
     % ====== Check to use FD or FE methods to solve Subpb2 step ======
-	if DICpara.Subpb2FDOrFEM == 1 % Using FD method
-		% ====== Build sparse finite difference operator ======
-		disp('Assemble finite difference operator D');
-		M = size(DICmesh.x0,1); N = size(DICmesh.x0,2);
-		tic; Rad = 1; D = funDerivativeOp((M-2*Rad),(N-2*Rad),DICpara.winstepsize); % D = sparse(4*(M-2*Rad)*(N-2*Rad), 2*(M-2*Rad)*(N-2*Rad));
-		D2 = funDerivativeOp(M,N,DICpara.winstepsize); toc
-		disp('Finish assembling finite difference operator D');
-		% ===== Solver using finite difference approximation ======
-		tic; a = FSubpb1-udual; b = USubpb1-vdual; 
-		Rad = 1; [temp3,temp4] = funFDNeumannBCInd(size(DICmesh.coordinatesFEM,1),M,N,Rad); % Find coordinatesFEM that belong to (x(Rad+1:M-Rad,Rad+1:N-Rad),y(Rad+1:M-Rad,Rad+1:N-Rad))
-		atemp = a(temp3); btemp = b(temp4); hbar = waitbar(0,'Please wait for Subproblem 2 global step!');  
+    if DICpara.Subpb2FDOrFEM == 1 % Using FD method
+        % ====== Build sparse finite difference operator ======
+        disp('Assemble finite difference operator D');
+        M = size(DICmesh.x0,1); N = size(DICmesh.x0,2);
+        tic; Rad = 1; D = funDerivativeOp((M-2*Rad),(N-2*Rad),DICpara.winstepsize); % D = sparse(4*(M-2*Rad)*(N-2*Rad), 2*(M-2*Rad)*(N-2*Rad));
+        D2 = funDerivativeOp(M,N,DICpara.winstepsize); toc
+        disp('Finish assembling finite difference operator D');
+        % ===== Solver using finite difference approximation ======
+        tic; a = FSubpb1-udual; b = USubpb1-vdual;
+        Rad = 1; [temp3,temp4] = funFDNeumannBCInd(size(DICmesh.coordinatesFEM,1),M,N,Rad); % Find coordinatesFEM that belong to (x(Rad+1:M-Rad,Rad+1:N-Rad),y(Rad+1:M-Rad,Rad+1:N-Rad))
+        atemp = a(temp3); btemp = b(temp4); hbar = waitbar(0,'Please wait for Subproblem 2 global step!');
         for tempk = 1:length(betaList)
             beta = betaList(tempk);
             tempAMatrixSub2 = (beta*(D')*D) + mu*speye(2*(M-2*Rad)*(N-2*Rad));
             USubpb2temp = (tempAMatrixSub2) \ (beta*D'*atemp + mu*btemp ) ;
-            USubpb2 = USubpb1; USubpb2(temp4) = USubpb2temp; 
-            FSubpb2 = D2*USubpb2; 
+            USubpb2 = USubpb1; USubpb2(temp4) = USubpb2temp;
+            FSubpb2 = D2*USubpb2;
             
             Err1(tempk) = norm(USubpb1-USubpb2,2);
             Err2(tempk) = norm(FSubpb1-FSubpb2,2);
@@ -202,10 +205,10 @@ for ImgSeqNum = 2:length(ImgNormalized)
         waitbar(1); close(hbar);
         %%%%%%%%%%%%%% End of using finite difference approximation %%%%%%%%%%%%%%
         
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
-	else %Subpb2FDOrFEM: Using FE method
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    else %Subpb2FDOrFEM: Using FE method
         M = size(DICmesh.x0,1); N = size(DICmesh.x0,2); GaussPtOrder = 2; alpha = 0;
-        close all; hbar = waitbar(0,'Please wait for Subproblem 2 global step!');  
+        close all; hbar = waitbar(0,'Please wait for Subproblem 2 global step!');
         % ====== Solver using finite element method ======
         for tempk = 1:length(betaList)
             beta = betaList(tempk);
@@ -229,41 +232,41 @@ for ImgSeqNum = 2:length(ImgNormalized)
         USubpb2 = full(USubpb2);
         waitbar(1); close(hbar);
     end
-	ALSub2Time(ALSolveStep) = toc; toc
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    ALSub2Time(ALSolveStep) = toc; toc
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % ------- Before computing strain, we smooth the displacement field -------
     %USubpb2 = funSmoothDisp(USubpb2,coordinatesFEM,elementsFEM,x0,y0,winstepsize,DispFilterSize,DispFilterStd);
     % ------- Compute strain field --------
-    if DICpara.Subpb2FDOrFEM == 1 %FD 
-		FSubpb2 = D2*USubpb2; % D2 = funDerivativeOp(M,N,winstepsize);
-	else %FEM
-		[FSubpb2] = funGlobal_NodalStrainAvg(DICmesh.coordinatesFEM,DICmesh.elementsFEM,USubpb2,GaussPtOrder);
+    if DICpara.Subpb2FDOrFEM == 1 %FD
+        FSubpb2 = D2*USubpb2; % D2 = funDerivativeOp(M,N,winstepsize);
+    else %FEM
+        [FSubpb2] = funGlobal_NodalStrainAvg(DICmesh.coordinatesFEM,DICmesh.elementsFEM,USubpb2,GaussPtOrder);
     end
     
     % ------- Smooth strain field --------
     FSubpb2 = funSmoothStrain(FSubpb2,DICmesh,DICpara);
-
+    
     % ------- Save data ------
     save(['Subpb2_step',num2str(ALSolveStep)],'USubpb2','FSubpb2');
-
+    
     % ------ Plot ------
-    USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end); FSubpb2World = FSubpb2;  
+    USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end); FSubpb2World = FSubpb2;
     close all; Plotuv(USubpb2World,DICmesh.x0,DICmesh.y0World); Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
     %Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
-
+    
     % ======= Update dual variables =======
     if DICpara.Subpb2FDOrFEM == 1 %FD
-		udualtemp1 = (FSubpb2 - FSubpb1); udualtemp2 = udualtemp1(temp3);
-		vdualtemp1 = (USubpb2 - USubpb1); vdualtemp2 = vdualtemp1(temp4);
-		udual = zeros(4*M*N,1); vdual = zeros(2*M*N,1);
-		udual(temp3) = udualtemp2; vdual(temp4) = vdualtemp2;
-	else  % FEM or other methods
-		udual = FSubpb2 - FSubpb1; vdual = USubpb2 - USubpb1;
-	end
+        udualtemp1 = (FSubpb2 - FSubpb1); udualtemp2 = udualtemp1(temp3);
+        vdualtemp1 = (USubpb2 - USubpb1); vdualtemp2 = vdualtemp1(temp4);
+        udual = zeros(4*M*N,1); vdual = zeros(2*M*N,1);
+        udual(temp3) = udualtemp2; vdual(temp4) = vdualtemp2;
+    else  % FEM or other methods
+        udual = FSubpb2 - FSubpb1; vdual = USubpb2 - USubpb1;
+    end
     save(['uvdual_step',num2str(ALSolveStep)],'udual','vdual');
     fprintf('------------ Section 5 Done ------------ \n \n')
-
-
+    
+    
     %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% Section 6: ADMM iterations
     fprintf('------------ Section 6 Start ------------ \n')
@@ -272,16 +275,16 @@ for ImgSeqNum = 2:length(ImgNormalized)
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     % ==================== ADMM AL Loop ==========================
-    ALSolveStep = 1; tol2 = 1e-4; UpdateY = 1e4; CrackOrNot = 0; CrackPath1 = [0,0]; CrackPath2 = [0,0]; CrackTip = [0,0]; 
+    ALSolveStep = 1; tol2 = 1e-4; UpdateY = 1e4; CrackOrNot = 0; CrackPath1 = [0,0]; CrackPath2 = [0,0]; CrackTip = [0,0];
     HPar = cell(21,1); for tempj = 1:21, HPar{tempj} = HtempPar(:,tempj); end
-
+    
     while (ALSolveStep < 5)
         ALSolveStep = ALSolveStep + 1;  % Update using the last step
         %%%%%%%%%%%%%%%%%%%%%%% Subproblem 1 %%%%%%%%%%%%%%%%%%%%%%%%%
         disp(['***** Start step',num2str(ALSolveStep),' Subproblem1 *****']);
         tic;[USubpb1,~,ALSub1Timetemp,ConvItPerEletemp,LocalICGNBadPtNumtemp] = Subpb1(USubpb2,FSubpb2,udual,vdual,DICmesh.coordinatesFEM,...
-        Df,fNormalized,gNormalized,mu,beta,HPar,ALSolveStep,DICpara,'GaussNewton',tol);
-        FSubpb1 = FSubpb2; toc 
+            Df,fNormalized,gNormalized,mu,beta,HPar,ALSolveStep,DICpara,'GaussNewton',tol);
+        FSubpb1 = FSubpb2; toc
         ALSub1Time(ALSolveStep) = ALSub1Timetemp; ConvItPerEle(:,ALSolveStep) = ConvItPerEletemp;  ALSub1BadPtNum(ALSolveStep) = LocalICGNBadPtNumtemp;
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % ------  Manually find some bad points from Local Subset ICGN step ------
@@ -298,36 +301,36 @@ for ImgSeqNum = 2:length(ImgNormalized)
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         save(['Subpb1_step',num2str(ALSolveStep)],'USubpb1','FSubpb1');
         USubpb1 = funSmoothDisp(USubpb1,DICmesh,DICpara);
-
+        
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % ============== Subproblem 2 ==============
         disp(['***** Start step',num2str(ALSolveStep),' Subproblem2 *****'])
         if DICpara.Subpb2FDOrFEM == 1 %FD
-			% ------- using finite difference approximation --------
-			tic; a = FSubpb1-udual; b = USubpb1-vdual; atemp = a(temp3); btemp = b(temp4);
-			USubpb2temp = (tempAMatrixSub2) \ (beta*D'*atemp + mu*btemp ) ;
+            % ------- using finite difference approximation --------
+            tic; a = FSubpb1-udual; b = USubpb1-vdual; atemp = a(temp3); btemp = b(temp4);
+            USubpb2temp = (tempAMatrixSub2) \ (beta*D'*atemp + mu*btemp ) ;
             USubpb2 = USubpb1; USubpb2(temp4) = USubpb2temp; %toc
-			% ------- End of using finite difference approximation --------
-		else % FEM 
-			tic; [USubpb2] = Subpb2(DICmesh,beta,mu,USubpb1,FSubpb1,udual,vdual,alpha,GaussPtOrder);
+            % ------- End of using finite difference approximation --------
+        else % FEM
+            tic; [USubpb2] = Subpb2(DICmesh,beta,mu,USubpb1,FSubpb1,udual,vdual,alpha,GaussPtOrder);
             USubpb2 = full(USubpb2);
-		end
-		ALSub2Time(ALSolveStep) = toc; toc
+        end
+        ALSub2Time(ALSolveStep) = toc; toc
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+        
         % ------- Before computing strain, we smooth the displacement field -------
         USubpb2 = funSmoothDisp(USubpb2,DICmesh,DICpara);
         % ------- Compute strain field --------
         if DICpara.Subpb2FDOrFEM == 1 %FD
-			FSubpb2 = D2*USubpb2; % D2 = funDerivativeOp(M,N,winstepsize);
-		else %FEM
-			GaussPtOrder = 2; [FSubpb2] = funGlobal_NodalStrainAvg(DICmesh.coordinatesFEM,DICmesh.elementsFEM,USubpb2,GaussPtOrder);
-		end
-		
-		% ------- Smooth strain field --------
+            FSubpb2 = D2*USubpb2; % D2 = funDerivativeOp(M,N,winstepsize);
+        else %FEM
+            GaussPtOrder = 2; [FSubpb2] = funGlobal_NodalStrainAvg(DICmesh.coordinatesFEM,DICmesh.elementsFEM,USubpb2,GaussPtOrder);
+        end
+        
+        % ------- Smooth strain field --------
         FSubpb2 = funSmoothStrain(FSubpb2,DICmesh,DICpara);
         save(['Subpb2_step',num2str(ALSolveStep)],'USubpb2','FSubpb2');
-
+        
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % Compute norm of UpdateY
         USubpb2_Old = load(['Subpb2_step',num2str(ALSolveStep-1)],'USubpb2');
@@ -347,51 +350,51 @@ for ImgSeqNum = 2:length(ImgNormalized)
         catch
         end
         fprintf('*********************************** \n \n');
-
+        
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % Update dual variables------------------------------
         if DICpara.Subpb2FDOrFEM == 1 %FD
-			udualtemp1 =  (FSubpb2 - FSubpb1); udualtemp2 = udualtemp1(temp3);
-			vdualtemp1 =  (USubpb2 - USubpb1); vdualtemp2 = vdualtemp1(temp4);
-			udual(temp3) = udual(temp3)+udualtemp2; 
-			vdual(temp4) = vdual(temp4)+vdualtemp2;
-		else %FEM
-			udual = FSubpb2 - FSubpb1; vdual = USubpb2 - USubpb1; 
-		end
-
+            udualtemp1 =  (FSubpb2 - FSubpb1); udualtemp2 = udualtemp1(temp3);
+            vdualtemp1 =  (USubpb2 - USubpb1); vdualtemp2 = vdualtemp1(temp4);
+            udual(temp3) = udual(temp3)+udualtemp2;
+            vdual(temp4) = vdual(temp4)+vdualtemp2;
+        else %FEM
+            udual = FSubpb2 - FSubpb1; vdual = USubpb2 - USubpb1;
+        end
+        
         save(['uvdual_step',num2str(ALSolveStep)],'udual','vdual');
         try
-        if UpdateY < tol2 || UpdateY2 < tol2
-            break
-        end
+            if UpdateY < tol2 || UpdateY2 < tol2
+                break
+            end
         catch
         end
-
+        
     end
     fprintf('------------ Section 6 Done ------------ \n \n')
- 
+    
     % Save data
     ResultDisp{ImgSeqNum-1}.U = full(USubpb2);
     ResultDisp{ImgSeqNum-1}.ALSub1BadPtNum = ALSub1BadPtNum;
     ResultDefGrad{ImgSeqNum-1}.F = full(FSubpb2); % tempFoamAL;
     
-end    
+end
 
 
 % ------ Plot ------
 USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end);
 FSubpb2World = FSubpb2; % FSubpb1World(2:2:end) = -FSubpb1(2:2:end);
-close all; Plotuv(USubpb2World,DICmesh.x0,DICmesh.y0World); 
+close all; Plotuv(USubpb2World,DICmesh.x0,DICmesh.y0World);
 Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
 % Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
 
 % ------ Save results ------
-% Find img name and save all the results 
+% Find img name and save all the results
 [~,imgname,imgext] = fileparts(file_name{1,end});
 results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
-save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh','ALSub1Time','ALSub2Time','ALSolveStep');
+save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh','ResultFEMeshEachFrame','ALSub1Time','ALSub2Time','ALSolveStep');
 
- 
+
 
 %% Section 7: Check convergence
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -446,7 +449,7 @@ for tempi = 1:ALSolveStep
 end
 
 % ------ clear temp variables ------
-clear a ALSub1BadPtNum ALSub1Timetemp atemp b btemp cc ConvItPerEletemp hbar Hbar 
+clear a ALSub1BadPtNum ALSub1Timetemp atemp b btemp cc ConvItPerEletemp hbar Hbar
 
 
 
@@ -456,9 +459,9 @@ fprintf('------------ Section 8 Start ------------ \n')
 % This section is to compute strain fields and plot figures
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ------ Smooth displacements ------
-DICpara.DoYouWantToSmoothOnceMore = funParaInput('SmoothDispOrNot');                 
+DICpara.DoYouWantToSmoothOnceMore = funParaInput('SmoothDispOrNot');
 % ------ Choose strain computation method ------
-DICpara.MethodToComputeStrain = funParaInput('StrainMethodOp'); 
+DICpara.MethodToComputeStrain = funParaInput('StrainMethodOp');
 % ------ Choose strain type (infinitesimal, Eulerian, Green-Lagrangian) ------
 DICpara.StrainType = funParaInput('StrainType');
 % ------ Choose image to plot (first only, second and next images) ------
@@ -468,9 +471,9 @@ end
 % ------ Save fig format ------
 DICpara.MethodToSaveFig = funParaInput('SaveFigFormat');
 % ------ Choose overlay image transparency ------
-DICpara.OrigDICImgTransparency = 1; 
-if DICpara.MethodToSaveFig == 1  
-    DICpara.OrigDICImgTransparency = funParaInput('OrigDICImgTransparency');         
+DICpara.OrigDICImgTransparency = 1;
+if DICpara.MethodToSaveFig == 1
+    DICpara.OrigDICImgTransparency = funParaInput('OrigDICImgTransparency');
 end
 
 % ------ Start main part ------
@@ -489,7 +492,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
     
     if FEMeshInd == 1
         USubpb2 = ResultDisp{ImgSeqNum-1}.U; %+ ResultDisp{10}.U + ResultDisp{20}.U;
-        coordinatesFEM = ResultFEMesh{1}.coordinatesFEM; 
+        coordinatesFEM = ResultFEMesh{1}.coordinatesFEM;
         elementsFEM = ResultFEMesh{1}.elementsFEM;
         if (ImgSeqNum-1 == 1) || (DICpara.ImgSeqIncROIUpdateOrNot==1), UFEMesh = 0*USubpb2; end
     else
@@ -513,28 +516,28 @@ for ImgSeqNum = 2:length(ImgNormalized)
     
     xList = min(coordinatesFEM(:,1)):DICpara.winstepsize:max(coordinatesFEM(:,1)); M = length(xList);
     yList = min(coordinatesFEM(:,2)):DICpara.winstepsize:max(coordinatesFEM(:,2)); N = length(yList);
-    %[x0,y0] = ndgrid(xList,yList); 
-    [x0,y0] = ndgrid(xList,yList); 
-    x0 = x0-reshape(UFEMesh(1:2:end),size(x0,1),size(x0,2)); 
-    y0 = y0-reshape(UFEMesh(2:2:end),size(y0,1),size(y0,2)); 
-    y0World = (size(ImgNormalized{1},2)+1-y0); 
+    %[x0,y0] = ndgrid(xList,yList);
+    [x0,y0] = ndgrid(xList,yList);
+    x0 = x0-reshape(UFEMesh(1:2:end),size(x0,1),size(x0,2));
+    y0 = y0-reshape(UFEMesh(2:2:end),size(y0,1),size(y0,2));
+    y0World = (size(ImgNormalized{1},2)+1-y0);
     coordinatesFEMWorld = [coordinatesFEM(:,1),size(ImgNormalized{1},2)+1-coordinatesFEM(:,2)];
-
+    
     % ------ Plotting and Compute Strain-------
     M = size(x0,1); N = size(x0,2);
     if size(USubpb2,1) == 1
-        ULocal = USubpb2_New.USubpb2; FLocal = FSubpb2.FSubpb2; 
+        ULocal = USubpb2_New.USubpb2; FLocal = FSubpb2.FSubpb2;
     else
         ULocal = USubpb2; FLocal = FSubpb2;
     end
-    % ULocal(1:2:end)= -ULocal(1:2:end); 
+    % ULocal(1:2:end)= -ULocal(1:2:end);
     % FLocal(1:4:end)= -1*FLocal(1:4:end); FLocal(3:4:end)= -1*FLocal(3:4:end); % because u is flipped sign
     UWorld = ULocal; UWorld(2:2:end) = -UWorld(2:2:end); FWorld = FLocal; close all; Plotuv(UWorld,x0,y0World);
     % tic; D = funDerivativeOp(M,N,winstepsize); toc
-
+    
     % ------ Smooth displacements ------
     %prompt = 'Do you want to smooth displacement? (0-yes; 1-no)';
-    %DoYouWantToSmoothOnceMore = input(prompt); 
+    %DoYouWantToSmoothOnceMore = input(prompt);
     SmoothTimes = 0;
     try
         while DICpara.DoYouWantToSmoothOnceMore == 0 && SmoothTimes < 3
@@ -549,34 +552,34 @@ for ImgSeqNum = 2:length(ImgNormalized)
     ComputeStrain; % Compute strain
     % % ------- Add filter and plot strain field -------
     %Plotstrain_Fij;
-
+    
     % ------ Plot disp and strain ------
     if DICpara.OrigDICImgTransparency == 1
-        Plotdisp_show(UWorld,coordinatesFEMWorld,elementsFEM);
+        Plotdisp_show(UWorld,coordinatesFEMWorld,elementsFEM,'NoEdgeColor');
         [strainxCoord,strainyCoord,dispu,dispv,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy,strain_principal_max, ...
             strain_principal_min,strain_maxshear,strain_vonMises]  =  Plotstrain0( ...
-            FStraintemp,x0(1+Rad:M-Rad,1+Rad:N-Rad),y0(1+Rad:M-Rad,1+Rad:N-Rad),size(ImgNormalized{1})); 
+            UWorld,FStraintemp,Rad,x0,y0,size(ImgNormalized{1}));
     else % Plot over raw DIC images
-        if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image	
+        if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image
             Plotdisp(UWorld,x0,y0,size(ImgNormalized{1}),file_name{1,1},DICpara);
             [strainxCoord,strainyCoord,dispu,dispv,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy,strain_principal_max, ...
-            strain_principal_min,strain_maxshear,strain_vonMises]  =  Plotstrain( ...
-            UWorld,FStraintemp,Rad,x0,y0,size(ImgNormalized{1}),file_name{1,1},DICpara); 
+                strain_principal_min,strain_maxshear,strain_vonMises]  =  Plotstrain( ...
+                UWorld,FStraintemp,Rad,x0,y0,size(ImgNormalized{1}),file_name{1,1},DICpara);
         else % Plot over second or next deformed images
             Plotdisp(UWorld,x0,y0,size(ImgNormalized{1}),file_name{1,ImgSeqNum},DICpara);
             [strainxCoord,strainyCoord,dispu,dispv,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy,strain_principal_max, ...
-            strain_principal_min,strain_maxshear,strain_vonMises]  =  Plotstrain( ...
-            UWorld,FStraintemp,Rad,x0,y0,size(ImgNormalized{1}),file_name{1,ImgSeqNum},DICpara); 
+                strain_principal_min,strain_maxshear,strain_vonMises]  =  Plotstrain( ...
+                UWorld,FStraintemp,Rad,x0,y0,size(ImgNormalized{1}),file_name{1,ImgSeqNum},DICpara);
         end
     end
-
+    
     % ----- Save strain results ------
     ResultStrain{ImgSeqNum-1} = struct('strainxCoord',strainxCoord,'strainyCoord',strainyCoord, ...
-            'dispu',dispu,'dispv',dispv,'dudx',dudx,'dvdx',dvdx,'dudy',dudy,'dvdy',dvdy, ...
-            'strain_exx',strain_exx,'strain_exy',strain_exy,'strain_eyy',strain_eyy, ...
-            'strain_principal_max',strain_principal_max,'strain_principal_min',strain_principal_min, ...
-            'strain_maxshear',strain_maxshear,'strain_vonMises',strain_vonMises);
-     
+        'dispu',dispu,'dispv',dispv,'dudx',dudx,'dvdx',dvdx,'dudy',dudy,'dvdy',dvdy, ...
+        'strain_exx',strain_exx,'strain_exy',strain_exy,'strain_eyy',strain_eyy, ...
+        'strain_principal_max',strain_principal_max,'strain_principal_min',strain_principal_min, ...
+        'strain_maxshear',strain_maxshear,'strain_vonMises',strain_vonMises);
+    
     % ------ Save figures for tracked displacement and strain fields ------
     SaveFigFilesDispAndStrain;
     
@@ -585,11 +588,11 @@ end
 % ------ END of for-loop {ImgSeqNum = 2:length(ImgNormalized)} ------
 fprintf('------------ Section 8 Done ------------ \n \n')
 
- 
+
 % ------ Save data again including solved strain fields ------
 results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
-save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh',...
-                   'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrain');
+save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh','ResultFEMeshEachFrame',...
+    'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrain');
 
 
 
@@ -598,14 +601,14 @@ fprintf('------------ Section 9 Start ------------ \n')
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % This section is to compute stress fields and plot figures
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% ------ Choose material model ------ 
+% ------ Choose material model ------
 DICpara.MaterialModel = funParaInput('MaterialModel');
 % ------ Define parameters in material models ------
 if (DICpara.MaterialModel == 1) || (DICpara.MaterialModel == 2) % Linear elasticity
     fprintf('Define Linear elasticity parameters \n')
-    fprintf("Young's modulus (unit: Pa). "); prompt = 'Input here: '; 
-    DICpara.MaterialModelPara.YoungsModulus = input(prompt); 
-    fprintf("Poisson's ratio. "); prompt = 'Input here: '; 
+    fprintf("Young's modulus (unit: Pa). "); prompt = 'Input here: ';
+    DICpara.MaterialModelPara.YoungsModulus = input(prompt);
+    fprintf("Poisson's ratio. "); prompt = 'Input here: ';
     DICpara.MaterialModelPara.PoissonsRatio = input(prompt);
     fprintf('------------------------------------- \n');
 end
@@ -614,26 +617,26 @@ end
 for ImgSeqNum = 2:length(ImgNormalized)
     
     disp(['Current image frame #: ', num2str(ImgSeqNum),'/',num2str(length(ImgNormalized))]); close all;
-     
+    
     % ------ Plot disp and strain ------
     if DICpara.OrigDICImgTransparency == 0
         [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
-                stress_principal_min_xyplane, stress_maxshear_xyplane, ...
-                stress_maxshear_xyz3d, stress_vonMises]  =  Plotstress0( ...
-            DICpara,ResultStrain{ImgSeqNum-1},size(ImgNormalized{1})); 
+            stress_principal_min_xyplane, stress_maxshear_xyplane, ...
+            stress_maxshear_xyz3d, stress_vonMises]  =  Plotstress0( ...
+            DICpara,ResultStrain{ImgSeqNum-1},size(ImgNormalized{1}));
     else % Plot over raw DIC images
-        if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image	
+        if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image
             [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
                 stress_principal_min_xyplane, stress_maxshear_xyplane, ...
                 stress_maxshear_xyz3d, stress_vonMises] = Plotstress( ...
-                DICpara,ResultStrain{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,1}); 
-
+                DICpara,ResultStrain{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,1});
+            
         else % Plot over second or next deformed images
-           [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
+            [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
                 stress_principal_min_xyplane, stress_maxshear_xyplane, ...
                 stress_maxshear_xyz3d, stress_vonMises] = Plotstress( ...
-                DICpara,ResultStrain{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,ImgSeqNum}); 
- 
+                DICpara,ResultStrain{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,ImgSeqNum});
+            
         end
     end
     
@@ -643,19 +646,19 @@ for ImgSeqNum = 2:length(ImgNormalized)
     
     % ----- Save strain results ------
     ResultStress{ImgSeqNum-1} = struct('stressxCoord',ResultStrain{ImgSeqNum-1}.strainxCoord,'stressyCoord',ResultStrain{ImgSeqNum-1}.strainyCoord, ...
-            'stress_sxx',stress_sxx,'stress_sxy',stress_sxy,'stress_syy',stress_syy, ...
-            'stress_principal_max_xyplane',stress_principal_max_xyplane, 'stress_principal_min_xyplane',stress_principal_min_xyplane, ...
-            'stress_maxshear_xyplane',stress_maxshear_xyplane,'stress_maxshear_xyz3d',stress_maxshear_xyz3d, ...
-            'stress_vonMises',stress_vonMises);
-        
+        'stress_sxx',stress_sxx,'stress_sxy',stress_sxy,'stress_syy',stress_syy, ...
+        'stress_principal_max_xyplane',stress_principal_max_xyplane, 'stress_principal_min_xyplane',stress_principal_min_xyplane, ...
+        'stress_maxshear_xyplane',stress_maxshear_xyplane,'stress_maxshear_xyz3d',stress_maxshear_xyz3d, ...
+        'stress_vonMises',stress_vonMises);
+    
 end
 % ------ END of for-loop {ImgSeqNum = 2:length(ImgNormalized)} ------
 fprintf('------------ Section 9 Done ------------ \n \n')
 
 % ------ Save data again including solved stress fields ------
 results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
-save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh',...
-                   'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrain','ResultStress');
+save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh','ResultFEMeshEachFrame',...
+    'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrain','ResultStress');
 
 
 
