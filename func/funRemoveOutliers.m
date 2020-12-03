@@ -147,9 +147,11 @@ while ClearBadInitialPointsOrNot == 0
     [row1, col1] = ginput; row = floor(col1); col = floor(row1); row=row(:); col=col(:);
     BadptRow=[BadptRow;row]; BadptCol=[BadptCol;col]; row=BadptRow; col=BadptCol;
     for tempi = 1:length(row)
+    	if row(tempi)>0 && col(tempi)>0 && row(tempi)<size(u,1) && col(tempi)<size(u,2)
         u(row(tempi),col(tempi))=NaN; v(row(tempi),col(tempi))=NaN;
         %f11(row(tempi),col(tempi))=NaN; f21(row(tempi),col(tempi))=NaN;
         %f12(row(tempi),col(tempi))=NaN; f22(row(tempi),col(tempi))=NaN;
+	end
     end
     u = inpaint_nans(u,4); v = inpaint_nans(v,4);
     %f11 = inpaint_nans(f11,4); f21 = inpaint_nans(f21,4);
@@ -186,9 +188,11 @@ while ClearBadInitialPointsOrNot == 0
     BadptRow=[BadptRow;row]; BadptCol=[BadptCol;col]; row=BadptRow; col=BadptCol;
     
     for tempi = 1:length(row)
+    	if row(tempi)>0 && col(tempi)>0 && row(tempi)<size(u,1) && col(tempi)<size(u,2)
         u(row(tempi),col(tempi))=NaN; v(row(tempi),col(tempi))=NaN;
         %f11(row(tempi),col(tempi))=NaN; f21(row(tempi),col(tempi))=NaN;
         %f12(row(tempi),col(tempi))=NaN; f22(row(tempi),col(tempi))=NaN;
+	end
     end
     u = inpaint_nans(u,4); v = inpaint_nans(v,4);
     %f11 = inpaint_nans(f11,4); f21 = inpaint_nans(f21,4);
