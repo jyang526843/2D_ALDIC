@@ -1,12 +1,16 @@
-function [x2,y2,u_x,v_x,u_y,v_y,strain_exx,strain_exy,strain_eyy, ...
-    strain_principal_max,strain_principal_min,strain_maxshear,strain_vonMises] = Plotstrain0(F,x,y,sizeOfImg)
-%PLOTSTRAIN0: to compute and plot DIC solved strain fields
+function [x2,y2,disp_u,disp_v,u_x,v_x,u_y,v_y,strain_exx,strain_exy,strain_eyy, ...
+    strain_principal_max,strain_principal_min,strain_maxshear,strain_vonMises] = Plotstrain0(U,F,Rad,x0,y0,sizeOfImg)
+%PLOTSTRAIN0: to compute and plot DIC solved strain fields without original DIC images as backgrounds
 %   [x2,y2,disp_u,disp_v,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy, ...
-%   strain_principal_max,strain_principal_min,strain_maxshear,strain_vonMises] = Plotstrain( ...
-%   U,Rad,F,x0,y0,sizeOfImg,CurrentImg,DICpara)
+%   strain_principal_max,strain_principal_min,strain_maxshear,strain_vonMises] = Plotstrain0( ...
+%   U,F,Rad,x0,y0,sizeOfImg)
 %
-%   INPUT: F                DIC solved deformation gradient tensor
-%          x,y              x and y coordinates of each points on the image domain
+%   INPUT: U                DIC solved displacement fields
+%          F                DIC solved deformation gradient tensor
+%          Rad              Parameter used to compute the final F. If we use the direct
+%                           output from the ALDIC code, Rad=0. If we apply a finite  
+%                           difference or plane fitting of the U to compute the F, Rad>0.
+%          x0,y0            x and y coordinates of each points on the image domain
 %          SizeOfImg        Size of the DIC raw image
 %
 %   OUTPUT: x2,y2                   x- and y-coordinates of points whose strain values are computed
@@ -37,16 +41,30 @@ function [x2,y2,u_x,v_x,u_y,v_y,strain_exx,strain_exy,strain_eyy, ...
 %%
 warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
 
+x = x0(1+Rad:end-Rad,1+Rad:end-Rad); 
+y = y0(1+Rad:end-Rad,1+Rad:end-Rad);
+
 M = size(x,1); N = size(x,2);
 u_x = F(1:4:end); v_x = F(2:4:end);
 u_y = F(3:4:end); v_y = F(4:4:end);
  
 u_x = reshape(u_x,M,N); v_x = reshape(v_x,M,N);
 u_y = reshape(u_y,M,N); v_y = reshape(v_y,M,N);
- 
-if M < 9,x2 = x(:,1)'; else x2 = interp(x(:,1)',4); end
-if N < 9,y2 = y(1,:); else y2 = interp(y(1,:),4); end
 
+u = U(1:2:end); v = U(2:2:end);
+u0 = reshape(u,M+2*Rad,N+2*Rad); v0 = reshape(v,M+2*Rad,N+2*Rad);
+u = u0(1+Rad:end-Rad,1+Rad:end-Rad); v = v0(1+Rad:end-Rad,1+Rad:end-Rad);
+
+% imagesc([x(1,1) x(end,1)], [y(1,1) y(1,end)], flipud(g)); hold on;
+if M < 9,x2 = x(:,1)'; else x2 = interp(x(:,1)',4); end
+if N < 9,y2 = y(1,:);  else y2 = interp(y(1,:),4);  end
+ 
+
+%% Compute displacement components to manipulate the reference image
+disp_u = gridfit(reshape(x,M*N,1),reshape(y,M*N,1),reshape(u,M*N,1),x2,y2);
+disp_v = gridfit(reshape(x,M*N,1),reshape(y,M*N,1),reshape(v,M*N,1),x2,y2);
+
+%% Compute strain components
 strain_exx = gridfit(reshape(x,M*N,1),reshape(y,M*N,1),reshape(u_x,M*N,1),x2,y2);
 strain_exy = gridfit(reshape(x,M*N,1),reshape(y,M*N,1),reshape(0.5*(v_x+u_y),M*N,1),x2,y2);
 strain_eyy = gridfit(reshape(x,M*N,1),reshape(y,M*N,1),reshape(v_y,M*N,1),x2,y2);
@@ -59,6 +77,9 @@ strain_principal_min = 0.5*(strain_exx+strain_eyy) - strain_maxshear;
 strain_vonMises = sqrt(strain_principal_max.^2 + strain_principal_min.^2 - ...
              strain_principal_max.*strain_principal_min + 3*strain_maxshear.^2);
          
+         % Please don't delete this line, to deal with the image and physical world coordinates
+[x2,y2]=ndgrid(x2,y2); x2=x2'; y2=y2';
+
          
 %% ====== 1) Strain exx ====== 
 figure;  
