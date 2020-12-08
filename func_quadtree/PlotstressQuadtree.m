@@ -95,11 +95,13 @@ elseif DICpara.MaterialModel == 2
     stress_maxshear_xyplane = sqrt((0.5*(stress_sxx-stress_syy)).^2 + stress_sxy.^2);
     stress_principal_max_xyplane = 0.5*(stress_sxx+stress_syy) + stress_maxshear_xyplane;
     stress_principal_min_xyplane = 0.5*(stress_sxx+stress_syy) - stress_maxshear_xyplane;
-    stress_maxshear_xyz3d = max(stress_maxshear_xyplane, 0.5*abs(stress_principal_max_xyplane-stress_szz), ...
-                                0.5*abs(stress_principal_min_xyplane-stress_szz));
     
-     % von Mises stress
-     stress_vonMises = sqrt(0.5*( (stress_principal_max_xyplane-stress_principal_min_xyplane).^2 + ...
+    stress_maxshear_xyz3d = reshape(  max( [ stress_maxshear_xyplane(:), 0.5*abs(stress_principal_max_xyplane(:)-stress_szz(:)), ...
+                                0.5*abs(stress_principal_min_xyplane(:)-stress_szz(:)) ], [], 2 ),  size(stress_maxshear_xyplane) ) ;
+    
+    
+    % von Mises stress
+    stress_vonMises = sqrt(0.5*( (stress_principal_max_xyplane-stress_principal_min_xyplane).^2 + ...
         (stress_principal_max_xyplane-stress_szz).^2 + (stress_principal_min_xyplane-stress_szz).^2 ));
     
     
@@ -123,6 +125,7 @@ end
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; % h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v),stress_sxx,'EdgeColor','none','LineStyle','none');
 h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_sxx,'NoEdgeColor');
+%h2=showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_sxx);
 set(gca,'fontSize',18); view(2); box on; caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
@@ -154,6 +157,7 @@ end
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; % h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v),stress_sxy,'EdgeColor','none','LineStyle','none');
 h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_sxy,'NoEdgeColor');
+%h2=showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_sxy);
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
@@ -185,6 +189,7 @@ end
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; % h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v),stress_syy,'EdgeColor','none','LineStyle','none');
 h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_syy,'NoEdgeColor');
+%h2=showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_syy);
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
@@ -216,6 +221,7 @@ end
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; % h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v),stress_principal_max_xyplane,'EdgeColor','none','LineStyle','none');
 h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_principal_max_xyplane,'NoEdgeColor');
+%h2=showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_principal_max_xyplane);
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
@@ -247,6 +253,7 @@ end
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; % h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v),stress_principal_min_xyplane,'EdgeColor','none','LineStyle','none');
 h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_principal_min_xyplane,'NoEdgeColor');
+%h2=showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_principal_min_xyplane);
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
@@ -278,6 +285,7 @@ end
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; % h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v),stress_maxshear_xyplane,'EdgeColor','none','LineStyle','none');
 h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_maxshear_xyplane,'NoEdgeColor');
+%h2=showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_maxshear_xyplane);
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
@@ -308,6 +316,7 @@ end
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; % h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v),stress_maxshear_xyz3d,'EdgeColor','none','LineStyle','none');
 h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_maxshear_xyz3d,'NoEdgeColor');
+%h2=showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_maxshear_xyz3d);
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
@@ -338,6 +347,7 @@ end
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2);  set(gca,'ydir','normal');
 hold on; ax2=axes; % h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v),stress_vonMises,'EdgeColor','none','LineStyle','none');
 h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_vonMises,'NoEdgeColor');
+%h2=showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorldDef,stress_vonMises);
 set(gca,'fontSize',18); view(2); box on;  caxis auto;  
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
