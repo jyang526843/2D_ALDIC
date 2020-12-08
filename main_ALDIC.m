@@ -15,7 +15,7 @@ try mex -O ba_interp2.cpp; catch; end
 % Comment 2: To use slower bi-cubic spline interpolation instead of ba_interp2 (bi-cubic)
 % % cd("./Splines_interp/lib_matlab"); CompileLib; cd("../../");  % This line is to mex bi-cubic spline interpolations
 % % addpath("./Splines_interp/lib_matlab"); % dbstop if error % % Old version codes.
-addpath("./func",'./src','./plotFiles','./func_quadtree','./func_quadtree/refinement','./plotFiles/export_fig-d966721/');
+addpath("./func",'./src','./plotFiles','./plotFiles/export_fig-d966721/');
 addpath('./Images_ForQuadtree_Sample12/'); % Also: addpath("./YOUR IMAGE FOLDER");
 fprintf('------------ Section 1 Done ------------ \n \n')
 
@@ -547,7 +547,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
         end
     catch
     end
-    
+     
     % ----- Compute strain field ------
     ComputeStrain; % Compute strain
     % % ------- Add filter and plot strain field -------
