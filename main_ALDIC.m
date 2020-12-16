@@ -86,6 +86,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
         ResultFEMesh{1+floor(fNormalizedNewIndex/DICpara.ImgSeqIncUnit)} = ... % To save first mesh info
             struct( 'coordinatesFEM',DICmesh.coordinatesFEM,'elementsFEM',DICmesh.elementsFEM, ...
             'winsize',DICpara.winsize,'winstepsize',DICpara.winstepsize,'gridxyROIRange',DICpara.gridxyROIRange );
+    
     else
         if ImgSeqNum < 7 % ====== Import previous U for ImgSeqNum [2,6] ======
             U0 = ResultDisp{ImgSeqNum-2}.U;
