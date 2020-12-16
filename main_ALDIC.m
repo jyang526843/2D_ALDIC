@@ -58,7 +58,9 @@ for ImgSeqNum = 2:length(ImgNormalized)
     % or use the results from the last frame as the new initial guess for the next frame;
     % Particularly in incremental mode DIC, the reference image can also be updated, e.g.:
     % fNormalized = ImgNormalized{ImgSeqNum-mod(ImgSeqNum-1,ImgSeqIncUnit)};
-    gNormalized = ImgNormalized{ImgSeqNum}; NewFFTSearchCheck = 0; % DICpara.NewFFTSearch = 0;
+    gNormalized = ImgNormalized{ImgSeqNum}; NewFFTSearchCheck = 0; 
+    % DICpara.NewFFTSearch = 0; % If you want to apply FFT-based cross correlation to 
+    % compute the initial guess for each frame, please make sure "DICpara.NewFFTSearch = 0". 
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     if ImgSeqNum == 2 || DICpara.NewFFTSearch == 1
@@ -85,8 +87,26 @@ for ImgSeqNum = 2:length(ImgNormalized)
             struct( 'coordinatesFEM',DICmesh.coordinatesFEM,'elementsFEM',DICmesh.elementsFEM, ...
             'winsize',DICpara.winsize,'winstepsize',DICpara.winstepsize,'gridxyROIRange',DICpara.gridxyROIRange );
     else
-        U0 = ResultDisp{ImgSeqNum-2}.U; % Plotdisp_show(U0,[DICmesh.coordinatesFEM(:,1),size(fNormalized,2)+1-DICmesh.coordinatesFEM(:,2)],DICmesh.elementsFEM); % Plot initial values
-        
+        if ImgSeqNum < 7 % ====== Import previous U for ImgSeqNum [2,6] ======
+            U0 = ResultDisp{ImgSeqNum-2}.U;
+            
+        else % ====== POD predict next U0 for ImgSeqNum > 6 ======
+            nTime = 5; np = length(ResultDisp{ImgSeqNum-2}.U)/2;
+            T_data_u = zeros(nTime,np); T_data_v = zeros(nTime,np);
+            for tempi = 1:nTime
+                T_data_u(tempi,:) = ResultDisp{ImgSeqNum-(2+nTime)+tempi, 1}.U(1:2:np*2)';
+                T_data_v(tempi,:) = ResultDisp{ImgSeqNum-(2+nTime)+tempi, 1}.U(2:2:np*2)';
+            end
+            nB = 3; t_train = [ImgSeqNum-1-nTime:ImgSeqNum-2]'; t_pre = [ImgSeqNum-1]';
+            [u_pred,~,~,~] = funPOR_GPR(T_data_u,t_train,t_pre,nB);
+            [v_pred,~,~,~] = funPOR_GPR(T_data_v,t_train,t_pre,nB);
+            tempu = u_pred(1,:); tempv = v_pred(1,:);
+            U0 = [tempu(:),tempv(:)]'; U0 = U0(:);
+            % %%%%% After running the new ImgSeqNum, you can uncomment these 
+            % %%%%% lines to compare how the initial guess has been improved.  
+            % Plotdisp_show(U0-ResultDisp{ImgSeqNum-1}.U,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4));
+            % Plotdisp_show(ResultDisp{ImgSeqNum-2}.U-ResultDisp{ImgSeqNum-1}.U,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4));
+        end
     end
     
     % ====== Compute f(X)-g(x+u) ======
