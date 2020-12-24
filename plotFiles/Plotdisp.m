@@ -1,15 +1,32 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% To plot DIC solved displacement components on the original DIC images
-%   1) dispx 
-%   2) dispy
-%
-% Author: Jin Yang  
-% Last date modified: 2020.11.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%
 function Plotdisp(U,x,y,sizeOfImg,CurrentImg,DICpara)
-  
+%FUNCTION Plotdisp(U,x,y,sizeOfImg,CurrentImg,DICpara)
+% To plot DIC solved displacement components
+% ----------------------------------------------
+%
+%   INPUT: U                 Displacement vector: U = [Ux_node1, Uy_node1, Ux_node2, Uy_node2, ... , Ux_nodeN, Uy_nodeN]';
+%          x,y               FE mesh x- and y-coordinates
+%          sizeOfImg         DIC deformed image size
+%          CurrentImg        Current deformed image
+%          DICpara           DIC paramters
+%
+%   OUTPUT: Plots of x-displacement field and y-displacement field.
+%
+%   TODO: users could change caxis range based on their own choices.
+%
+% ----------------------------------------------
+% Reference
+% [1] RegularizeNd. Matlab File Exchange open source. 
+% https://www.mathworks.com/matlabcentral/fileexchange/61436-regularizend
+% [2] Gridfit. Matlab File Exchange open source. 
+% https://www.mathworks.com/matlabcentral/fileexchange/8998-surface-fitting-using-gridfit
+% ----------------------------------------------
+% Author: Jin Yang.  
+% Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
+% Last time updated: 11/2020.
+% ==============================================
+
+
+%% Initialization
 warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
   
 OrigDICImgTransparency = DICpara.OrigDICImgTransparency; % Original raw DIC image transparency

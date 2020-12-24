@@ -1,7 +1,7 @@
 function [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
     stress_principal_min_xyplane, stress_maxshear_xyplane, ...
     stress_maxshear_xyz3d, stress_vonMises] = Plotstress(DICpara,ResultStrain,sizeOfImg,CurrentImg)
-%PLOTSTRESS: to compute and plot DIC solved stress fields on the original DIC images
+%FUNCTION PLOTSTRESS: to compute and plot DIC solved stress fields on the original DIC images
 %   [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
 %    stress_principal_min_xyplane, stress_maxshear_xyplane, ...
 %    stress_maxshear_xyz3d, stress_vonMises]     = Plotstress(DICpara,ResultStrain,sizeOfImg,CurrentImg)
@@ -30,15 +30,27 @@ function [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
 %       7) max shear stress on the xyz-three dimensional space
 %       8) equivalent von Mises stress
 %
-% Author: Jin Yang  (jyang526@wisc.edu)
-% Last date modified: 2020.11.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   TODO: users could change caxis range based on their own choices.
+%
+% ----------------------------------------------
+% Reference
+% [1] RegularizeNd. Matlab File Exchange open source. 
+% https://www.mathworks.com/matlabcentral/fileexchange/61436-regularizend
+% [2] Gridfit. Matlab File Exchange open source. 
+% https://www.mathworks.com/matlabcentral/fileexchange/8998-surface-fitting-using-gridfit
+% ----------------------------------------------
+% Author: Jin Yang.  
+% Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
+% Last time updated: 11/2020.
+% ==============================================
 
-%%
+
+%% Initialization
 warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
 OrigDICImgTransparency = DICpara.OrigDICImgTransparency; % Original raw DIC image transparency
 Image2PlotResults = DICpara.Image2PlotResults; % Choose image to plot over (first only, second and next images)
    
+
 %% Load computed strain fields
 x2 = ResultStrain.strainxCoord; 
 y2 = ResultStrain.strainyCoord;
@@ -97,12 +109,11 @@ elseif DICpara.MaterialModel == 2
     stress_maxshear_xyplane = sqrt((0.5*(stress_sxx-stress_syy)).^2 + stress_sxy.^2);
     stress_principal_max_xyplane = 0.5*(stress_sxx+stress_syy) + stress_maxshear_xyplane;
     stress_principal_min_xyplane = 0.5*(stress_sxx+stress_syy) - stress_maxshear_xyplane;
-    
     stress_maxshear_xyz3d = reshape(  max( [ stress_maxshear_xyplane(:), 0.5*abs(stress_principal_max_xyplane(:)-stress_szz(:)), ...
                                 0.5*abs(stress_principal_min_xyplane(:)-stress_szz(:)) ], [], 2 ),  size(stress_maxshear_xyplane) ) ;
-    
-     % von Mises stress
-     stress_vonMises = sqrt(0.5*( (stress_principal_max_xyplane-stress_principal_min_xyplane).^2 + ...
+                            
+    % von Mises stress
+    stress_vonMises = sqrt(0.5*( (stress_principal_max_xyplane-stress_principal_min_xyplane).^2 + ...
         (stress_principal_max_xyplane-stress_szz).^2 + (stress_principal_min_xyplane-stress_szz).^2 ));
     
     

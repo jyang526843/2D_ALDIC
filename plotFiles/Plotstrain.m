@@ -36,6 +36,7 @@ function [x2,y2,disp_u,disp_v,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_e
 %       6) max shear strain on the xy-plane
 %       7) equivalent von Mises strain
 %
+%   TODO: users could change caxis range based on their own choices.
 %
 % Author: Jin Yang  (jyang526@wisc.edu)
 % Last date modified: 2020.11.
@@ -92,6 +93,7 @@ strain_vonMises = sqrt(strain_principal_max.^2 + strain_principal_min.^2 - ...
 [x2,y2]=ndgrid(x2,y2); x2=x2'; y2=y2';
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ====== 1) Strain exx ======
 fig1=figure; ax1=axes; 
 try h1=imshow( flipud(imread(CurrentImg) ),'InitialMagnification','fit');
@@ -121,6 +123,7 @@ title('Strain $e_{xx}$','FontWeight','Normal','Interpreter','latex'); set(gcf,'c
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ====== 2) Strain exy ======
 fig1=figure; ax1=axes; 
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
@@ -132,7 +135,7 @@ hold on; ax2=axes; h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
-% colormap(jet); caxis([-0.008,0.008]); % caxis([-0.025,0.025]); 
+% colormap(jet); caxis([-0.008,0.008]);  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 linkaxes([ax1,ax2]);  %%Link them together
@@ -150,6 +153,7 @@ title('Strain $e_{xy}$','FontWeight','Normal','Interpreter','latex'); set(gcf,'c
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ====== 3) Strain eyy ======
 fig1=figure; ax1=axes; 
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
@@ -161,7 +165,8 @@ hold on; ax2=axes; h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
-% colormap(jet); caxis([-0.002,0.014]); %caxis([-0.015,0.015]); 
+% colormap(jet); caxis([-0.002,0.014]);
+% caxis([-0.55,0]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 linkaxes([ax1,ax2]);  %%Link them together
@@ -178,7 +183,7 @@ xlabel( '$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interprete
 title('Strain $e_{yy}$','FontWeight','Normal','Interpreter','latex'); set(gcf,'color','w');
 
  
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ====== 4) Strain e_principal_max ======
 fig1=figure; ax1=axes; 
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
@@ -190,7 +195,7 @@ hold on; ax2=axes; h2=surf(x2+Image2PlotResults*disp_u,sizeOfImg(2)+1-(y2-Image2
 set(gca,'fontSize',18); view(2); box on;  caxis auto; % set(gca,'ydir','normal');
 alpha(h2,OrigDICImgTransparency);  axis equal;  axis tight; colormap jet; colormap(cMap);
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
-%  colormap(jet); % caxis([-0.002,0.014]) % caxis([-0.025,0.025]); 
+% colormap(jet); % caxis([-0.002,0.014]) % caxis([-0.025,0.025]); 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 linkaxes([ax1,ax2]);  %%Link them together
@@ -208,6 +213,7 @@ title('$Principal strain e_{\max}$','FontWeight','Normal','Interpreter','latex')
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ====== 5) Strain e_principal_min ======
 fig1=figure; ax1=axes; 
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
@@ -237,6 +243,7 @@ title('$Principal strain e_{\min}$','FontWeight','Normal','Interpreter','latex')
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ====== 6) Strain e_max_shear ======
 fig1=figure; ax1=axes; 
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
@@ -265,6 +272,8 @@ xlabel( '$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interprete
 title('Max shear strain','FontWeight','Normal','Interpreter','latex'); set(gcf,'color','w');
 
  
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ====== 7) von Mises equivalent strain ======
 fig1=figure; ax1=axes; 
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
@@ -292,9 +301,7 @@ cb2 = colorbar('Position',[.17+0.685+0.012 .11 .03 .815]); cb2.TickLabelInterpre
 xlabel( '$x$ (pixels)','Interpreter','latex');  ylabel('$y$ (pixels)','Interpreter','latex');
 title('von Mises equivalent strain','FontWeight','Normal','Interpreter','latex'); set(gcf,'color','w');
  
-
-
-
+ 
 
 end
  

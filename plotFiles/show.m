@@ -30,6 +30,7 @@ hold on;
 % trisurf(elements4,coordinates(:,1),coordinates(:,2),u',...
 % 'facecolor','interp' )
 
+
 Sqx = zeros(4,size(elements4,1)); Sqy = zeros(4,size(elements4,1)); Sqc = zeros(4,size(elements4,1));
 for j = 1:size(elements4,1)
     Sqx(1:4,j) = coordinates(elements4(j,1:4),1);
