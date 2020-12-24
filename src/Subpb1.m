@@ -1,18 +1,51 @@
+function [U,HPar,ALSub1Time,ConvItPerEle,LocalICGNBadPtNum] = Subpb1(UOld,FOld,udual,vdual,coordinatesFEM,...
+                                                        Df,ImgRef,ImgDef,mu,beta,HPar,ALSolveStep,DICpara,ICGNmethod,tol)
+%FUNCTION [U,HPar,ALSub1Time,ConvItPerEle,LocalICGNBadPtNum] = Subpb1(UOld,FOld,udual,vdual,coordinatesFEM,...
+%                                                    Df,ImgRef,ImgDef,mu,beta,HPar,ALSolveStep,DICpara,ICGNmethod,tol)
+% The ALDIC Subproblem 1 ICGN subset solver (part I): to assign a sequential or a parallel computing
+% (see part II: ./func/funICGN_Subpb1.m)
+% ----------------------------------------------
+%   INPUT: UOld                 Initial guess of the displacement fields
+%          FOld                 Initial guess of the deformation gradients
+%          udual,vdual          Dual variables
+%          coordinatesFEM       FE mesh coordinates
+%          Df                   Image grayscale value gradients
+%          ImgRef               Reference image
+%          ImgDef               Deformed image
+%          mu,beta              ALDIC coefficients
+%          HPar                 Stored Hessian matrix
+%          ALSolveStep          ALDIC ADMM iteration step #
+%          DICpara              DIC parameters: subset size, subset spacing, ...
+%          ICGNmethod           ICGN iteration scheme: 'GaussNewton' -or- 'LevenbergMarquardt'
+%          tol                  ICGN iteration stopping threshold
+%
+%   OUTPUT: U                   Disp vector: [Ux_node1, Uy_node1, ... , Ux_nodeN, Uy_nodeN]';
+%           HPar                Hessian matrix for each local subset
+%           ALSub1Time          Computation time
+%           ConvItPerEle        ICGN iteration step for convergence
+%           LocalICGNBadPtNum   Number of subsets whose ICGN iterations don't converge 
+%
+% ----------------------------------------------
+% Reference
+% [1] RegularizeNd. Matlab File Exchange open source. 
+% https://www.mathworks.com/matlabcentral/fileexchange/61436-regularizend
+% [2] Gridfit. Matlab File Exchange open source. 
+% https://www.mathworks.com/matlabcentral/fileexchange/8998-surface-fitting-using-gridfit
+% ----------------------------------------------
+% Author: Jin Yang.  
+% Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
+% Last time updated: 02/2020.
 % ==============================================
-% function ALDIC: Subpb1
-% ==============================================
-
-function [USubpb1,HPar,ALSub1Time,ConvItPerEle,LocalICGNBadPtNum] = Subpb1(USubpb2,FSubpb2,udual,vdual,coordinatesFEM,...
-    Df,imgfNormalizedbc,imggNormalizedbc,mu,beta,HPar,ALSolveStep,DICpara,ICGNmethod,tol)
-
+                                 
+                                                    
+%% Initialization
 winsize = DICpara.winsize;
 winstepsize = DICpara.winstepsize;
 ClusterNo = DICpara.ClusterNo;
 
 temp = zeros(size(coordinatesFEM,1),1); UPar = cell(2,1); UPar{1} = temp; UPar{2} = temp;
 ConvItPerEle = zeros(size(coordinatesFEM,1),1);
-
-%%
+ 
 % disp(['***** Start step',num2str(ALSolveStep),' Subproblem1 *****'])
 
 % ------ Within each iteration step ------
@@ -26,6 +59,8 @@ ConvItPerEle = zeros(size(coordinatesFEM,1),1);
 % Go to the Parallel menu, then select Manage Cluster Profiles.
 % Select the "local" profile, and change NumWorkers to 4.
 % -----------------------------------------------
+
+%% ClusterNo == 0 or 1: Sequential computing
 if (ClusterNo == 0) || (ClusterNo == 1)
     
     h = waitbar(0,'Please wait for Subproblem 1 IC-GN iterations!'); tic;
@@ -42,16 +77,17 @@ if (ClusterNo == 0) || (ClusterNo == 1)
         end
         
         try
-            [Utemp, Htemp, ConvItPerEle(tempj,:)] = ...
-                funICGN_Subpb1(x0temp,y0temp,Df,imgfNormalizedbc,imggNormalizedbc,winsize,...
+            [Utemp, Htemp, ConvItPerEle(tempj,:)] = funICGN_Subpb1( ...
+                x0temp,y0temp,Df,ImgRef,ImgDef,winsize,...
                 HLocal,beta,mu,udual(4*tempj-3:4*tempj),vdual(2*tempj-1:2*tempj),...
-                USubpb2(2*tempj-1:2*tempj),FSubpb2(4*tempj-3:4*tempj),tol,ICGNmethod);
+                UOld(2*tempj-1:2*tempj),FOld(4*tempj-3:4*tempj),tol,ICGNmethod);
             
             % disp(['ele ',num2str(tempj),' converge or not is ',num2str(elementsLocalMethodConvergeOrNot(tempj)),' (1-converged; 0-unconverged)']);
             
             % Store solved deformation gradients
             UPar{1}(tempj) = Utemp(1); UPar{2}(tempj) = Utemp(2);
         catch
+            ConvItPerEle(tempj,:) = -1;
             UPar{1}(tempj) = nan; UPar{2}(tempj) = nan;
             Htemp = zeros(6,6);
         end
@@ -67,6 +103,8 @@ if (ClusterNo == 0) || (ClusterNo == 1)
     end
     close(h); ALSub1Time = toc;
     
+
+%% ClusterNo > 1: parallel computing
 else
     
     % Start parallel computing
@@ -90,15 +128,16 @@ else
         end
         
         try
-            [Utemp,~,ConvItPerEle(tempj,:)] = ...
-                funICGN_Subpb1(x0temp,y0temp,Df,imgfNormalizedbc,imggNormalizedbc,winsize,...
+            [Utemp,~,ConvItPerEle(tempj,:)] = funICGN_Subpb1( ...
+                x0temp,y0temp,Df,ImgRef,ImgDef,winsize,...
                 HLocal,beta,mu,udual(4*tempj-3:4*tempj),vdual(2*tempj-1:2*tempj),...
-                USubpb2(2*tempj-1:2*tempj),FSubpb2(4*tempj-3:4*tempj),tol,ICGNmethod);
+                UOld(2*tempj-1:2*tempj),FOld(4*tempj-3:4*tempj),tol,ICGNmethod);
             % disp(['ele ',num2str(tempj),' converge or not is ',num2str(elementsLocalMethodConvergeOrNot(tempj)),' (1-converged; 0-unconverged)']);
             
             % Store solved deformation gradients
             UtempPar(tempj) = Utemp(1); VtempPar(tempj) = Utemp(2);
         catch
+            ConvItPerEle(tempj,:) = -1;
             UtempPar(tempj) = nan; VtempPar(tempj) = nan;
             Htemp = zeros(6,6);
         end
@@ -120,31 +159,43 @@ else
     % clear HPar1 HPar2 HPar3 HPar4 HPar5 HPar6 HPar7 HPar8 HPar9 HPar10 HPar11 HPar12 HPar13 HPar14 HPar15 HPar16 HPar17 HPar18 HPar19 HPar20 HPar21
 end
 
-USubpb1 = USubpb2;
-USubpb1(1:2:end) = UPar{1}; USubpb1(2:2:end) = UPar{2};
+U = UOld;
+U(1:2:end) = UPar{1}; U(2:2:end) = UPar{2};
 
 % ------ Clear bad points for Local DIC ------
 % find bad points after Local Subset ICGN
-[row1,~] = find(ConvItPerEle(:)==0);
+[row1,~] = find(ConvItPerEle(:)<0);
 [row2,~] = find(ConvItPerEle(:)>99);
-row = unique(union(row1,row2)); LocalICGNBadPtNum = length(row);
+LocalICGNBadPt = unique(union(row1,row2)); LocalICGNBadPtNum = length(LocalICGNBadPt);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Though some subsets are converged, but their accuracy is worse than most
+% other subsets. This step is to remove those subsets with abnormal convergence steps
+% LocalICGNGoodPt = setdiff([1:1:size(coordinatesFEM,1)],LocalICGNBadPt);
+% ConvItPerEleMean = mean(ConvItPerEle(LocalICGNGoodPt));
+% ConvItPerEleStd = std(ConvItPerEle(LocalICGNGoodPt));
+% [row3,~] = find(ConvItPerEle(:) > ConvItPerEleMean + 0*ConvItPerEleStd);
+% LocalICGNBadPt = unique(union(LocalICGNBadPt,row3));
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 disp(['Local ICGN bad subsets %: ', num2str(LocalICGNBadPtNum),'/',num2str(size(coordinatesFEM,1)),'=',num2str(100*LocalICGNBadPtNum/size(coordinatesFEM,1)),'%']);
-USubpb1(2*row-1) = NaN; USubpb1(2*row) = NaN;
+U(2*LocalICGNBadPt-1) = NaN; U(2*LocalICGNBadPt) = NaN;
 % Plotdisp_show(full(USubpb1),elementsFEM(:,1:4) ,coordinatesFEM );
 % Plotuv(full(USubpb1),x0,y0);
 % ------ inpaint nans using gridfit ------
 Coordxnodes = unique(coordinatesFEM(:,1)); Coordynodes = unique(coordinatesFEM(:,2));
-nanindex = find(isnan(USubpb1(1:2:end))==1); notnanindex = setdiff([1:1:size(coordinatesFEM,1)],nanindex);
-[u1temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), USubpb1(2*notnanindex-1),Coordxnodes,Coordynodes,'regularizer','springs'); u1temp = u1temp';
-[v1temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), USubpb1(2*notnanindex),Coordxnodes,Coordynodes,'regularizer','springs'); v1temp = v1temp';
+nanindex = find(isnan(U(1:2:end))==1); notnanindex = setdiff([1:1:size(coordinatesFEM,1)],nanindex);
+[u1temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), U(2*notnanindex-1),Coordxnodes,Coordynodes,'regularizer','springs'); u1temp = u1temp';
+[v1temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), U(2*notnanindex),Coordxnodes,Coordynodes,'regularizer','springs'); v1temp = v1temp';
+  
 % Add remove outliers median-test based on:
 % u1=cell(2,1); u1{1}=u1temp; u1{2}=v1temp;
 % [u2] = removeOutliersMedian(u1,4); u2temp=u2{1}; v2temp=u2{2};
 for tempi = 1:size(coordinatesFEM,1)
     [row1,col1] = find(Coordxnodes==coordinatesFEM(tempi,1));
     [row2,col2] = find(Coordynodes==coordinatesFEM(tempi,2));
-    USubpb1(2*tempi-1) = u1temp(row1,row2);
-    USubpb1(2*tempi)   = v1temp(row1,row2);
+    U(2*tempi-1) = u1temp(row1,row2);
+    U(2*tempi)   = v1temp(row1,row2); 
 end
 
 
