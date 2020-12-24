@@ -1,69 +1,70 @@
 % ---------------------------------------------
-% Augmented Lagrangian DIC
-% Author: Jin Yang, PhD. Caltech
-% Contact: yangjin@caltech.edu
-% 2015.04,06,07; 2016.03,04; 2020.11
+% Augmented Lagrangian Digital Image Correlation (AL-DIC)
+% working with an adaptive quadtree mesh
+% 
+% Author: Jin Yang, PhD @Caltech
+% Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
+% Date: 2015.04,06,07; 2016.03,04; 2020.11
 % ---------------------------------------------
 
-%% Section 1: Clear MATLAB environment & mex set up Spline interpolation
+%% Section 1: Clear MATLAB environment & mex set up Spline interpolation  
 close all; clear; clc; clearvars -global
 fprintf('------------ Section 1 Start ------------ \n')
 setenv('MW_MINGW64_LOC','C:\TDM-GCC-64');
-try mex -O ba_interp2.cpp; catch; end
-% Comment 1: If your MATLAB has just been crashed, and this line reports error but it works before the crash,
-% Change this line to: "try mex -O ba_interp2.cpp; catch; end"
-% Comment 2: To use slower bi-cubic spline interpolation instead of ba_interp2 (bi-cubic)
-% % cd("./Splines_interp/lib_matlab"); CompileLib; cd("../../");  % This line is to mex bi-cubic spline interpolations
-% % addpath("./Splines_interp/lib_matlab"); % dbstop if error % % Old version codes.
-addpath("./func",'./src','./plotFiles','./plotFiles/export_fig-d966721/');
-addpath('./Images_ForQuadtree_Sample12/'); % Also: addpath("./YOUR IMAGE FOLDER");
+try mex -O ba_interp2.cpp; catch; end % mex set up ba_interp2.cpp script
+% [Comment]: If this line reports error but it works before, 
+% Change line 14 to: "try mex -O ba_interp2.cpp; catch; end"
+addpath("./func",'./src','./plotFiles','./func_quadtree','./func_quadtree/refinement','./plotFiles/export_fig-d966721/'); 
+% TODO: addpath("./YOUR IMAGE FOLDER"); 
 fprintf('------------ Section 1 Done ------------ \n \n')
 
 
 %% Section 2: Load DIC parameters and set up DIC parameters
 fprintf('------------ Section 2 Start ------------ \n')
 % ====== Read images ======
-[file_name,Img,DICpara] = ReadImage; close all;
+[file_name,Img,DICpara] = ReadImage; % Load DIC raw images
 % %%%%%% Uncomment the line below to change the DIC computing region (ROI) manually %%%%%%
-%gridxROIRange = [gridxROIRange1,gridxROIRange2]; gridyROIRange = [Val1, Val2];
-%gridxROIRange = [224,918]; gridyROIRange = [787,1162];
+% DICpara.gridxROIRange = [gridxROIRange1,gridxROIRange2]; DICpara.gridyROIRange = [Val1, Val2];
+% E.g., gridxROIRange = [224,918]; gridyROIRange = [787,1162];
 
 % ====== Normalize images: fNormalized = (f-f_avg)/(f_std) ======
 [ImgNormalized,DICpara.gridxyROIRange] = funNormalizeImg(Img,DICpara.gridxyROIRange);
-fNormalized = ImgNormalized{1}; % Referece image frame
+fNormalized = ImgNormalized{1}; % Load the first referece image
 
 % ====== Compute image gradients ======
 Df = funImgGradient(fNormalized,fNormalized); % Finite difference to compute image grayscale gradients;
 
 % ====== Initialize variable storage ======
-ResultDisp = cell(length(ImgNormalized)-1,1);   ResultDefGrad = cell(length(ImgNormalized)-1,1);
-ResultStrain = cell(length(ImgNormalized)-1,1); ResultStress = cell(length(ImgNormalized)-1,1);
+ResultDisp = cell(length(ImgNormalized)-1,1);    ResultDefGrad = cell(length(ImgNormalized)-1,1);
+ResultStrain = cell(length(ImgNormalized)-1,1);  ResultStress = cell(length(ImgNormalized)-1,1);
 ResultFEMeshEachFrame = cell(length(ImgNormalized)-1,1); % Needs future improvment: to store FE-mesh for each frame
 ResultFEMesh = cell(ceil((length(ImgNormalized)-1)/DICpara.ImgSeqIncUnit),1); % For incremental DIC mode
 fprintf('------------ Section 2 Done ------------ \n \n')
 
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Start each frame in an image sequence
+% To solve each frame in an image sequence
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-for ImgSeqNum = 2:length(ImgNormalized)
+for ImgSeqNum = 2 : length(ImgNormalized)
     
     disp(['Current image frame #: ', num2str(ImgSeqNum),'/',num2str(length(ImgNormalized))]);
+    gNormalized = ImgNormalized{ImgSeqNum}; % Load current deformed image frame 
     
     %% Section 3: Compute an initial guess of the unknown displacement field
     fprintf('\n'); fprintf('------------ Section 3 Start ------------ \n')
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % This section is to find or update an initial guess of displacements
+    % This section is to find or update an initial guess of the unknown displacements.
     % The key idea is to either to use a new FFT-based cross correlation peak fitting,
     % or use the results from the last frame as the new initial guess for the next frame;
-    % Particularly in incremental mode DIC, the reference image can also be updated, e.g.:
-    % fNormalized = ImgNormalized{ImgSeqNum-mod(ImgSeqNum-1,ImgSeqIncUnit)};
-    gNormalized = ImgNormalized{ImgSeqNum}; NewFFTSearchCheck = 0; 
-    % DICpara.NewFFTSearch = 0; % If you want to apply FFT-based cross correlation to 
-    % compute the initial guess for each frame, please make sure "DICpara.NewFFTSearch = 0". 
+    % Particularly in the incremental mode DIC, the reference image can also be updated, e.g.,
+    % " fNormalized = ImgNormalized{ImgSeqNum-mod(ImgSeqNum-1,ImgSeqIncUnit)}; "
+    %
+    % DICpara.NewFFTSearch = 0; % If you want to apply the FFT-based cross correlation to 
+    % compute the initial guess for each frame, please make sure that "DICpara.NewFFTSearch = 0". 
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
-    if ImgSeqNum == 2 || DICpara.NewFFTSearch == 1
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    if ImgSeqNum == 2 || DICpara.NewFFTSearch == 1 % Apply FFT-based cross correlation to compute the initial guess 
         % ====== Integer Search ======
         [DICpara,x0temp,y0temp,u,v,cc]= IntegerSearch(fNormalized,gNormalized,file_name,DICpara);
         % ====== FEM mesh set up ======
@@ -77,7 +78,8 @@ for ImgSeqNum = 2:length(ImgNormalized)
             struct( 'coordinatesFEM',DICmesh.coordinatesFEM,'elementsFEM',DICmesh.elementsFEM, ...
             'winsize',DICpara.winsize,'winstepsize',DICpara.winstepsize,'gridxyROIRange',DICpara.gridxyROIRange );
         
-    elseif mod(ImgSeqNum-2,DICpara.ImgSeqIncUnit) == 0 % TO update ref image in incremental mode
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    elseif mod(ImgSeqNum-2,DICpara.ImgSeqIncUnit) == 0 % To update ref image in incremental mode
         fNormalizedNewIndex = ImgSeqNum-mod(ImgSeqNum-2,DICpara.ImgSeqIncUnit)-1;
         if DICpara.ImgSeqIncUnit == 1,  fNormalizedNewIndex = fNormalizedNewIndex-1; end
         fNormalized = ImgNormalized{fNormalizedNewIndex}; % Update reference
@@ -87,13 +89,14 @@ for ImgSeqNum = 2:length(ImgNormalized)
             struct( 'coordinatesFEM',DICmesh.coordinatesFEM,'elementsFEM',DICmesh.elementsFEM, ...
             'winsize',DICpara.winsize,'winstepsize',DICpara.winstepsize,'gridxyROIRange',DICpara.gridxyROIRange );
     
-    else
-        if ImgSeqNum < 7 % ====== Import previous U for ImgSeqNum [2,6] ======
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    else % Use the solved results from the last frame as the new initial guess
+        if ImgSeqNum < 7 % Import previous U for ImgSeqNum [2,6] 
             U0 = ResultDisp{ImgSeqNum-2}.U;
-            
-        else % ====== POD predict next U0 for ImgSeqNum > 6 ======
-            nTime = 5; np = length(ResultDisp{ImgSeqNum-2}.U)/2;
-            T_data_u = zeros(nTime,np); T_data_v = zeros(nTime,np);
+             
+        else % When ImgSeqNum > 6: POD predicts next disp U0 from previous results of (ImgSeqNum+[-5:1:-1])
+            nTime = 5; np = length(ResultDisp{ImgSeqNum-2}.U)/2; % "nTime" value 5 is an empirical value, can be changed.
+            T_data_u = zeros(nTime,np); T_data_v = zeros(nTime,np); 
             for tempi = 1:nTime
                 T_data_u(tempi,:) = ResultDisp{ImgSeqNum-(2+nTime)+tempi, 1}.U(1:2:np*2)';
                 T_data_v(tempi,:) = ResultDisp{ImgSeqNum-(2+nTime)+tempi, 1}.U(2:2:np*2)';
@@ -103,6 +106,7 @@ for ImgSeqNum = 2:length(ImgNormalized)
             [v_pred,~,~,~] = funPOR_GPR(T_data_v,t_train,t_pre,nB);
             tempu = u_pred(1,:); tempv = v_pred(1,:);
             U0 = [tempu(:),tempv(:)]'; U0 = U0(:);
+         
             % %%%%% After running the new ImgSeqNum, you can uncomment these 
             % %%%%% lines to compare how the initial guess has been improved.  
             % Plotdisp_show(U0-ResultDisp{ImgSeqNum-1}.U,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4));
@@ -119,12 +123,12 @@ for ImgSeqNum = 2:length(ImgNormalized)
     %% Section 4: Subproblem 1 -or- Local ICGN Subset DIC
     fprintf('------------ Section 4 Start ------------ \n')
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % This section is to solve first local step in ALDIC: Subproblem 1
+    % This section is to solve the first local step in ALDIC: Subproblem 1
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     % ====== ALStep 1 Subproblem1: Local Subset DIC ======
-    mu = 0; beta = 0; tol = 1e-2; ALSolveStep = 1; ALSub1Time = zeros(6,1); ALSub2Time = zeros(6,1);
-    ConvItPerEle = zeros(size(DICmesh.coordinatesFEM,1),6); ALSub1BadPtNum = zeros(6,1);
+    mu=0; beta=0; tol=1e-2; ALSolveStep=1; ALSub1Time=zeros(6,1); ALSub2Time=zeros(6,1); 
+    ConvItPerEle=zeros(size(DICmesh.coordinatesFEM,1),6); ALSub1BadPtNum=zeros(6,1);
     disp(['***** Start step',num2str(ALSolveStep),' Subproblem1 *****'])
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % ------ Start Local DIC IC-GN iteration ------
@@ -133,52 +137,48 @@ for ImgSeqNum = 2:length(ImgNormalized)
     ALSub1Time(ALSolveStep) = ALSub1Timetemp; ConvItPerEle(:,ALSolveStep) = ConvItPerEletemp; ALSub1BadPtNum(ALSolveStep) = LocalICGNBadPtNumtemp; toc
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % ------  Manually find some bad points from Local Subset ICGN step ------
-    % Comment these lines below if you don't have local bad points
-    % Comment START
-    close all; USubpb1World = USubpb1; USubpb1World(2:2:end) = -USubpb1(2:2:end);
-    Plotuv(USubpb1World,DICmesh.x0,DICmesh.y0World);
-    disp('--- Start to manually remove bad points ---')
-    u = reshape(USubpb1(1:2:end),size(DICmesh.x0,1),size(DICmesh.x0,2)); v = reshape(USubpb1(2:2:end),size(DICmesh.x0,1),size(DICmesh.x0,2));
-    [u,v,~,Local_BadptRow,Local_BadptCol,RemoveOutliersList] = funRemoveOutliers(u',v',[],0.5,100); u=u';v=v';
-    USubpb1(1:2:end) = reshape(u,size(DICmesh.coordinatesFEM,1),1); USubpb1(2:2:end) = reshape(v,size(DICmesh.coordinatesFEM,1),1);
-    f11 = reshape(FSubpb1(1:4:end),size(DICmesh.x0,1),size(DICmesh.x0,2)); f21 = reshape(FSubpb1(2:4:end),size(DICmesh.x0,1),size(DICmesh.x0,2));
-    f12 = reshape(FSubpb1(3:4:end),size(DICmesh.x0,1),size(DICmesh.x0,2)); f22 = reshape(FSubpb1(4:4:end),size(DICmesh.x0,1),size(DICmesh.x0,2));
-    f11=f11'; f21=f21'; f12=f12'; f22=f22';
-    f11(RemoveOutliersList) = NaN; f21(RemoveOutliersList) = NaN; f12(RemoveOutliersList) = NaN; f22(RemoveOutliersList) = NaN;
-    f11 = inpaint_nans(f11,4); f21 = inpaint_nans(f21,4); f12 = inpaint_nans(f12,4); f22 = inpaint_nans(f22,4);
-    f11=f11'; f21=f21'; f12=f12'; f22=f22';
-    FSubpb1(1:4:end) = reshape(f11,size(DICmesh.coordinatesFEM,1),1); FSubpb1(2:4:end) = reshape(f21,size(DICmesh.coordinatesFEM,1),1);
-    FSubpb1(3:4:end) = reshape(f12,size(DICmesh.coordinatesFEM,1),1); FSubpb1(4:4:end) = reshape(f22,size(DICmesh.coordinatesFEM,1),1);
-    disp('--- Remove bad points done ---')
-    % Comment END
+    % Comment these lines below if you don't need to manually remove local bad points
+    % %%%%% Comment START %%%%%
+        close all; USubpb1World = USubpb1; USubpb1World(2:2:end) = -USubpb1(2:2:end);
+        Plotuv(USubpb1World,DICmesh.x0,DICmesh.y0World);
+        disp('--- Start to manually remove bad points ---')
+        u = reshape(USubpb1(1:2:end),size(DICmesh.x0,1),size(DICmesh.x0,2)); 
+        v = reshape(USubpb1(2:2:end),size(DICmesh.x0,1),size(DICmesh.x0,2));
+        [u,v,~,Local_BadptRow,Local_BadptCol,RemoveOutliersList] = funRemoveOutliers(u',v',[],0.5,100); u=u';v=v';
+        USubpb1(1:2:end) = reshape(u,size(DICmesh.coordinatesFEM,1),1); USubpb1(2:2:end) = reshape(v,size(DICmesh.coordinatesFEM,1),1);
+        f11 = reshape(FSubpb1(1:4:end),size(DICmesh.x0,1),size(DICmesh.x0,2)); 
+        f21 = reshape(FSubpb1(2:4:end),size(DICmesh.x0,1),size(DICmesh.x0,2));
+        f12 = reshape(FSubpb1(3:4:end),size(DICmesh.x0,1),size(DICmesh.x0,2)); 
+        f22 = reshape(FSubpb1(4:4:end),size(DICmesh.x0,1),size(DICmesh.x0,2));
+        f11=f11'; f11(RemoveOutliersList) = NaN; f11 = inpaint_nans(f11,4); f11=f11';  
+        f21=f21'; f21(RemoveOutliersList) = NaN; f21 = inpaint_nans(f21,4); f21=f21'; 
+        f12=f12'; f12(RemoveOutliersList) = NaN; f12 = inpaint_nans(f12,4); f12=f12'; 
+        f22=f22'; f22(RemoveOutliersList) = NaN; f22 = inpaint_nans(f22,4); f22=f22';
+        FSubpb1(1:4:end) = reshape(f11,size(DICmesh.coordinatesFEM,1),1); 
+        FSubpb1(2:4:end) = reshape(f21,size(DICmesh.coordinatesFEM,1),1);
+        FSubpb1(3:4:end) = reshape(f12,size(DICmesh.coordinatesFEM,1),1); 
+        FSubpb1(4:4:end) = reshape(f22,size(DICmesh.coordinatesFEM,1),1);
+        disp('--- Remove bad points done ---')
+    % %%%%% Comment END %%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % You won't use these codes now. Please ignore all the codes related
-    % with NewFFTSearchCheck and don't change them.
-    % --- --- Check: need redo FFT search or not ------
-    %if (LocalICGNBadPtNumtemp/size(DICmesh.coordinatesFEM,1) > 0.1) %&& (mod(ImgSeqNum-2,DICpara.ImgSeqIncUnit) == 0) % 10% bad points
-    %    DICpara.NewFFTSearch = 1;
-    %else
-    %    NewFFTSearchCheck = 1; %DICpara.NewFFTSearch = 0;
-    %end
-    % end % Please ignore this while-loop now.
-    
+     
     % ------ Plot ------
-    USubpb1World = USubpb1; USubpb1World(2:2:end) = -USubpb1(2:2:end);
-    FSubpb1World = FSubpb1; % FSubpb1World(2:2:end) = -FSubpb1(2:2:end);
-    %close all; Plotuv(USubpb1World,DICmesh.x0,DICmesh.y0World); Plotdisp_show(USubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
-    %Plotstrain_show(FSubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
+    USubpb1World = USubpb1; USubpb1World(2:2:end) = -USubpb1(2:2:end); FSubpb1World = FSubpb1;  
+    close all; Plotuv(USubpb1World,DICmesh.x0,DICmesh.y0World); 
+    Plotdisp_show(USubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
+    Plotstrain_show(FSubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
     save(['Subpb1_step',num2str(ALSolveStep)],'USubpb1','FSubpb1');
     fprintf('------------ Section 4 Done ------------ \n \n')
     
     
-    %% Section 5: Subproblem 2 -or- solve the global compatible displacement field
-    fprintf('------------ Section 5 Start ------------ \n')
+    %% Section 5: Subproblem 2 -- solve the global compatible displacement field
+    fprintf('------------ Section 5 Start ------------ \n'); tic;
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % This section is to solve global step in ALDIC: Subproblem 2
+    % This section is to solve the global step in ALDIC Subproblem 2
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     % ======= ALStep 1 Subproblem 2: Global constraint =======
-    % ------ Smooth displacements for better F ------
+    % ------ Smooth displacements for a better F ------
     DICpara.DispFilterSize=0; DICpara.DispFilterStd=0; DICpara.StrainFilterSize=0; DICpara.StrainFilterStd=0; LevelNo=1;
     FSubpb1 = funSmoothStrain(FSubpb1,DICmesh,DICpara);
     
@@ -213,13 +213,14 @@ for ImgSeqNum = 2:length(ImgNormalized)
             waitbar(tempk/(length(betaList)+1));
         end
         ErrSum = Err1+Err2*mean(DICpara.winstepsize)^2; [~,indexOfbeta] = min(ErrSum);
-        try
+        
+        try % Tune the best beta by a quadratic polynomial fitting
             [fitobj] = fit(log10(betaList(indexOfbeta-1:1:indexOfbeta+1))',ErrSum(indexOfbeta-1:1:indexOfbeta+1),'poly2');
             p = coeffvalues(fitobj); beta = 10^(-p(2)/2/p(1));
-        catch
-            beta = betaList(indexOfbeta);
+        catch, beta = betaList(indexOfbeta);
         end
-        % Using optimal beta to solve again
+        
+        % Using the optimal beta to solve the ALDIC Subproblem 2 again
         tempAMatrixSub2 = (beta*(D')*D) + mu*speye(2*(M-2*Rad)*(N-2*Rad));
         USubpb2temp = (tempAMatrixSub2) \ (beta*D'*atemp + mu*btemp) ;
         USubpb2 = USubpb1; USubpb2(temp4) = USubpb2temp;
@@ -242,19 +243,21 @@ for ImgSeqNum = 2:length(ImgNormalized)
         Err1Norm = (Err1-mean(Err1))/std(Err1); figure, plot(Err1Norm);
         Err2Norm = (Err2-mean(Err2))/std(Err2); figure, plot(Err2Norm);
         ErrSum = Err1Norm+Err2Norm; figure,plot(ErrSum); [~,indexOfbeta] = min(ErrSum);
-        try
+        
+        try % Tune the best beta by a quadratic polynomial fitting
             [fitobj] = fit(log10(betaList(indexOfbeta-1:1:indexOfbeta+1))',ErrSum(indexOfbeta-1:1:indexOfbeta+1),'poly2');
             p = coeffvalues(fitobj); beta = 10^(-p(2)/2/p(1));
-        catch
-            beta = betaList(indexOfbeta);
+        catch, beta = betaList(indexOfbeta);
         end
-        % Using optimal beta to solve again
+        
+        % Using the optimal beta to solve the ALDIC Subproblem 2 again
         [USubpb2] = Subpb2(DICmesh,beta,mu,USubpb1,FSubpb1,udual,vdual,alpha,GaussPtOrder);
         USubpb2 = full(USubpb2);
         waitbar(1); close(hbar);
     end
     ALSub2Time(ALSolveStep) = toc; toc
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
     % ------- Before computing strain, we smooth the displacement field -------
     %USubpb2 = funSmoothDisp(USubpb2,coordinatesFEM,elementsFEM,x0,y0,winstepsize,DispFilterSize,DispFilterStd);
     % ------- Compute strain field --------
@@ -303,22 +306,24 @@ for ImgSeqNum = 2:length(ImgNormalized)
         ALSolveStep = ALSolveStep + 1;  % Update using the last step
         %%%%%%%%%%%%%%%%%%%%%%% Subproblem 1 %%%%%%%%%%%%%%%%%%%%%%%%%
         disp(['***** Start step',num2str(ALSolveStep),' Subproblem1 *****']);
-        tic;[USubpb1,~,ALSub1Timetemp,ConvItPerEletemp,LocalICGNBadPtNumtemp] = Subpb1(USubpb2,FSubpb2,udual,vdual,DICmesh.coordinatesFEM,...
-            Df,fNormalized,gNormalized,mu,beta,HPar,ALSolveStep,DICpara,'GaussNewton',tol);
+        tic;[USubpb1,~,ALSub1Timetemp,ConvItPerEletemp,LocalICGNBadPtNumtemp] = Subpb1( ...
+                                        USubpb2,FSubpb2,udual,vdual,DICmesh.coordinatesFEM,...
+                                        Df,fNormalized,gNormalized,mu,beta,HPar,ALSolveStep,DICpara,'GaussNewton',tol);
         FSubpb1 = FSubpb2; toc
         ALSub1Time(ALSolveStep) = ALSub1Timetemp; ConvItPerEle(:,ALSolveStep) = ConvItPerEletemp;  ALSub1BadPtNum(ALSolveStep) = LocalICGNBadPtNumtemp;
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % ------  Manually find some bad points from Local Subset ICGN step ------
         % disp('--- Start to manually remove bad points --- \n')
         % disp('    Comment codes here if you do not have bad local points \n')
-        % % Comment START
-        % close all; Plotuv(USubpb1,DICmesh.x0,DICmesh.y0);
-        % u = reshape(USubpb1(1:2:end),M,N); v = reshape(USubpb1(2:2:end),M,N);
-        % [u,v,~,Subpb1_BadptRow,Subpb1_BadptCol] = funRemoveOutliers(u',v',[],0.5,100,Local_BadptRow,Local_BadptCol); u=u';v=v';
-        % disp('--- Remove bad points done ---')
-        % USubpb1(1:2:end) = reshape(u,size(DICmesh.coordinatesFEM,1),1); USubpb1(2:2:end) = reshape(v,size(DICmesh.coordinatesFEM,1),1);
-        % close all; Plotuv(USubpb1,DICmesh.x0,DICmesh.y0); Plotdisp_show(USubpb1,DICmesh.coordinatesFEM,DICmesh.elementsFEM);
-        % Comment END
+        % %%%%% Comment START %%%%%
+        %   close all; Plotuv(USubpb1,DICmesh.x0,DICmesh.y0);
+        %   u = reshape(USubpb1(1:2:end),M,N); v = reshape(USubpb1(2:2:end),M,N);
+        %   [u,v,~,Subpb1_BadptRow,Subpb1_BadptCol] = funRemoveOutliers(u',v',[],0.5,100,Local_BadptRow,Local_BadptCol); u=u';v=v';
+        %   disp('--- Remove bad points done ---')
+        %   USubpb1(1:2:end) = reshape(u,size(DICmesh.coordinatesFEM,1),1); 
+        %   USubpb1(2:2:end) = reshape(v,size(DICmesh.coordinatesFEM,1),1);
+        %   close all; Plotuv(USubpb1,DICmesh.x0,DICmesh.y0); Plotdisp_show(USubpb1,DICmesh.coordinatesFEM,DICmesh.elementsFEM);
+        % %%%%% Comment END %%%%%
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         save(['Subpb1_step',num2str(ALSolveStep)],'USubpb1','FSubpb1');
         USubpb1 = funSmoothDisp(USubpb1,DICmesh,DICpara);
@@ -347,9 +352,9 @@ for ImgSeqNum = 2:length(ImgNormalized)
         else %FEM
             GaussPtOrder = 2; [FSubpb2] = funGlobal_NodalStrainAvg(DICmesh.coordinatesFEM,DICmesh.elementsFEM,USubpb2,GaussPtOrder);
         end
-        
         % ------- Smooth strain field --------
         FSubpb2 = funSmoothStrain(FSubpb2,DICmesh,DICpara);
+        
         save(['Subpb2_step',num2str(ALSolveStep)],'USubpb2','FSubpb2');
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -403,11 +408,10 @@ end
 
 
 % ------ Plot ------
-USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end);
-FSubpb2World = FSubpb2; % FSubpb1World(2:2:end) = -FSubpb1(2:2:end);
+USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end); FSubpb2World = FSubpb2;  
 close all; Plotuv(USubpb2World,DICmesh.x0,DICmesh.y0World);
 Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
-% Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
+Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
 
 % ------ Save results ------
 % Find img name and save all the results
@@ -415,59 +419,62 @@ Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
 results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
 save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh','ResultFEMeshEachFrame','ALSub1Time','ALSub2Time','ALSolveStep');
 
-
-
+ 
 %% Section 7: Check convergence
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % This section is to check convergence of ADMM
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% fprintf('------------ Section 7 Start ------------ \n')
-% % ====== Check convergence ======
-% fprintf('***** Check convergence ***** \n');
-% ALSolveStep1 = min(6,ALSolveStep);
-% disp('========');
-% for ALSolveStep = 1:ALSolveStep1
-%     USubpb2 = load(['Subpb2_step',num2str(ALSolveStep )],'USubpb2');
-%     USubpb1 = load(['Subpb1_step',num2str(ALSolveStep )],'USubpb1');
-%     UpdateY = norm((USubpb2.USubpb2 - USubpb1.USubpb1), 2)/sqrt(length(USubpb2.USubpb2));
-%     disp(num2str(UpdateY));
-% end
-% disp('========');
-% for ALSolveStep = 1:ALSolveStep1
-%     FSubpb1 = load(['Subpb1_step',num2str(ALSolveStep )],'FSubpb1');
-%     FSubpb2 = load(['Subpb2_step',num2str(ALSolveStep )],'FSubpb2');
-%     UpdateF = norm((FSubpb1.FSubpb1 - FSubpb2.FSubpb2), 2)/sqrt(length(FSubpb1.FSubpb1));
-%     disp(num2str(UpdateF));
-% end
-% disp('========');
-% for ALSolveStep = 2:ALSolveStep1
-%     USubpb2_Old = load(['Subpb2_step',num2str(ALSolveStep-1)],'USubpb2');
-%     USubpb2_New = load(['Subpb2_step',num2str(ALSolveStep)],'USubpb2');
-%     UpdateY = norm((USubpb2_Old.USubpb2 - USubpb2_New.USubpb2), 2)/sqrt(length(USubpb2.USubpb2));
-%     disp(num2str(UpdateY));
-% end
-% disp('========');
-% for ALSolveStep = 2:ALSolveStep1
-%     uvdual_Old = load(['uvdual_step',num2str(ALSolveStep-1)],'udual');
-%     uvdual_New = load(['uvdual_step',num2str(ALSolveStep)],'udual');
-%     UpdateW = norm((uvdual_Old.udual - uvdual_New.udual), 2)/sqrt(length(uvdual_Old.udual));
-%     disp(num2str(UpdateW));
-% end
-% disp('========');
-% for ALSolveStep = 2:ALSolveStep1
-%     uvdual_Old = load(['uvdual_step',num2str(ALSolveStep-1)],'vdual');
-%     uvdual_New = load(['uvdual_step',num2str(ALSolveStep)],'vdual');
-%     Updatev = norm((uvdual_Old.vdual - uvdual_New.vdual), 2)/sqrt(length(uvdual_Old.vdual));
-%     disp(num2str(Updatev));
-% end
-% fprintf('------------ Section 7 Done ------------ \n \n')
-% ------ Delete temp files ------
-for tempi = 1:ALSolveStep
-    file_name_Subpb1 = ['Subpb1_step',num2str(tempi),'.mat'];
-    file_name_Subpb2 = ['Subpb2_step',num2str(tempi),'.mat'];
-    file_name_dual = ['uvdual_step',num2str(tempi),'.mat'];
-    delete(file_name_Subpb1); delete(file_name_Subpb2); delete(file_name_dual);
+fprintf('------------ Section 7 Start ------------ \n')
+% ====== Check convergence ======
+fprintf('***** Check convergence ***** \n');
+ALSolveStep1 = min(6,ALSolveStep);
+disp('==== uhat^(k) - u^(k) ====');
+for ALSolveStep = 1:ALSolveStep1
+    USubpb2 = load(['Subpb2_step',num2str(ALSolveStep )],'USubpb2');
+    USubpb1 = load(['Subpb1_step',num2str(ALSolveStep )],'USubpb1');
+    UpdateY = norm((USubpb2.USubpb2 - USubpb1.USubpb1), 2)/sqrt(length(USubpb2.USubpb2));
+    disp(num2str(UpdateY));
 end
+disp('==== Fhat^(k) - F^(k) ====');
+for ALSolveStep = 1:ALSolveStep1
+    FSubpb1 = load(['Subpb1_step',num2str(ALSolveStep )],'FSubpb1');
+    FSubpb2 = load(['Subpb2_step',num2str(ALSolveStep )],'FSubpb2');
+    UpdateF = norm((FSubpb1.FSubpb1 - FSubpb2.FSubpb2), 2)/sqrt(length(FSubpb1.FSubpb1));
+    disp(num2str(UpdateF));
+end
+disp('==== uhat^(k) - uhat^(k-1) ====');
+for ALSolveStep = 2:ALSolveStep1
+    USubpb2_Old = load(['Subpb2_step',num2str(ALSolveStep-1)],'USubpb2');
+    USubpb2_New = load(['Subpb2_step',num2str(ALSolveStep)],'USubpb2');
+    UpdateY = norm((USubpb2_Old.USubpb2 - USubpb2_New.USubpb2), 2)/sqrt(length(USubpb2.USubpb2));
+    disp(num2str(UpdateY));
+end
+disp('==== udual^(k) - udual^(k-1) ====');
+for ALSolveStep = 2:ALSolveStep1
+    uvdual_Old = load(['uvdual_step',num2str(ALSolveStep-1)],'udual');
+    uvdual_New = load(['uvdual_step',num2str(ALSolveStep)],'udual');
+    UpdateW = norm((uvdual_Old.udual - uvdual_New.udual), 2)/sqrt(length(uvdual_Old.udual));
+    disp(num2str(UpdateW));
+end
+disp('==== vdual^(k) - vdual^(k-1) ====');
+for ALSolveStep = 2:ALSolveStep1
+    uvdual_Old = load(['uvdual_step',num2str(ALSolveStep-1)],'vdual');
+    uvdual_New = load(['uvdual_step',num2str(ALSolveStep)],'vdual');
+    Updatev = norm((uvdual_Old.vdual - uvdual_New.vdual), 2)/sqrt(length(uvdual_Old.vdual));
+    disp(num2str(Updatev));
+end
+fprintf('------------ Section 7 Done ------------ \n \n')
+
+% ------ Delete temp files ------
+%%%%% Comment START %%%%%
+% Uncomment these lines to delete temporary files
+%   for tempi = 1:ALSolveStep
+%       file_name_Subpb1 = ['Subpb1_step',num2str(tempi),'.mat'];
+%       file_name_Subpb2 = ['Subpb2_step',num2str(tempi),'.mat'];
+%       file_name_dual = ['uvdual_step',num2str(tempi),'.mat'];
+%       delete(file_name_Subpb1); delete(file_name_Subpb2); delete(file_name_dual);
+%   end
+%%%%% Comment END %%%%%
 
 % ------ clear temp variables ------
 clear a ALSub1BadPtNum ALSub1Timetemp atemp b btemp cc ConvItPerEletemp hbar Hbar
@@ -477,7 +484,7 @@ clear a ALSub1BadPtNum ALSub1Timetemp atemp b btemp cc ConvItPerEletemp hbar Hba
 %% Section 8: Compute strains
 fprintf('------------ Section 8 Start ------------ \n')
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% This section is to compute strain fields and plot figures
+% This section is to compute strain fields and plot disp and strain results
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ------ Smooth displacements ------
 DICpara.DoYouWantToSmoothOnceMore = funParaInput('SmoothDispOrNot');
@@ -498,7 +505,7 @@ if DICpara.MethodToSaveFig == 1
 end
 
 % ------ Start main part ------
-for ImgSeqNum = 2:length(ImgNormalized)
+for ImgSeqNum = 2 : length(ImgNormalized)
     
     disp(['Current image frame #: ', num2str(ImgSeqNum),'/',num2str(length(ImgNormalized))]);
     
@@ -530,31 +537,26 @@ for ImgSeqNum = 2:length(ImgNormalized)
         end
         USubpb2 = USubpb2 + UFEMesh;
     end
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %USubpb2 = ResultDisp{ImgSeqNum-1}.U;
-    FSubpb2 = ResultDefGrad{ImgSeqNum-1}.F;
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
+    FSubpb2 = ResultDefGrad{ImgSeqNum-1}.F;
+    coordinatesFEM = ResultFEMeshEachFrame{ImgSeqNum-1}.coordinatesFEM;
+    elementsFEM = ResultFEMeshEachFrame{ImgSeqNum-1}.elementsFEM;
     xList = min(coordinatesFEM(:,1)):DICpara.winstepsize:max(coordinatesFEM(:,1)); M = length(xList);
     yList = min(coordinatesFEM(:,2)):DICpara.winstepsize:max(coordinatesFEM(:,2)); N = length(yList);
-    %[x0,y0] = ndgrid(xList,yList);
     [x0,y0] = ndgrid(xList,yList);
     x0 = x0-reshape(UFEMesh(1:2:end),size(x0,1),size(x0,2));
     y0 = y0-reshape(UFEMesh(2:2:end),size(y0,1),size(y0,2));
     y0World = (size(ImgNormalized{1},2)+1-y0);
     coordinatesFEMWorld = [coordinatesFEM(:,1),size(ImgNormalized{1},2)+1-coordinatesFEM(:,2)];
-    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     
     % ------ Plotting and Compute Strain-------
-    M = size(x0,1); N = size(x0,2);
     if size(USubpb2,1) == 1
         ULocal = USubpb2_New.USubpb2; FLocal = FSubpb2.FSubpb2;
     else
         ULocal = USubpb2; FLocal = FSubpb2;
     end
-    % ULocal(1:2:end)= -ULocal(1:2:end);
-    % FLocal(1:4:end)= -1*FLocal(1:4:end); FLocal(3:4:end)= -1*FLocal(3:4:end); % because u is flipped sign
-    UWorld = ULocal; UWorld(2:2:end) = -UWorld(2:2:end); FWorld = FLocal; close all; Plotuv(UWorld,x0,y0World);
-    % tic; D = funDerivativeOp(M,N,winstepsize); toc
+    UWorld = ULocal; UWorld(2:2:end) = -UWorld(2:2:end); FWorld = FLocal; % close all; Plotuv(UWorld,x0,y0World);
     
     % ------ Smooth displacements ------
     %prompt = 'Do you want to smooth displacement? (0-yes; 1-no)';
@@ -580,12 +582,14 @@ for ImgSeqNum = 2:length(ImgNormalized)
         [strainxCoord,strainyCoord,dispu,dispv,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy,strain_principal_max, ...
             strain_principal_min,strain_maxshear,strain_vonMises]  =  Plotstrain0( ...
             UWorld,FStraintemp,Rad,x0,y0,size(ImgNormalized{1}));
+    
     else % Plot over raw DIC images
         if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image
             Plotdisp(UWorld,x0,y0,size(ImgNormalized{1}),file_name{1,1},DICpara);
             [strainxCoord,strainyCoord,dispu,dispv,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy,strain_principal_max, ...
                 strain_principal_min,strain_maxshear,strain_vonMises]  =  Plotstrain( ...
                 UWorld,FStraintemp,Rad,x0,y0,size(ImgNormalized{1}),file_name{1,1},DICpara);
+        
         else % Plot over second or next deformed images
             Plotdisp(UWorld,x0,y0,size(ImgNormalized{1}),file_name{1,ImgSeqNum},DICpara);
             [strainxCoord,strainyCoord,dispu,dispv,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy,strain_principal_max, ...
@@ -620,22 +624,22 @@ save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad',
 %% Section 9: Compute stress
 fprintf('------------ Section 9 Start ------------ \n')
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% This section is to compute stress fields and plot figures
+% This section is to compute stress fields and plot stress fields
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ------ Choose material model ------
 DICpara.MaterialModel = funParaInput('MaterialModel');
 % ------ Define parameters in material models ------
 if (DICpara.MaterialModel == 1) || (DICpara.MaterialModel == 2) % Linear elasticity
     fprintf('Define Linear elasticity parameters \n')
-    fprintf("Young's modulus (unit: Pa). "); prompt = 'Input here: ';
-    DICpara.MaterialModelPara.YoungsModulus = input(prompt);
-    fprintf("Poisson's ratio. "); prompt = 'Input here: ';
+    fprintf("Young's modulus (unit: Pa): \n"); prompt = 'Input here (e.g., 69e9): '; 
+    DICpara.MaterialModelPara.YoungsModulus = input(prompt); 
+    fprintf("Poisson's ratio: \n"); prompt = 'Input here (e.g., 0.3): '; 
     DICpara.MaterialModelPara.PoissonsRatio = input(prompt);
     fprintf('------------------------------------- \n');
 end
 
 % ------ Start main part ------
-for ImgSeqNum = 2:length(ImgNormalized)
+for ImgSeqNum = 2 : length(ImgNormalized)
     
     disp(['Current image frame #: ', num2str(ImgSeqNum),'/',num2str(length(ImgNormalized))]); close all;
     
