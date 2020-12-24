@@ -1,7 +1,8 @@
-% Find indices of finite difference scheme Neumann boundary points 
 function [NeumannBCInd_F, NeumannBCInd_u]  = funFDNeumannBCInd(size1coordinatesFEM,M,N,Rad)
+% Find indices of finite difference scheme Neumann boundary points 
 
-temp = 1:1:size1coordinatesFEM; % size(coordinatesFEM,1); 
+%%
+temp = 1:1:size1coordinatesFEM;  
 
 temp = temp'; temp = reshape(temp,M,N); 
 temp2 = temp(Rad+1:M-Rad, Rad+1:N-Rad); temp2 = reshape(temp2, (M-2*Rad)*(N-2*Rad),1);

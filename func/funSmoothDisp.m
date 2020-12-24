@@ -1,8 +1,28 @@
-% ==============================================
-% function funSmoothDisp
-% ==============================================
 function ULocal = funSmoothDisp(ULocal,DICmesh,DICpara)
+%FUNCTION U = funSmoothDisp(U,DICmesh,DICpara)
+% Object: Smooth solved displacement field by gridfit
+% ----------------------------------------------
+%
+%   INPUT: U                 Displacement vector: U = [Ux_node1, Uy_node1, Ux_node2, Uy_node2, ... , Ux_nodeN, Uy_nodeN]';
+%          DICmesh           DIC mesh
+%          DICpara           DIC parameters
+%
+%   OUTPUT: U                Smoothed displacement fields by gridfit
+%
+% ----------------------------------------------
+% Reference
+% [1] RegularizeNd. Matlab File Exchange open source. 
+% https://www.mathworks.com/matlabcentral/fileexchange/61436-regularizend
+% [2] Gridfit. Matlab File Exchange open source. 
+% https://www.mathworks.com/matlabcentral/fileexchange/8998-surface-fitting-using-gridfit
+% ----------------------------------------------
+% Author: Jin Yang.  
+% Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
+% Last time updated: 12/2020.
+% ==============================================
 
+
+%% Initialization
 coordinatesFEM = DICmesh.coordinatesFEM;
 elementsFEM = DICmesh.elementsFEM;
 winstepsize = DICpara.winstepsize;
@@ -10,19 +30,9 @@ DispFilterSize = DICpara.DispFilterSize;
 DispFilterStd = DICpara.DispFilterStd;
 
 FilterStd = DispFilterStd; FilterSizeInput = DispFilterSize; LevelNo = 1; 
-% switch nargin
-%     case 7
-%         FilterSizeInput = varargin{1};
-%     case 8
-%         FilterSizeInput = varargin{1}; FilterStd = varargin{2};
-%     case 9
-%         FilterSizeInput = varargin{1}; FilterStd = varargin{2}; LevelNo = varargin{3};
-%     otherwise
-%         disp('Wrong input in funSmoothDisp!');
-% end
+ 
          
-%%
-%prompt = 'Do you want to smooth displacement? (0-yes; 1-no)';
+%% prompt = 'Do you want to smooth displacement? (0-yes; 1-no)';
 %DoYouWantToSmoothOnceMore = input(prompt);
 DoYouWantToSmoothOnceMore = 0; 
 
@@ -71,8 +81,8 @@ while (DoYouWantToSmoothOnceMore==0)
     Iblur_Top1 = nanconv(Iblur_Top10,imageFilter,'edge','nanout');
     Iblur_Top2 = nanconv(Iblur_Top20,imageFilter,'edge','nanout');
     for tempi = 1:size(coordinatesFEM,1)
-        [row1,col1] = find(Coordxnodes==coordinatesFEM(tempi,1));
-        [row2,col2] = find(Coordynodes==coordinatesFEM(tempi,2));
+        [row1,~] = find(Coordxnodes==coordinatesFEM(tempi,1));
+        [row2,~] = find(Coordynodes==coordinatesFEM(tempi,2));
         ULocal(2*tempi-1) = Iblur_Top1(row1,row2);
         ULocal(2*tempi)   = Iblur_Top2(row1,row2);
     end
@@ -89,3 +99,4 @@ while (DoYouWantToSmoothOnceMore==0)
     % DoYouWantToSmoothOnceMore = input(prompt); 
     
 end
+

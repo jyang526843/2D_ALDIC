@@ -1,7 +1,6 @@
-%-------------------------------------------------------
 function [vec, peak] = findPeak2(f,varargin)
 %FINDPEAK Find extremum of matrix.
-%   [XPEAK,YPEAK,MAX_F] = FINDPEAK(F,SUBPIXEL) finds the extremum of F,
+%   [XPEAK,YPEAK,MAX_F] = FINDPEAK2(F,SUBPIXEL) finds the extremum of F,
 %   MAX_F, and its location (XPEAK, YPEAK). F is a matrix. MAX_F is the maximum
 %   absolute value of F, or an estimate of the extremum if a subpixel
 %   extremum is requested.

@@ -111,6 +111,7 @@ for tempi = 1:temparrayLength
     
     waitbar(tempi/temparrayLength);
     
+  
     jj = PtPosSeq(tempi,2); % for jj = gridy(1) : winstepsize : gridy(end)-winsize
     % jj is for y -or- vertical direction of images
     
@@ -119,36 +120,41 @@ for tempi = 1:temparrayLength
         
         C = f(ii:ii+winsize(1), jj:jj+winsize(2));
         
-        D = g(ii-tempSizeOfSearchRegion:ii+winsize(1)+tempSizeOfSearchRegion, ...
-            jj-tempSizeOfSearchRegion:jj+winsize(2)+tempSizeOfSearchRegion);
+        D = g(ii-tempSizeOfSearchRegion(1):ii+winsize(1)+tempSizeOfSearchRegion(1), ...
+            jj-tempSizeOfSearchRegion(2):jj+winsize(2)+tempSizeOfSearchRegion(2) );
         
-        XCORRF2OfCD0 = normxcorr2(C,D);
-        
-        %find qfactors
-        cc.A{1} = real(XCORRF2OfCD0);
-        qfactors(tempi,:) = compute_qFactor(cc,tempi);
-        
-        % find maximum index of the cross-correlaiton
-        [v1temp, u1temp, max_f] = findpeak(XCORRF2OfCD0(winsize(1):end-winsize(1)+1,winsize(2):end-winsize(2)+1),1);
-        
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % I tried following code, unfortunately it doesn't work very well
-        % [v1temp1, u1temp1, max_f1] = findpeak(XCORRF2OfCD0(winsize:end-winsize+1,winsize:end-winsize+1),1);
-        % [v1temp2, u1temp2, max_f2] = findpeak(XCORRF2OfCD0(winsize:end-winsize+1,winsize:end-winsize+1),0);
-        %
-        % if max_f2 > 0.999
-        %    v1temp = v1temp2; u1temp = u1temp2; max_f = max_f2;
-        % else
-        %    v1temp = v1temp1; u1temp = u1temp1; max_f = max_f1;
-        % end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
-        zero_disp = ceil(size(XCORRF2OfCD0(winsize(1):end-winsize(1)+1,winsize(2):end-winsize(2)+1))/2);
-        
-        utemp(tempi) = u1temp-zero_disp(1); % u(cj1,ci1)   = u1temp-zero_disp(1);
-        vtemp(tempi) = v1temp-zero_disp(2); % v(cj1,ci1)   = v1temp-zero_disp(2);
-        Phitemp(tempi) = max_f; % Phi(cj1,ci1) = max_f;
-        
+        try 
+            XCORRF2OfCD0 = normxcorr2(C,D);
+
+            %find qfactors
+            cc.A{1} = real(XCORRF2OfCD0);
+            qfactors(tempi,:) = compute_qFactor(cc,tempi);
+
+            % find maximum index of the cross-correlaiton
+            [v1temp, u1temp, max_f] = findpeak(XCORRF2OfCD0(winsize(1):end-winsize(1)+1,winsize(2):end-winsize(2)+1),1);
+
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % I tried following code, unfortunately it doesn't work very well
+            % [v1temp1, u1temp1, max_f1] = findpeak(XCORRF2OfCD0(winsize:end-winsize+1,winsize:end-winsize+1),1);
+            % [v1temp2, u1temp2, max_f2] = findpeak(XCORRF2OfCD0(winsize:end-winsize+1,winsize:end-winsize+1),0);
+            %
+            % if max_f2 > 0.999
+            %    v1temp = v1temp2; u1temp = u1temp2; max_f = max_f2;
+            % else
+            %    v1temp = v1temp1; u1temp = u1temp1; max_f = max_f1;
+            % end
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+            zero_disp = ceil(size(XCORRF2OfCD0(winsize(1):end-winsize(1)+1,winsize(2):end-winsize(2)+1))/2);
+
+            utemp(tempi) = u1temp-zero_disp(1); % u(cj1,ci1)   = u1temp-zero_disp(1);
+            vtemp(tempi) = v1temp-zero_disp(2); % v(cj1,ci1)   = v1temp-zero_disp(2);
+            Phitemp(tempi) = max_f; % Phi(cj1,ci1) = max_f;
+        catch
+            utemp(tempi)=nan; vtemp(tempi)=nan; Phitemp(tempi)=nan;
+            %cc.A{1} = [0];
+             qfactors(tempi,:) = [Inf,Inf];
+        end
         ytemp(tempi) = (jj+jj+winsize(2))/2; % y(cj1,ci1)=(jj+jj+winsize)/2;   % vertical position in image
         xtemp(tempi) = (ii+ii+winsize(1))/2; % x(cj1,ci1)=(ii+ii+winsize)/2;   % horizontal position in image
         

@@ -1,7 +1,7 @@
 function [u,v,cc,BadptRow,BadptCol,RemoveOutliersList] = funRemoveOutliers(u,v,cc,qDICOrNot,Thr0,varargin)
 % =========================================================================
-% removes outliers using the universal
-% outlier test based on
+% Objective: to manually remove outliers or remove outliers using the 
+% universal outlier test based on
 %
 % J. Westerweel and F. Scarano. Universal outlier detection for PIV data.
 % Exp. Fluids, 39(6):1096{1100, August 2005. doi: 10.1007/s00348-005-0016-6
@@ -12,7 +12,10 @@ function [u,v,cc,BadptRow,BadptCol,RemoveOutliersList] = funRemoveOutliers(u,v,c
 % (http://www.mathworks.com/matlabcentral/fileexchange/4551-inpaint-nans)function. 
 % =========================================================================
 
-
+%% Find u,v indices where are holes
+HolePtInd = find(isnan(u)); 
+ 
+%%
 switch nargin
     case 7
         BadptRow = varargin{1}; BadptCol = varargin{2};
@@ -23,12 +26,9 @@ end
 % ============== qDIC bad points removal ===============
 % prompt = 'Input threshold for qDIC bad points removal:';
 % ccThreshold = input(prompt); % Thr = 50;
-% 
 if qDICOrNot == 1
     
-    [M,N ] = size(u);  % size of the displacement field
-    mSize = [M*N ,1];
- 
+    [M, N] = size(u); mSize = [M*N ,1]; % size of the displacement field
     [cc, ccMask_] = removeBadCorrelations(cc,cc.ccThreshold,1,mSize);
     for ii = 1:2
         ccMask{ii} = reshape(double(ccMask_(:,ii)),mSize);
@@ -61,7 +61,7 @@ while MedFilterOrNot < 1
 	else
 		Thr = Thr0;
 	end
-    RemoveOutliersList = find( normFluctMag > Thr); % detection criterion
+    RemoveOutliersList = find( normFluctMag > Thr ); % detection criterion
     
     % ============== remove bad points ===============
     u2 = u; u2(qDICpceRmList) = NaN; u2(qDICppeRmList) = NaN; u2(RemoveOutliersList) = NaN;
@@ -69,8 +69,11 @@ while MedFilterOrNot < 1
     u2 = inpaint_nans(u2,4); v2 = inpaint_nans(v2,4);
     % --------------------------------------
     close all;
-    figure; surf(u2); colorbar; title('Displacement u','fontweight','normal');
-    figure; surf(v2); colorbar; title('Displacement v','fontweight','normal');
+    u2(HolePtInd) = nan;  v2(HolePtInd) = nan; % Set points where is a hole as nans
+    figure; surf(u2); colorbar; title('Displacement u','fontweight','normal'); 
+    colormap(jet); set(gca,'fontsize',18); set(gcf,'color','w'); a = gca; a.TickLabelInterpreter = 'latex'; 
+    figure; surf(v2); colorbar; title('Displacement v','fontweight','normal'); colormap(jet);
+    colormap(jet); set(gca,'fontsize',18); set(gcf,'color','w'); a = gca; a.TickLabelInterpreter = 'latex'; 
     
     if isempty(Thr0) || (Thr0 == 0)
         fprintf('Do you want to redo Median test: 0(Yes, redo it!); 1(No, it is good!)  \n')
@@ -83,25 +86,26 @@ while MedFilterOrNot < 1
 end
 u = u2; v = v2;
 
+
 %% ==============================================
 % Manually remove bad points.
 if abs(qDICOrNot) > 0
-fprintf('Do you clear bad points by setting upper/lower bounds once more? (0-yes; 1-no)  \n')
+fprintf('Do you clear bad points by setting upper/lower bounds? (0-yes; 1-no)  \n')
 prompt = 'Input here: ';
 ClearBadInitialPointsOrNot = input(prompt);
 
 while ClearBadInitialPointsOrNot == 0
     
-    prompt = 'What is your upper bound for x-displacement? Input: ';
+    prompt = 'What is the upper bound for x-disp? Input: ';
     upperbound = input(prompt);
     [row1,col1] = find(u>upperbound);
-    prompt = 'What is your lower bound for x-displacement? Input: ';
+    prompt = 'What is the lower bound for x-disp? Input: ';
     lowerbound = input(prompt);
     [row2,col2] = find(u<lowerbound);
-    prompt = 'What is your upper bound for y-displacement? Input: ';
+    prompt = 'What is the upper bound for y-disp? Input: ';
     upperbound = input(prompt);
     [row3,col3] = find(v>upperbound);
-    prompt = 'What is your lower bound for y-displacement? Input: ';
+    prompt = 'What is the lower bound for y-disp? Input: ';
     lowerbound = input(prompt);
     [row4,col4] = find(v<lowerbound);
     
@@ -119,8 +123,11 @@ while ClearBadInitialPointsOrNot == 0
     
     % --------------------------------------
     close all;
+    u(HolePtInd) = nan;  v(HolePtInd) = nan; % Set points where is a hole as nans
     figure; surf(u); colorbar; title('Displacement u','fontweight','normal');
+    colormap(jet);  set(gca,'fontsize',18); set(gcf,'color','w'); a = gca; a.TickLabelInterpreter = 'latex'; 
     figure; surf(v); colorbar; title('Displacement v','fontweight','normal');
+    colormap(jet);  set(gca,'fontsize',18); set(gcf,'color','w'); a = gca; a.TickLabelInterpreter = 'latex'; 
     
     prompt = 'Do you want to reset upper/lower bounds? (0-yes; 1-no) Input: ';
     ClearBadInitialPointsOrNot = input(prompt);
@@ -128,7 +135,7 @@ end
 
 
 %% =========
-fprintf('Do you clear bad points by directly pointing x-disp bad points? (0-yes; 1-no)  \n')
+fprintf('Do you clear bad points by directly clicking x-disp bad points? (0-yes; 1-no)  \n')
 prompt = 'Input here: ';
 ClearBadInitialPointsOrNot = input(prompt);
 
@@ -140,18 +147,17 @@ while ClearBadInitialPointsOrNot == 0
     close all;
     figure; surf(u); colorbar; view(2)
     title('Displacement u','fontweight','normal')
-    % figure; surf(v); colorbar; view(2)
-    % title('Displacement v','fontweight','normal')
+    colormap(jet);  set(gca,'fontsize',18); set(gcf,'color','w'); a = gca; a.TickLabelInterpreter = 'latex'; 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     [row1, col1] = ginput; row = floor(col1); col = floor(row1); row=row(:); col=col(:);
     BadptRow=[BadptRow;row]; BadptCol=[BadptCol;col]; row=BadptRow; col=BadptCol;
     for tempi = 1:length(row)
-    	if row(tempi)>0 && col(tempi)>0 && row(tempi)<size(u,1) && col(tempi)<size(u,2)
+        if row(tempi)>0 && col(tempi)>0 && row(tempi)<size(u,1) && col(tempi)<size(u,2)
         u(row(tempi),col(tempi))=NaN; v(row(tempi),col(tempi))=NaN;
         %f11(row(tempi),col(tempi))=NaN; f21(row(tempi),col(tempi))=NaN;
         %f12(row(tempi),col(tempi))=NaN; f22(row(tempi),col(tempi))=NaN;
-	end
+        end
     end
     u = inpaint_nans(u,4); v = inpaint_nans(v,4);
     %f11 = inpaint_nans(f11,4); f21 = inpaint_nans(f21,4);
@@ -159,16 +165,17 @@ while ClearBadInitialPointsOrNot == 0
     
     % --------------------------------------
     close all;
+    u(HolePtInd) = nan; v(HolePtInd) = nan; % Set points where is a hole as nans
     figure; surf(u); colorbar; title('Displacement u','fontweight','normal');
-    % figure; surf(v); colorbar; title('Displacement v','fontweight','normal');
+    colormap(jet);  set(gca,'fontsize',18); set(gcf,'color','w'); a = gca; a.TickLabelInterpreter = 'latex'; 
     
-    prompt = 'Do you point out more x-disp bad points? (0-yes; 1-no) Input: ';
+    prompt = 'Do you want to remove more x-disp bad points? (0-yes; 1-no) Input: ';
     ClearBadInitialPointsOrNot = input(prompt);
     
 end
 
 %prompt = 'Do you clear bad points by directly pointing y-disp bad points? (0-yes; 1-no)';
-fprintf('Do you clear bad points by directly pointing y-disp bad points? (0-yes; 1-no)  \n')
+fprintf('Do you clear bad points by directly clicking y-disp bad points? (0-yes; 1-no)  \n')
 prompt = 'Input here: ';
 ClearBadInitialPointsOrNot = input(prompt);
 
@@ -178,21 +185,20 @@ while ClearBadInitialPointsOrNot == 0
     % Have a look at integer search
     % --------------------------------------
     close all;
-    % figure; surf(u); colorbar; view(2)
-    % title('Displacement u','fontweight','normal')
     figure; surf(v); colorbar; view(2)
     title('Displacement v','fontweight','normal')
+    colormap(jet); set(gca,'fontsize',18); set(gcf,'color','w'); a = gca; a.TickLabelInterpreter = 'latex'; 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     [row1, col1] = ginput; row = floor(col1); col = floor(row1); row=row(:); col=col(:);
     BadptRow=[BadptRow;row]; BadptCol=[BadptCol;col]; row=BadptRow; col=BadptCol;
     
     for tempi = 1:length(row)
-    	if row(tempi)>0 && col(tempi)>0 && row(tempi)<size(u,1) && col(tempi)<size(u,2)
+        if row(tempi)>0 && col(tempi)>0 && row(tempi)<size(u,1) && col(tempi)<size(u,2)
         u(row(tempi),col(tempi))=NaN; v(row(tempi),col(tempi))=NaN;
         %f11(row(tempi),col(tempi))=NaN; f21(row(tempi),col(tempi))=NaN;
         %f12(row(tempi),col(tempi))=NaN; f22(row(tempi),col(tempi))=NaN;
-	end
+        end
     end
     u = inpaint_nans(u,4); v = inpaint_nans(v,4);
     %f11 = inpaint_nans(f11,4); f21 = inpaint_nans(f21,4);
@@ -200,16 +206,17 @@ while ClearBadInitialPointsOrNot == 0
     
     % --------------------------------------
     close all;
-    % figure; surf(u); colorbar; title('Displacement u','fontweight','normal');
+    u(HolePtInd) = nan; v(HolePtInd) = nan; % Set points where is a hole as nans
     figure; surf(v); colorbar; title('Displacement v','fontweight','normal');
+    colormap(jet);  set(gca,'fontsize',18); set(gcf,'color','w'); a = gca; a.TickLabelInterpreter = 'latex'; 
     
     % prompt = 'Do you clear bad points by directly pointing y-disp bad points more? (0-yes; 1-no)';
-    prompt = 'Do you point out more y-disp bad points? (0-yes; 1-no) Input: ';
+    prompt = 'Do you want to remove more y-disp bad points? (0-yes; 1-no) Input: ';
     ClearBadInitialPointsOrNot = input(prompt);
     
 end
 
-% 
+% %%%%% Old codes to remove bad {F11, F21, F12, F22} %%%%%
 % prompt = 'Do you clear bad points by directly pointing F11 bad points? (0-yes; 1-no)';
 % ClearBadInitialPointsOrNot = input(prompt);
 % 

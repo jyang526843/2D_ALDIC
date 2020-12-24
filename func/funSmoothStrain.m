@@ -1,8 +1,29 @@
-% ==============================================
-% function funSmoothDispCrack
-% ==============================================
 function F = funSmoothStrain(F,DICmesh,DICpara)
+%FUNCTION F = funSmoothStrain(F,DICmesh,DICpara)
+% Object: Smooth solved strain fields by gridfit
+% ----------------------------------------------
+%
+%   INPUT: F                 Deformation gradient tensor: 
+%                            F = [F11_node1, F21_node1, F12_node1, F22_node1, ... , F11_nodeN, F21_nodeN, F12_nodeN, F22_nodeN]';
+%          DICmesh           DIC mesh
+%          DICpara           DIC parameters
+%
+%   OUTPUT: F                Smoothed strain fields by gridfit
+%
+% ----------------------------------------------
+% Reference
+% [1] RegularizeNd. Matlab File Exchange open source. 
+% https://www.mathworks.com/matlabcentral/fileexchange/61436-regularizend
+% [2] Gridfit. Matlab File Exchange open source. 
+% https://www.mathworks.com/matlabcentral/fileexchange/8998-surface-fitting-using-gridfit
+% ----------------------------------------------
+% Author: Jin Yang.  
+% Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
+% Last time updated: 12/2020.
+% ==============================================
 
+
+%% Initialization
 coordinatesFEM = DICmesh.coordinatesFEM;
 elementsFEM = DICmesh.elementsFEM;
 winstepsize = DICpara.winstepsize;
@@ -10,21 +31,9 @@ StrainFilterSize = DICpara.StrainFilterSize;
 StrainFilterStd = DICpara.StrainFilterStd;
 
 FilterStd = StrainFilterStd; FilterSizeInput = StrainFilterSize; LevelNo = 1;
-% switch nargin
-%     case 5
-%         FilterSizeInput = varargin{1};
-%     case 6
-%         FilterSizeInput = varargin{1}; FilterStd = varargin{2};
-%     case 7
-%         FilterSizeInput = varargin{1}; FilterStd = varargin{2}; LevelNo = varargin{3};
-%     otherwise
-%         disp('Wrong input in funSmoothStrain!');
-% end
+ 
 
-%%
-% close all; Plotdisp_show(ULocal,elementsFEM,coordinatesFEM);
-
-% prompt = 'Do you want to smooth displacement? (0-yes; 1-no)';
+%% % prompt = 'Do you want to smooth displacement? (0-yes; 1-no)';
 DoYouWantToSmoothOnceMore = 0; % DoYouWantToSmoothOnceMore = input(prompt);
 if DoYouWantToSmoothOnceMore == 0  
     if isempty(FilterStd) == 1

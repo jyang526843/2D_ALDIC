@@ -161,23 +161,30 @@ while gridxyRatioCurr > 0
         IterNo = IterNo+1;
         waitbar(IterNo/TotalNo);
         
-        C = f(gridx_fNew(tempi,1):gridx_fNew(tempi,2), gridy_fNew(tempi,1):gridy_fNew(tempi,2));
-        D = g(gridx_gNew(tempi,1)-5:gridx_gNew(tempi,2)+5, gridy_gNew(tempi,1)-5:gridy_gNew(tempi,2)+5);
-        winsize1 = size(C,1)-1; winsize2 = size(C,2)-1;
+        try
+            C = f(gridx_fNew(tempi,1):gridx_fNew(tempi,2), gridy_fNew(tempi,1):gridy_fNew(tempi,2));
+            D = g(gridx_gNew(tempi,1)-5:gridx_gNew(tempi,2)+5, gridy_gNew(tempi,1)-5:gridy_gNew(tempi,2)+5);
+            winsize1 = size(C,1)-1; winsize2 = size(C,2)-1;
+
         
-        XCORRF2OfCD0 = normxcorr2(C,D); % cross-correlation
-        % find qfactors
-        cc.A{1} = real(XCORRF2OfCD0);
-        qfactors(tempi,:) = compute_qFactor(cc,tempi);
-        
-        [v1temp,u1temp,max_f] = findpeak(XCORRF2OfCD0(winsize1:end-winsize1+1, winsize2:end-winsize2+2),1);
-        zero_disp = ceil(size(XCORRF2OfCD0(winsize1:end-winsize1+1,winsize2:end-winsize2+1))/2);
-        
-        ind = tempi;
-        
-        utempNew(ind) = utempNew(ind) + (u1temp-zero_disp(1)) ;
-        vtempNew(ind) = vtempNew(ind) + (v1temp-zero_disp(2));
-        Phitemp(ind) = max_f;
+            XCORRF2OfCD0 = normxcorr2(C,D); % cross-correlation
+            % find qfactors
+            cc.A{1} = real(XCORRF2OfCD0);
+            qfactors(tempi,:) = compute_qFactor(cc,tempi);
+
+            [v1temp,u1temp,max_f] = findpeak(XCORRF2OfCD0(winsize1:end-winsize1+1, winsize2:end-winsize2+2),1);
+            zero_disp = ceil(size(XCORRF2OfCD0(winsize1:end-winsize1+1,winsize2:end-winsize2+1))/2);
+
+            ind = tempi;
+
+            utempNew(ind) = utempNew(ind) + (u1temp-zero_disp(1)) ;
+            vtempNew(ind) = vtempNew(ind) + (v1temp-zero_disp(2));
+            Phitemp(ind) = max_f;
+        catch
+            ind = tempi;
+            cc.A{1} = nan;  qfactors(tempi,:) = nan; 
+            utempNew(ind) = nan;  vtempNew(ind) = nan;  Phitemp(ind) = 0;
+        end
         
     end
     
@@ -268,6 +275,7 @@ try yList=[gridy(1):winstepsize(2):gridy(2)]; catch, yList=[gridy(1):winstepsize
 [uGrid,xGrid,yGrid] = gridfit(tempx(indxy),tempy(indxy),tempu(indxy),xList,yList,'regularizer','springs');
 [vGrid,~,~] = gridfit(tempx(indxy),tempy(indxy),tempv(indxy),xList,yList,'regularizer','springs');
 [PhiGrid,~,~] = gridfit(tempx(indxy),tempy(indxy),tempPhi(indxy),xList,yList,'regularizer','springs');
+ 
 [qf_1Grid,~,~] = gridfit(tempx(indxy),tempy(indxy),qf_1(indxy),xList,yList,'regularizer','springs');
 [qf_2Grid,~,~] = gridfit(tempx(indxy),tempy(indxy),qf_2(indxy),xList,yList,'regularizer','springs');
 cc.max = PhiGrid; cc.A = []; cc.qfactors =[qf_1Grid(:),qf_2Grid(:)]; 
