@@ -1,6 +1,6 @@
 function [strain_exx,strain_exy,strain_eyy,strain_principal_max,strain_principal_min, ...
     strain_maxshear,strain_vonMises] = Plotstrain0Quadtree(F,coordinatesFEMWorld,elementsFEM)
-%PLOTSTRAIN0QUADTREE: to compute and plot DIC solved strain fields
+%FUNCTION PLOTSTRAIN0QUADTREE: to compute and plot DIC solved strain fields
 %   [strain_exx,strain_exy,strain_eyy,strain_principal_max,strain_principal_min, ...
 %    strain_maxshear,strain_vonMises] = Plotstrain0Quadtree(F,coordinatesFEM,elementsFEM)
 %
@@ -26,9 +26,11 @@ function [strain_exx,strain_exy,strain_eyy,strain_principal_max,strain_principal
 %       7) equivalent von Mises strain
 %
 %
-% Author: Jin Yang  (jyang526@wisc.edu)
-% Last date modified: 2020.11.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ----------------------------------------------
+% Author: Jin Yang.
+% Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
+% Last time updated: 2020.11
+% ==============================================
 
 warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
 
@@ -36,10 +38,6 @@ warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
 
 u_x = F(1:4:end); v_x = F(2:4:end);
 u_y = F(3:4:end); v_y = F(4:4:end);
-
-for tempi=1:length(u_x)
-    F = 
-end
 
 strain_exx = u_x; 
 strain_exy = 0.5*(v_x+u_y);
@@ -57,6 +55,7 @@ strain_vonMises = sqrt(strain_principal_max.^2 + strain_principal_min.^2 - ...
 %% ====== 1) Strain exx ====== 
 figure;  
 show([],elementsFEM(:,1:4),coordinatesFEMWorld,strain_exx,'NoEdgeColor');
+%showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorld,strain_exx);
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('Strain $e_{xx}$','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
@@ -66,11 +65,11 @@ xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter
 
 a = gca; a.TickLabelInterpreter = 'latex';
 b = colorbar; b.TickLabelInterpreter = 'latex';
-  
-
+ 
 %% ====== 2) Strain exy ======
 figure;  
 show([],elementsFEM(:,1:4),coordinatesFEMWorld,strain_exy,'NoEdgeColor');
+%showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorld,strain_exy);
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('Strain $e_{xy}$','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
@@ -85,6 +84,7 @@ b = colorbar; b.TickLabelInterpreter = 'latex';
 %% ====== 3) Strain eyy ======
 figure;  
 show([],elementsFEM(:,1:4),coordinatesFEMWorld,strain_eyy,'NoEdgeColor');
+%showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorld,strain_eyy);
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('Strain $e_{yy}$','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
@@ -94,11 +94,12 @@ xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter
 
 a = gca; a.TickLabelInterpreter = 'latex';
 b = colorbar; b.TickLabelInterpreter = 'latex';
- 
+  
 
 %% ====== 4) Strain e_principal_max ======
 figure;  
 show([],elementsFEM(:,1:4),coordinatesFEMWorld,strain_principal_max,'NoEdgeColor');
+%showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorld,strain_principal_max);
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('Principal strain $e_{\max}$','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
@@ -113,6 +114,7 @@ b = colorbar; b.TickLabelInterpreter = 'latex';
 %% ====== 5) Strain e_principal_min ======
 figure;  
 show([],elementsFEM(:,1:4),coordinatesFEMWorld,strain_principal_min,'NoEdgeColor');
+%showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorld,strain_principal_min);
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('Principal strain $e_{\min}$','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
@@ -127,6 +129,7 @@ b = colorbar; b.TickLabelInterpreter = 'latex';
 %% ====== 6) Strain e_max_shear ======
 figure;  
 show([],elementsFEM(:,1:4),coordinatesFEMWorld,strain_maxshear,'NoEdgeColor');
+%showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorld,strain_maxshear);
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('Max shear strain','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
@@ -141,6 +144,7 @@ b = colorbar; b.TickLabelInterpreter = 'latex';
 %% ====== 7) von Mises equivalent strain ======
 figure;  
 show([],elementsFEM(:,1:4),coordinatesFEMWorld,strain_vonMises,'NoEdgeColor');
+%showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorld,strain_vonMises);
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('von Mises equivalent strain','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');

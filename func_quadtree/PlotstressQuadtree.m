@@ -1,10 +1,10 @@
 function [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
     stress_principal_min_xyplane, stress_maxshear_xyplane, ...
-    stress_maxshear_xyz3d, stress_vonMises] = PlotstressQuadtree(DICpara,ResultStrain,coordinatesFEMWorld,elementsFEM,CurrentImg)
-%PLOTSTRESSQUADTREE: to compute and plot DIC solved stress fields on the original DIC images
-%   [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
-%    stress_principal_min_xyplane, stress_maxshear_xyplane, ...
-%    stress_maxshear_xyz3d, stress_vonMises]     = Plotstress(DICpara,ResultStrain,sizeOfImg,CurrentImg)
+    stress_maxshear_xyz3d, stress_vonMises] = PlotstressQuadtree(DICpara,ResultStrain,coordinatesFEM,elementsFEM,CurrentImg)
+%FUNCTION PLOTSTRESSQUADTREE: to compute and plot DIC solved stress fields on the original DIC images
+%  [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
+%   stress_principal_min_xyplane, stress_maxshear_xyplane, ...
+%   stress_maxshear_xyz3d, stress_vonMises] = PlotstressQuadtree(DICpara,ResultStrain,coordinatesFEM,elementsFEM,CurrentImg)
 %
 %   INPUT: DICpara          DIC para in the ALDIC code
 %          ResultStrain     DIC computed strain field result
@@ -29,11 +29,20 @@ function [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
 %       7) max shear stress on the xyz-three dimensional space
 %       8) equivalent von Mises stress
 %
-% Author: Jin Yang  (jyang526@wisc.edu)
-% Last date modified: 2020.11.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ----------------------------------------------
+% Reference
+% [1] RegularizeNd. Matlab File Exchange open source. 
+% https://www.mathworks.com/matlabcentral/fileexchange/61436-regularizend
+% [2] Gridfit. Matlab File Exchange open source. 
+% https://www.mathworks.com/matlabcentral/fileexchange/8998-surface-fitting-using-gridfit
+% ----------------------------------------------
+% Author: Jin Yang.  
+% Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
+% Last time updated: 11/2020.
+% ==============================================
 
-%%
+
+%% Initialization
 warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
 OrigDICImgTransparency = DICpara.OrigDICImgTransparency; % Original raw DIC image transparency
 Image2PlotResults = DICpara.Image2PlotResults; % Choose image to plot over (first only, second and next images)
@@ -48,7 +57,7 @@ strain_eyy = dvdy;
 %% Load displacement components to deform the reference image
 disp_u = ResultStrain.dispu; 
 disp_v = ResultStrain.dispv; 
-coordinatesFEMWorldDef = [coordinatesFEMWorld(:,1)+Image2PlotResults*disp_u, coordinatesFEMWorld(:,2)-Image2PlotResults*disp_v];
+coordinatesFEMWorldDef = [coordinatesFEM(:,1)+Image2PlotResults*disp_u, coordinatesFEM(:,2)-Image2PlotResults*disp_v];
 
 %% Compute stress components
 
@@ -95,11 +104,9 @@ elseif DICpara.MaterialModel == 2
     stress_maxshear_xyplane = sqrt((0.5*(stress_sxx-stress_syy)).^2 + stress_sxy.^2);
     stress_principal_max_xyplane = 0.5*(stress_sxx+stress_syy) + stress_maxshear_xyplane;
     stress_principal_min_xyplane = 0.5*(stress_sxx+stress_syy) - stress_maxshear_xyplane;
-    
     stress_maxshear_xyz3d = reshape(  max( [ stress_maxshear_xyplane(:), 0.5*abs(stress_principal_max_xyplane(:)-stress_szz(:)), ...
                                 0.5*abs(stress_principal_min_xyplane(:)-stress_szz(:)) ], [], 2 ),  size(stress_maxshear_xyplane) ) ;
-    
-    
+                            
     % von Mises stress
     stress_vonMises = sqrt(0.5*( (stress_principal_max_xyplane-stress_principal_min_xyplane).^2 + ...
         (stress_principal_max_xyplane-stress_szz).^2 + (stress_principal_min_xyplane-stress_szz).^2 ));
@@ -137,8 +144,8 @@ linkaxes([ax1,ax2]);  %%Link them together
 ax2.Visible = 'off';ax2.XTick = [];ax2.YTick = []; %%Hide the top axes
 colormap(ax1,'gray'); % %%Give each one its own colormap
 
-if max(coordinatesFEMWorld(:,1)) < 200,set(gca,'XTick',[]); end
-if max(coordinatesFEMWorld(:,2)) < 200,set(gca,'YTick',[]); end
+if max(coordinatesFEM(:,1)) < 200,set(gca,'XTick',[]); end
+if max(coordinatesFEM(:,2)) < 200,set(gca,'YTick',[]); end
 set([ax1,ax2],'Position',[.17 .11 .685 .815]);  
 ax1.Visible = 'on'; ax1.TickLabelInterpreter = 'latex'; 
 cb2 = colorbar('Position',[.17+0.685+0.012 .11 .03 .815]); cb2.TickLabelInterpreter = 'latex';
@@ -169,8 +176,8 @@ linkaxes([ax1,ax2]);  %%Link them together
 ax2.Visible = 'off';ax2.XTick = [];ax2.YTick = []; %%Hide the top axes
 colormap(ax1,'gray'); % %%Give each one its own colormap
 
-if max(coordinatesFEMWorld(:,1)) < 200,set(gca,'XTick',[]); end
-if max(coordinatesFEMWorld(:,2)) < 200,set(gca,'YTick',[]); end
+if max(coordinatesFEM(:,1)) < 200,set(gca,'XTick',[]); end
+if max(coordinatesFEM(:,2)) < 200,set(gca,'YTick',[]); end
 set([ax1,ax2],'Position',[.17 .11 .685 .815]);  
 ax1.Visible = 'on'; ax1.TickLabelInterpreter = 'latex'; 
 cb2 = colorbar('Position',[.17+0.685+0.012 .11 .03 .815]); cb2.TickLabelInterpreter = 'latex';
@@ -201,8 +208,8 @@ linkaxes([ax1,ax2]);  %%Link them together
 ax2.Visible = 'off';ax2.XTick = [];ax2.YTick = []; %%Hide the top axes
 colormap(ax1,'gray'); % %%Give each one its own colormap
 
-if max(coordinatesFEMWorld(:,1)) < 200,set(gca,'XTick',[]); end
-if max(coordinatesFEMWorld(:,2)) < 200,set(gca,'YTick',[]); end
+if max(coordinatesFEM(:,1)) < 200,set(gca,'XTick',[]); end
+if max(coordinatesFEM(:,2)) < 200,set(gca,'YTick',[]); end
 set([ax1,ax2],'Position',[.17 .11 .685 .815]);  
 ax1.Visible = 'on'; ax1.TickLabelInterpreter = 'latex'; 
 cb2 = colorbar('Position',[.17+0.685+0.012 .11 .03 .815]); cb2.TickLabelInterpreter = 'latex';
@@ -233,8 +240,8 @@ linkaxes([ax1,ax2]);  %%Link them together
 ax2.Visible = 'off';ax2.XTick = [];ax2.YTick = []; %%Hide the top axes
 colormap(ax1,'gray'); % %%Give each one its own colormap
 
-if max(coordinatesFEMWorld(:,1)) < 200,set(gca,'XTick',[]); end
-if max(coordinatesFEMWorld(:,2)) < 200,set(gca,'YTick',[]); end
+if max(coordinatesFEM(:,1)) < 200,set(gca,'XTick',[]); end
+if max(coordinatesFEM(:,2)) < 200,set(gca,'YTick',[]); end
 set([ax1,ax2],'Position',[.17 .11 .685 .815]);  
 ax1.Visible = 'on'; ax1.TickLabelInterpreter = 'latex'; 
 cb2 = colorbar('Position',[.17+0.685+0.012 .11 .03 .815]); cb2.TickLabelInterpreter = 'latex';
@@ -265,8 +272,8 @@ linkaxes([ax1,ax2]);  %%Link them together
 ax2.Visible = 'off';ax2.XTick = [];ax2.YTick = []; %%Hide the top axes
 colormap(ax1,'gray'); % %%Give each one its own colormap
 
-if max(coordinatesFEMWorld(:,1)) < 200,set(gca,'XTick',[]); end
-if max(coordinatesFEMWorld(:,2)) < 200,set(gca,'YTick',[]); end
+if max(coordinatesFEM(:,1)) < 200,set(gca,'XTick',[]); end
+if max(coordinatesFEM(:,2)) < 200,set(gca,'YTick',[]); end
 set([ax1,ax2],'Position',[.17 .11 .685 .815]);  
 ax1.Visible = 'on'; ax1.TickLabelInterpreter = 'latex'; 
 cb2 = colorbar('Position',[.17+0.685+0.012 .11 .03 .815]); cb2.TickLabelInterpreter = 'latex';
@@ -297,8 +304,8 @@ linkaxes([ax1,ax2]);  %%Link them together
 ax2.Visible = 'off';ax2.XTick = [];ax2.YTick = []; %%Hide the top axes
 colormap(ax1,'gray'); % %%Give each one its own colormap
 
-if max(coordinatesFEMWorld(:,1)) < 200,set(gca,'XTick',[]); end
-if max(coordinatesFEMWorld(:,2)) < 200,set(gca,'YTick',[]); end
+if max(coordinatesFEM(:,1)) < 200,set(gca,'XTick',[]); end
+if max(coordinatesFEM(:,2)) < 200,set(gca,'YTick',[]); end
 set([ax1,ax2],'Position',[.17 .11 .685 .815]);  
 ax1.Visible = 'on'; ax1.TickLabelInterpreter = 'latex'; 
 cb2 = colorbar('Position',[.17+0.685+0.012 .11 .03 .815]); cb2.TickLabelInterpreter = 'latex';
@@ -328,8 +335,8 @@ linkaxes([ax1,ax2]);  %%Link them together
 ax2.Visible = 'off';ax2.XTick = [];ax2.YTick = []; %%Hide the top axes
 colormap(ax1,'gray'); % %%Give each one its own colormap
 
-if max(coordinatesFEMWorld(:,1)) < 200,set(gca,'XTick',[]); end
-if max(coordinatesFEMWorld(:,2)) < 200,set(gca,'YTick',[]); end
+if max(coordinatesFEM(:,1)) < 200,set(gca,'XTick',[]); end
+if max(coordinatesFEM(:,2)) < 200,set(gca,'YTick',[]); end
 set([ax1,ax2],'Position',[.17 .11 .685 .815]);  
 ax1.Visible = 'on'; ax1.TickLabelInterpreter = 'latex'; 
 cb2 = colorbar('Position',[.17+0.685+0.012 .11 .03 .815]); cb2.TickLabelInterpreter = 'latex';
@@ -359,8 +366,8 @@ linkaxes([ax1,ax2]);  %%Link them together
 ax2.Visible = 'off';ax2.XTick = [];ax2.YTick = []; %%Hide the top axes
 colormap(ax1,'gray'); % %%Give each one its own colormap
 
-if max(coordinatesFEMWorld(:,1)) < 200,set(gca,'XTick',[]); end
-if max(coordinatesFEMWorld(:,2)) < 200,set(gca,'YTick',[]); end
+if max(coordinatesFEM(:,1)) < 200,set(gca,'XTick',[]); end
+if max(coordinatesFEM(:,2)) < 200,set(gca,'YTick',[]); end
 set([ax1,ax2],'Position',[.17 .11 .685 .815]);  
 ax1.Visible = 'on'; ax1.TickLabelInterpreter = 'latex'; 
 cb2 = colorbar('Position',[.17+0.685+0.012 .11 .03 .815]); cb2.TickLabelInterpreter = 'latex';

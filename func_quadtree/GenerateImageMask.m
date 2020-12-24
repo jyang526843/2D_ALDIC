@@ -65,11 +65,18 @@ removeobjradius =  round(0.2*ParHole(3)); % remove all object containing fewer t
 se = strel('disk',removeobjradius); ImgRefMask = imclose(ImgRefMask,se); imshow(ImgRefMask);
 
 
-%% ====== Update Df for image gradients ======
-Df.ImgRefMask = ImgRefMask'; % Generate image mask
-Df.DfDx = (Df.DfDx) .* Df.ImgRefMask(Df.DfAxis(1):Df.DfAxis(2), Df.DfAxis(3):Df.DfAxis(4));
-Df.DfDy = (Df.DfDy) .* Df.ImgRefMask(Df.DfAxis(1):Df.DfAxis(2), Df.DfAxis(3):Df.DfAxis(4));
-% figure, surf((Df.DfDx)','edgecolor','none'); view(2); axis equal;
-% axis tight; colormap gray; colorbar; caxis([-0.1,0.1])
+%% Deal with outside  DICpara.gridxyROIRange
+gridx = DICpara.gridxyROIRange.gridx;
+gridy = DICpara.gridxyROIRange.gridy;
+
+ImgRefMask(:, 1:gridx(1)) = 1;
+ImgRefMask(:, gridx(2):end) = 1;
+ImgRefMask(1:gridy(1), :) = 1;
+ImgRefMask(gridy(2):end, :) = 1;
+figure, imshow(ImgRefMask);
+ 
+
+%% ====== Store ImgRefMask ======
+DICpara.ImgRefMask = ImgRefMask;
 
 

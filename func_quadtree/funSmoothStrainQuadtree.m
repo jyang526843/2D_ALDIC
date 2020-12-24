@@ -1,13 +1,38 @@
-% ==============================================
-% function funSmoothDispCrack
-% ==============================================
 function F = funSmoothStrainQuadtree(F,DICmesh,DICpara)
+%FUNCTION F = funSmoothStrainQuadtree(F,DICmesh,DICpara)
+% Object: Smooth solved strain fields by curvature regularization
+% ----------------------------------------------
+%
+%   INPUT: F                 Deformation gradient tensor: 
+%                            F = [F11_node1, F21_node1, F12_node1, F22_node1, ... , F11_nodeN, F21_nodeN, F12_nodeN, F22_nodeN]';
+%          DICmesh           DIC mesh
+%          DICpara           DIC parameters
+%
+%   OUTPUT: F                Smoothed strain fields by curvature regularization
+%
+% ----------------------------------------------
+% Reference
+% [1] RegularizeNd. Matlab File Exchange open source. 
+% https://www.mathworks.com/matlabcentral/fileexchange/61436-regularizend
+% [2] Gridfit. Matlab File Exchange open source. 
+% https://www.mathworks.com/matlabcentral/fileexchange/8998-surface-fitting-using-gridfit
+% ----------------------------------------------
+% Author: Jin Yang.  
+% Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
+% Last time updated: 12/2020.
+% ==============================================
 
+
+%% Initialization
 h = DICmesh.elementMinSize;
 coordinatesFEM = DICmesh.coordinatesFEM;
 FilterSizeInput = DICpara.StrainFilterSize;
 FilterStd = DICpara.StrainFilterStd; 
 F = full(F); 
+try smoothness = DICpara.StrainSmoothness; 
+catch smoothness = 1e-5;
+end
+
 
 %% prompt = 'Do you want to smooth displacement? (0-yes; 1-no)';
 DoYouWantToSmoothOnceMore = 0; % DoYouWantToSmoothOnceMore = input(prompt);
@@ -40,14 +65,20 @@ SmoothTimes = 1;
 while (DoYouWantToSmoothOnceMore==0)
     Coordxnodes = [min(coordinatesFEM(:,1)):h:max(coordinatesFEM(:,1))]'; 
     Coordynodes = [min(coordinatesFEM(:,2)):h:max(coordinatesFEM(:,2))]';
-    Iblur_11 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), F(1:4:end),Coordxnodes,Coordynodes,'regularizer','springs'); 
-    Iblur_11=Iblur_11';
-    Iblur_22 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), F(4:4:end),Coordxnodes,Coordynodes,'regularizer','springs');  
-    Iblur_22=Iblur_22';
-    Iblur_21 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), F(2:4:end),Coordxnodes,Coordynodes,'regularizer','springs'); 
-    Iblur_21=Iblur_21';
-    Iblur_12 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), F(3:4:end),Coordxnodes,Coordynodes,'regularizer','springs');
-    Iblur_12=Iblur_12';
+    % Iblur_11 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), F(1:4:end),Coordxnodes,Coordynodes,'regularizer','springs'); 
+    % Iblur_11=Iblur_11';
+    % Iblur_22 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), F(4:4:end),Coordxnodes,Coordynodes,'regularizer','springs');  
+    % Iblur_22=Iblur_22';
+    % Iblur_21 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), F(2:4:end),Coordxnodes,Coordynodes,'regularizer','springs'); 
+    % Iblur_21=Iblur_21';
+    % Iblur_12 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), F(3:4:end),Coordxnodes,Coordynodes,'regularizer','springs');
+    % Iblur_12=Iblur_12';
+    
+    Iblur_11 = regularizeNd([coordinatesFEM(:,1), coordinatesFEM(:,2)],F(1:4:end),{Coordxnodes,Coordynodes},smoothness);
+    Iblur_22 = regularizeNd([coordinatesFEM(:,1), coordinatesFEM(:,2)],F(4:4:end),{Coordxnodes,Coordynodes},smoothness);
+    Iblur_21 = regularizeNd([coordinatesFEM(:,1), coordinatesFEM(:,2)],F(2:4:end),{Coordxnodes,Coordynodes},smoothness);
+    Iblur_12 = regularizeNd([coordinatesFEM(:,1), coordinatesFEM(:,2)],F(3:4:end),{Coordxnodes,Coordynodes},smoothness);
+    
     % -------------------------------------------------------
     imageFilter=fspecial('gaussian',FilterSizeInput,FilterStd);
     Iblur_1 = nanconv(Iblur_11,imageFilter,'edge','nanout');

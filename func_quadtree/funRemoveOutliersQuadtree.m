@@ -1,4 +1,4 @@
-function [U,F] = funRemoveOutliersQuadtree(DICmesh,U,F,Thr0,varargin)
+function [U,F] = funRemoveOutliersQuadtree(DICmesh,DICpara,U,F,varargin)
 % =========================================================================
 % removes outliers using the universal
 % outlier test based on
@@ -8,10 +8,11 @@ function [U,F] = funRemoveOutliersQuadtree(DICmesh,U,F,Thr0,varargin)
 % -------------------------------------------------------------------------
 % NOTES
 % -------------------------------------------------------------------------
-% needs medFilt3 and John D'Errico's inpaint_nans3 
-% (http://www.mathworks.com/matlabcentral/fileexchange/4551-inpaint-nans)function. 
+% needs medFilt3 and John D'Errico's inpaint_nans3
+% (http://www.mathworks.com/matlabcentral/fileexchange/4551-inpaint-nans)function.
 % =========================================================================
 
+winstepsize = DICpara.winstepsize;
 coordinatesFEM = DICmesh.coordinatesFEM;
 elementsFEM = DICmesh.elementsFEM;
 
@@ -23,9 +24,7 @@ switch nargin
 end
 
 %%
-%coordinatesFEM = coordinatesFEMIter; elementsFEM = elementsFEMIter;
-%U = UIter; F = FIter;
-close all; %Plotdisp_show(U,coordinatesFEM,elementsFEM);
+close all;
 Ux = U(1:2:end);
 Sqx = zeros(4,size(elementsFEM,1)); Sqy = zeros(4,size(elementsFEM,1)); Sqc = zeros(4,size(elementsFEM,1));
 for j = 1:size(elementsFEM,1)
@@ -34,50 +33,25 @@ for j = 1:size(elementsFEM,1)
     Sqc(1:4,j) = Ux(elementsFEM(j,1:4));
 end
 if size(elementsFEM,1)>2e4
-    patch(Sqx,Sqy,Sqc,'facecolor','interp','edgecolor','none'); 
+    patch(Sqx,Sqy,Sqc,'facecolor','interp','edgecolor','none');
 else
-    patch(Sqx,Sqy,Sqc,'facecolor','interp'); 
+    patch(Sqx,Sqy,Sqc,'facecolor','interp');
 end
 view(2); axis tight; axis equal; colorbar; xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
 set(gcf,'color','w'); colormap jet;
 title('Click bad dispx-u points and press -Enter- after done','fontweight','normal')
 
-%% =========
+%% %%%%% Remove bad x-disp bad points %%%%%
 fprintf('Do you clear bad points by directly pointing x-disp bad points? (0-yes; 1-no)  \n')
 prompt = 'Input here: ';
 ClearBadInitialPointsOrNot = input(prompt);
 
 while ClearBadInitialPointsOrNot == 0
     
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Have a look at integer search
-    % --------------------------------------
-%     close all; %Plotdisp_show(U,coordinatesFEM,elementsFEM);
-%     Ux = U(1:2:end);
-%     Sqx = zeros(4,size(elementsFEM,1)); Sqy = zeros(4,size(elementsFEM,1)); Sqc = zeros(4,size(elementsFEM,1));
-%     for j = 1:size(elementsFEM,1)
-%         Sqx(1:4,j) = coordinatesFEM(elementsFEM(j,1:4),1);
-%         Sqy(1:4,j) = coordinatesFEM(elementsFEM(j,1:4),2);
-%         Sqc(1:4,j) = Ux(elementsFEM(j,1:4));
-%     end
-%     patch(Sqx,Sqy,Sqc,'facecolor','interp','edgecolor','none');
-%     view(2); axis tight; axis equal; colorbar; xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
-%     set(gcf,'color','w'); colormap jet;
-%     title('Click bad dispx-u points and press -Enter- after done','fontweight','normal')
-    % figure; surf(v); colorbar; view(2)
-    % title('Displacement v','fontweight','normal')
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    [row1, col1] = ginput; row = floor(col1); col = floor(row1); 
-    %row13 = row; col13 = col+2;     row22 = row-1; col22 = col+1;
-    %row23 = row; col23 = col+1;     row24 = row+1; col24 = col+1;
-    %row31 = row-2; col31 = col;     row32 = row-1; col32 = col; 
-    %row34 = row+1; col34 = col;     row35 = row+2; col35 = col;
-    %row42 = row-1; col42 = col-1;   row43 = row; col43 = col-1;
-    %row44 = row+1; col44 = col-1;   row53 = row; col53 = col-2;
-    %row = [row;row13;row22;row23;row24;row31;row32;row34;row35;row42;row43;row44;row53];
-    %col = [col;col13;col22;col23;col24;col31;col32;col34;col35;col42;col43;col44;col53];
-     
-    BadptCol=[row]; BadptRow=[col]; 
+    [row1, col1] = ginput; row = floor(col1); col = floor(row1);
+    
+    % Make sure it's within the image domain
+    BadptCol=[row]; BadptRow=[col];
     [tempindex1] = find(BadptRow<1+max(coordinatesFEM(:,1)));  [tempindex2] = find(BadptCol<1+max(coordinatesFEM(:,2)));
     [tempindex3] = find(BadptRow>min(coordinatesFEM(:,1)));  [tempindex4] = find(BadptCol>min(coordinatesFEM(:,2)));
     tempindex1 = reshape(tempindex1,length(tempindex1),1);
@@ -85,32 +59,37 @@ while ClearBadInitialPointsOrNot == 0
     tempindex3 = reshape(tempindex3,length(tempindex3),1);
     tempindex4 = reshape(tempindex4,length(tempindex4),1);
     tempindex = unique(intersect(tempindex4,intersect(tempindex3,intersect(tempindex1,tempindex2))));
- 
-    BadptRow = BadptRow(tempindex); BadptCol = BadptCol(tempindex); 
+    
+    BadptRow = BadptRow(tempindex); BadptCol = BadptCol(tempindex);
     row=BadptRow; col=BadptCol;
-     
-     % --- Find which elements ---
-     BadptCoord = [];
+    
+    % --- Find elements include clicked bad points ---
+    elementFEMCenterCoordx = 0.25* (coordinatesFEM( elementsFEM(:,1)  , 1) + coordinatesFEM( elementsFEM(:,2)  , 1) + ...
+        coordinatesFEM( elementsFEM(:,3)  , 1) + coordinatesFEM( elementsFEM(:,4)  , 1));
+    elementFEMCenterCoordy = 0.25* (coordinatesFEM( elementsFEM(:,1)  , 2) + coordinatesFEM( elementsFEM(:,2)  , 2) + ...
+        coordinatesFEM( elementsFEM(:,3)  , 2) + coordinatesFEM( elementsFEM(:,4)  , 2));
+    
+    BadptCoord = [];
     for tempk = 1:length(row) % iterate for each clicking points
-        % Compute distance
-        DistCoordAll = (coordinatesFEM(:,2)-col(tempk)).^2 + (coordinatesFEM(:,1)-row(tempk)).^2; 
-        [DistCoordAllSorted, DistCoordAllSortedInd] = sort(sqrt(DistCoordAll));
-        ismember1 = []; ismember2 = []; ismember3 = []; 
-        for templ = 1:size(elementsFEM,1)
-            ismember1(templ) = ismember(DistCoordAllSortedInd(1),elementsFEM(templ,1:8));
-            ismember2(templ) = ismember(DistCoordAllSortedInd(2),elementsFEM(templ,1:8));
-            ismember3(templ) = ismember(DistCoordAllSortedInd(3),elementsFEM(templ,1:8));
-        end
-        [~,coll] = find(ismember1+ismember2+ismember3 == 3);
-        BadptCoord = [BadptCoord;elementsFEM(coll,:)'];
+        
+        DistElementAll = sqrt( ( elementFEMCenterCoordx-row(tempk) ).^2 + (elementFEMCenterCoordy-col(tempk)).^2 );
+        DistCoordAll = sqrt( ( coordinatesFEM(:,1)-row(tempk) ).^2 + (coordinatesFEM(:,2)-col(tempk)).^2 );
+        [row1,~] = find(DistElementAll < 1.42*mean(winstepsize));
+        [row2,~] = find(DistCoordAll < 1.42*mean(winstepsize));
+        temp1 = elementsFEM(row1,:); temp2 = row2(:);
+        
+        BadptCoord = [BadptCoord; unique([temp1(:);temp2(:)])]; BadptCoord=BadptCoord(:);
+        
     end
-    % Set unique BadptCoord
+    
+    % Find unique BadptCoord
     BadptCoord = unique(BadptCoord); BadptCoord = setdiff(BadptCoord,[0]);
     
-    U(2*BadptCoord-1) = NaN; U(2*BadptCoord) = NaN; 
+    % Set bad points value to be NaNs
+    U(2*BadptCoord-1) = NaN; U(2*BadptCoord) = NaN;
     F(4*BadptCoord-3) = NaN; F(4*BadptCoord-2) = NaN; F(4*BadptCoord-1) = NaN; F(4*BadptCoord) = NaN;
-
-    % ------ inpaint nans using gridfit ------
+    
+    % ------ inpaint nans using gridfit or scatteredInterpolant ------
     Coordxnodes = unique(coordinatesFEM(:,1)); Coordynodes = unique(coordinatesFEM(:,2));
     nanindex = find(isnan(U(1:2:end))==1); notnanindex = setdiff([1:1:size(coordinatesFEM,1)],nanindex);
     
@@ -120,31 +99,39 @@ while ClearBadInitialPointsOrNot == 0
     %[F21temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-2),Coordxnodes,Coordynodes,'regularizer','springs'); F21temp = F21temp';
     %[F12temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-1),Coordxnodes,Coordynodes,'regularizer','springs'); F12temp = F12temp';
     %[F22temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-0),Coordxnodes,Coordynodes,'regularizer','springs'); F22temp = F22temp';
-
-    [CoordxnodesGrid,CoordynodesGrid] = ndgrid(Coordxnodes,Coordynodes);
+    
+    %[CoordxnodesGrid,CoordynodesGrid] = ndgrid(Coordxnodes,Coordynodes);
     Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), U(2*notnanindex-1));
-    [u1temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %u1temp = u1temp';
+    U1 = Ftemp(coordinatesFEM(:,1),coordinatesFEM(:,2));
+    %[u1temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %u1temp = u1temp';
     Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), U(2*notnanindex));
-    [v1temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %v1temp = v1temp';
+    V1 = Ftemp(coordinatesFEM(:,1),coordinatesFEM(:,2));
+    %[v1temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %v1temp = v1temp';
     Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-3));
-    [F11temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F11temp = F11temp';
+    F11 = Ftemp(coordinatesFEM(:,1),coordinatesFEM(:,2));
+    %[F11temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F11temp = F11temp';
     Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-2));
-    [F21temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F21temp = F21temp';
+    F21 = Ftemp(coordinatesFEM(:,1),coordinatesFEM(:,2));
+    %[F21temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F21temp = F21temp';
     Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-1));
-    [F12temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F12temp = F12temp';
+    F12 = Ftemp(coordinatesFEM(:,1),coordinatesFEM(:,2));
+    %[F12temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F12temp = F12temp';
     Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-0));
-    [F22temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F22temp = F22temp';
-     
-    for tempi = 1:size(coordinatesFEM,1)
-        [row1,col1] = find(Coordxnodes==coordinatesFEM(tempi,1));
-        [row2,col2] = find(Coordynodes==coordinatesFEM(tempi,2));
-        U(2*tempi-1) = u1temp(row1,row2);
-        U(2*tempi)   = v1temp(row1,row2);
-        F(4*tempi-3) = F11temp(row1,row2); F(4*tempi-2) = F21temp(row1,row2);
-        F(4*tempi-1) = F12temp(row1,row2); F(4*tempi) = F22temp(row1,row2);
-    end
-
-    close all;  
+    F22 = Ftemp(coordinatesFEM(:,1),coordinatesFEM(:,2));
+    %[F22temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F22temp = F22temp';
+    
+    %     for tempi = 1:size(coordinatesFEM,1)
+    %         [row1,col1] = find(Coordxnodes==coordinatesFEM(tempi,1));
+    %         [row2,col2] = find(Coordynodes==coordinatesFEM(tempi,2));
+    %         U(2*tempi-1) = u1temp(row1,row2);
+    %         U(2*tempi)   = v1temp(row1,row2);
+    %         F(4*tempi-3) = F11temp(row1,row2); F(4*tempi-2) = F21temp(row1,row2);
+    %         F(4*tempi-1) = F12temp(row1,row2); F(4*tempi) = F22temp(row1,row2);
+    %     end
+    U = [U1(:),V1(:)]'; U = U(:);
+    F = [F11(:),F21(:),F12(:),F22(:)]'; F = F(:);
+    
+    close all;
     Ux = U(1:2:end);
     Sqx = zeros(4,size(elementsFEM,1)); Sqy = zeros(4,size(elementsFEM,1)); Sqc = zeros(4,size(elementsFEM,1));
     for j = 1:size(elementsFEM,1)
@@ -160,8 +147,8 @@ while ClearBadInitialPointsOrNot == 0
     view(2); axis tight; axis equal; colorbar; xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
     set(gcf,'color','w'); colormap jet;
     title('Click bad dispx-u points and press -Enter- after done','fontweight','normal')
-
- 
+    
+    
     prompt = 'Do you point out more x-disp bad points? (0-yes; 1-no) Input: ';
     ClearBadInitialPointsOrNot = input(prompt);
     
@@ -170,11 +157,11 @@ end
 
 
 
-%% =========
+%% %%%%% Remove bad y-disp bad points %%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Have a look at integer search
 % --------------------------------------
-close all; %Plotdisp_show(U,coordinatesFEM,elementsFEM);
+close all;
 Uy = U(2:2:end);
 Sqx = zeros(4,size(elementsFEM,1)); Sqy = zeros(4,size(elementsFEM,1)); Sqc = zeros(4,size(elementsFEM,1));
 for j = 1:size(elementsFEM,1)
@@ -183,13 +170,13 @@ for j = 1:size(elementsFEM,1)
     Sqc(1:4,j) = Uy(elementsFEM(j,1:4));
 end
 if size(elementsFEM,1)>2e4
-    patch(Sqx,Sqy,Sqc,'facecolor','interp','edgecolor','none'); 
+    patch(Sqx,Sqy,Sqc,'facecolor','interp','edgecolor','none');
 else
-    patch(Sqx,Sqy,Sqc,'facecolor','interp'); 
+    patch(Sqx,Sqy,Sqc,'facecolor','interp');
 end
 view(2); axis tight; axis equal; colorbar; xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
 set(gcf,'color','w'); colormap jet;
-title('Click bad dispy-v points and press -Enter- after done','fontweight','normal')
+title('Click bad y-disp points and press -Enter- after done','fontweight','normal')
 % figure; surf(v); colorbar; view(2)
 % title('Displacement v','fontweight','normal')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -198,18 +185,11 @@ prompt = 'Input here: ';
 ClearBadInitialPointsOrNot = input(prompt);
 
 while ClearBadInitialPointsOrNot == 0
-     
-    [row1, col1] = ginput; row = floor(col1); col = floor(row1); 
-    %row13 = row; col13 = col+2;     row22 = row-1; col22 = col+1;
-    %row23 = row; col23 = col+1;     row24 = row+1; col24 = col+1;
-    %row31 = row-2; col31 = col;     row32 = row-1; col32 = col; 
-    %row34 = row+1; col34 = col;     row35 = row+2; col35 = col;
-    %row42 = row-1; col42 = col-1;   row43 = row; col43 = col-1;
-    %row44 = row+1; col44 = col-1;   row53 = row; col53 = col-2;
-    %row = [row;row13;row22;row23;row24;row31;row32;row34;row35;row42;row43;row44;row53];
-    %col = [col;col13;col22;col23;col24;col31;col32;col34;col35;col42;col43;col44;col53];
-     
-    BadptCol=[row]; BadptRow=[col]; 
+    
+    [row1, col1] = ginput; row = round(col1); col = round(row1);
+    
+    % Make sure it's within the image domain
+    BadptCol=[row]; BadptRow=[col];
     [tempindex1] = find(BadptRow<1+max(coordinatesFEM(:,1)));  [tempindex2] = find(BadptCol<1+max(coordinatesFEM(:,2)));
     [tempindex3] = find(BadptRow>min(coordinatesFEM(:,1)));  [tempindex4] = find(BadptCol>min(coordinatesFEM(:,2)));
     tempindex1 = reshape(tempindex1,length(tempindex1),1);
@@ -217,66 +197,66 @@ while ClearBadInitialPointsOrNot == 0
     tempindex3 = reshape(tempindex3,length(tempindex3),1);
     tempindex4 = reshape(tempindex4,length(tempindex4),1);
     tempindex = unique(intersect(tempindex4,intersect(tempindex3,intersect(tempindex1,tempindex2))));
- 
-    BadptRow = BadptRow(tempindex); BadptCol = BadptCol(tempindex); 
+    
+    BadptRow = BadptRow(tempindex); BadptCol = BadptCol(tempindex);
     row=BadptRow; col=BadptCol;
-     
-     % --- Find which elements ---
-     BadptCoord = [];
+    
+    
+    % --- Find elements include clicked bad points ---
+    elementFEMCenterCoordx = 0.25* (coordinatesFEM( elementsFEM(:,1)  , 1) + coordinatesFEM( elementsFEM(:,2)  , 1) + ...
+        coordinatesFEM( elementsFEM(:,3)  , 1) + coordinatesFEM( elementsFEM(:,4)  , 1));
+    elementFEMCenterCoordy = 0.25* (coordinatesFEM( elementsFEM(:,1)  , 2) + coordinatesFEM( elementsFEM(:,2)  , 2) + ...
+        coordinatesFEM( elementsFEM(:,3)  , 2) + coordinatesFEM( elementsFEM(:,4)  , 2));
+    
+    BadptCoord = [];
     for tempk = 1:length(row) % iterate for each clicking points
-        % Compute distance
-        DistCoordAll = (coordinatesFEM(:,2)-col(tempk)).^2 + (coordinatesFEM(:,1)-row(tempk)).^2; 
-        [DistCoordAllSorted, DistCoordAllSortedInd] = sort(sqrt(DistCoordAll));
-        ismember1 = []; ismember2 = []; ismember3 = []; 
-        for templ = 1:size(elementsFEM,1)
-            ismember1(templ) = ismember(DistCoordAllSortedInd(1),elementsFEM(templ,1:8));
-            ismember2(templ) = ismember(DistCoordAllSortedInd(2),elementsFEM(templ,1:8));
-            ismember3(templ) = ismember(DistCoordAllSortedInd(3),elementsFEM(templ,1:8));
-        end
-        [~,coll] = find(ismember1+ismember2+ismember3 == 3);
-        BadptCoord = [BadptCoord;elementsFEM(coll,:)'];
+        
+        DistElementAll = sqrt( ( elementFEMCenterCoordx-row(tempk) ).^2 + (elementFEMCenterCoordy-col(tempk)).^2 );
+        DistCoordAll = sqrt( ( coordinatesFEM(:,1)-row(tempk) ).^2 + (coordinatesFEM(:,2)-col(tempk)).^2 );
+        [row1,~] = find(DistElementAll < 1.42*mean(winstepsize));
+        [row2,~] = find(DistCoordAll < 1.42*mean(winstepsize));
+        temp1 = elementsFEM(row1,:); temp2 = row2(:);
+        
+        BadptCoord = [BadptCoord; unique([temp1(:);temp2(:)])]; BadptCoord=BadptCoord(:);
+        
     end
     % Set unique BadptCoord
     BadptCoord = unique(BadptCoord); BadptCoord = setdiff(BadptCoord,[0]);
     
-    U(2*BadptCoord-1) = NaN; U(2*BadptCoord) = NaN; 
+    U(2*BadptCoord-1) = NaN; U(2*BadptCoord) = NaN;
     F(4*BadptCoord-3) = NaN; F(4*BadptCoord-2) = NaN; F(4*BadptCoord-1) = NaN; F(4*BadptCoord) = NaN;
-
+    
+    
     % ------ inpaint nans using gridfit ------
     Coordxnodes = unique(coordinatesFEM(:,1)); Coordynodes = unique(coordinatesFEM(:,2));
     nanindex = find(isnan(U(1:2:end))==1); notnanindex = setdiff([1:1:size(coordinatesFEM,1)],nanindex);
-%     [u1temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), U(2*notnanindex-1),Coordxnodes,Coordynodes,'regularizer','springs'); u1temp = u1temp';
-%     [v1temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), U(2*notnanindex),Coordxnodes,Coordynodes,'regularizer','springs'); v1temp = v1temp';
-%     [F11temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-3),Coordxnodes,Coordynodes,'regularizer','springs'); F11temp = F11temp';
-%     [F21temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-2),Coordxnodes,Coordynodes,'regularizer','springs'); F21temp = F21temp';
-%     [F12temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-1),Coordxnodes,Coordynodes,'regularizer','springs'); F12temp = F12temp';
-%     [F22temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-0),Coordxnodes,Coordynodes,'regularizer','springs'); F22temp = F22temp';
-
-    [CoordxnodesGrid,CoordynodesGrid] = ndgrid(Coordxnodes,Coordynodes);
-    Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), U(2*notnanindex-1));
-    [u1temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %u1temp = u1temp';
-    Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), U(2*notnanindex));
-    [v1temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %v1temp = v1temp';
-    Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-3));
-    [F11temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F11temp = F11temp';
-    Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-2));
-    [F21temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F21temp = F21temp';
-    Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-1));
-    [F12temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F12temp = F12temp';
-    Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-0));
-    [F22temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F22temp = F22temp';
-     
     
-    for tempi = 1:size(coordinatesFEM,1)
-        [row1,col1] = find(Coordxnodes==coordinatesFEM(tempi,1));
-        [row2,col2] = find(Coordynodes==coordinatesFEM(tempi,2));
-        U(2*tempi-1) = u1temp(row1,row2);
-        U(2*tempi)   = v1temp(row1,row2);
-        F(4*tempi-3) = F11temp(row1,row2); F(4*tempi-2) = F21temp(row1,row2);
-        F(4*tempi-1) = F12temp(row1,row2); F(4*tempi) = F22temp(row1,row2);
-    end
-
-    close all; %Plotdisp_show(U,coordinatesFEM,elementsFEM);
+    
+    %[CoordxnodesGrid,CoordynodesGrid] = ndgrid(Coordxnodes,Coordynodes);
+    Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), U(2*notnanindex-1));
+    U1 = Ftemp(coordinatesFEM(:,1),coordinatesFEM(:,2));
+    %[u1temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %u1temp = u1temp';
+    Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), U(2*notnanindex));
+    V1 = Ftemp(coordinatesFEM(:,1),coordinatesFEM(:,2));
+    %[v1temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %v1temp = v1temp';
+    Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-3));
+    F11 = Ftemp(coordinatesFEM(:,1),coordinatesFEM(:,2));
+    %[F11temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F11temp = F11temp';
+    Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-2));
+    F21 = Ftemp(coordinatesFEM(:,1),coordinatesFEM(:,2));
+    %[F21temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F21temp = F21temp';
+    Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-1));
+    F12 = Ftemp(coordinatesFEM(:,1),coordinatesFEM(:,2));
+    %[F12temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F12temp = F12temp';
+    Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-0));
+    F22 = Ftemp(coordinatesFEM(:,1),coordinatesFEM(:,2));
+    %[F22temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F22temp = F22temp';
+    
+    U = [U1(:),V1(:)]'; U = U(:);
+    F = [F11(:),F21(:),F12(:),F22(:)]'; F = F(:);
+    
+    
+    close all;  Plotdisp_show(U,coordinatesFEM,elementsFEM);
     Uy = U(2:2:end);
     Sqx = zeros(4,size(elementsFEM,1)); Sqy = zeros(4,size(elementsFEM,1)); Sqc = zeros(4,size(elementsFEM,1));
     for j = 1:size(elementsFEM,1)
@@ -292,7 +272,7 @@ while ClearBadInitialPointsOrNot == 0
     view(2); axis tight; axis equal; colorbar; xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
     set(gcf,'color','w'); colormap jet;
     title('Click bad dispy-v points and press -Enter- after done','fontweight','normal')
- 
+    
     prompt = 'Do you point out more y-disp bad points? (0-yes; 1-no) Input: ';
     ClearBadInitialPointsOrNot = input(prompt);
     
@@ -301,10 +281,34 @@ end
 
 
 
-%%
+%% Remove bad F values
+% ------ inpaint nans using gridfit ------
+minCoordStep = min( [DICmesh.elementMinSize] );
+xList = [ceil(min(coordinatesFEM(:,1))) : minCoordStep : floor(max(coordinatesFEM(:,1)))]';
+yList = [ceil(min(coordinatesFEM(:,2))) : minCoordStep : floor(max(coordinatesFEM(:,2)))]';
+
+[xGrid,yGrid] = ndgrid(xList,yList);
+smoothness = 1e-4;
+tempF11 = regularizeNd([coordinatesFEM(:,1), coordinatesFEM(:,2)],F(1:4:end),{xList,yList},smoothness);
+tempF21 = regularizeNd([coordinatesFEM(:,1), coordinatesFEM(:,2)],F(2:4:end),{xList,yList},smoothness);
+tempF12 = regularizeNd([coordinatesFEM(:,1), coordinatesFEM(:,2)],F(3:4:end),{xList,yList},smoothness);
+tempF22 = regularizeNd([coordinatesFEM(:,1), coordinatesFEM(:,2)],F(4:4:end),{xList,yList},smoothness);
+% tempU1 = regularizeNd([coordinatesFEM(:,1), coordinatesFEM(:,2)],U(1:2:end),{xList,yList},smoothness/10);
+% tempU2 = regularizeNd([coordinatesFEM(:,1), coordinatesFEM(:,2)],U(1:2:end),{xList,yList},smoothness/10);
+
+F_F11 = scatteredInterpolant(xGrid(:),yGrid(:),tempF11(:));
+F11 = F_F11(coordinatesFEM(:,1),coordinatesFEM(:,2));
+F_F21 = scatteredInterpolant(xGrid(:),yGrid(:),tempF21(:));
+F21 = F_F21(coordinatesFEM(:,1),coordinatesFEM(:,2));
+F_F12 = scatteredInterpolant(xGrid(:),yGrid(:),tempF12(:));
+F12 = F_F12(coordinatesFEM(:,1),coordinatesFEM(:,2));
+F_F22 = scatteredInterpolant(xGrid(:),yGrid(:),tempF22(:));
+F22 = F_F22(coordinatesFEM(:,1),coordinatesFEM(:,2));
+
+F = [F11(:),F21(:),F12(:),F22(:)]'; F = F(:);
 
 
-% %% ========= F11 
+%% % ========= F11
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % % Have a look at integer search
 % % --------------------------------------
@@ -317,9 +321,9 @@ end
 %     Sqc(1:4,j) = Ftemp(elementsFEM(j,1:4));
 % end
 % if size(elementsFEM,1)>2e4
-%     patch(Sqx,Sqy,Sqc,'facecolor','interp','edgecolor','none'); 
+%     patch(Sqx,Sqy,Sqc,'facecolor','interp','edgecolor','none');
 % else
-%     patch(Sqx,Sqy,Sqc,'facecolor','interp'); 
+%     patch(Sqx,Sqy,Sqc,'facecolor','interp');
 % end
 % view(2); axis tight; axis equal; colorbar; xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
 % set(gcf,'color','w'); colormap jet;
@@ -330,20 +334,20 @@ end
 % fprintf('Do you clear bad points by directly pointing F11-bad points? (0-yes; 1-no)  \n')
 % prompt = 'Input here: ';
 % ClearBadInitialPointsOrNot = input(prompt);
-% 
+%
 % while ClearBadInitialPointsOrNot == 0
-%      
-%     [row1, col1] = ginput; row = floor(col1); col = floor(row1); 
+%
+%     [row1, col1] = ginput; row = floor(col1); col = floor(row1);
 %     %row13 = row; col13 = col+2;     row22 = row-1; col22 = col+1;
 %     %row23 = row; col23 = col+1;     row24 = row+1; col24 = col+1;
-%     %row31 = row-2; col31 = col;     row32 = row-1; col32 = col; 
+%     %row31 = row-2; col31 = col;     row32 = row-1; col32 = col;
 %     %row34 = row+1; col34 = col;     row35 = row+2; col35 = col;
 %     %row42 = row-1; col42 = col-1;   row43 = row; col43 = col-1;
 %     %row44 = row+1; col44 = col-1;   row53 = row; col53 = col-2;
 %     %row = [row;row13;row22;row23;row24;row31;row32;row34;row35;row42;row43;row44;row53];
 %     %col = [col;col13;col22;col23;col24;col31;col32;col34;col35;col42;col43;col44;col53];
-%      
-%     BadptCol=[row]; BadptRow=[col]; 
+%
+%     BadptCol=[row]; BadptRow=[col];
 %     [tempindex1] = find(BadptRow<1+max(coordinatesFEM(:,1)));  [tempindex2] = find(BadptCol<1+max(coordinatesFEM(:,2)));
 %     [tempindex3] = find(BadptRow>min(coordinatesFEM(:,1)));  [tempindex4] = find(BadptCol>min(coordinatesFEM(:,2)));
 %     tempindex1 = reshape(tempindex1,length(tempindex1),1);
@@ -351,17 +355,17 @@ end
 %     tempindex3 = reshape(tempindex3,length(tempindex3),1);
 %     tempindex4 = reshape(tempindex4,length(tempindex4),1);
 %     tempindex = unique(intersect(tempindex4,intersect(tempindex3,intersect(tempindex1,tempindex2))));
-%  
-%     BadptRow = BadptRow(tempindex); BadptCol = BadptCol(tempindex); 
+%
+%     BadptRow = BadptRow(tempindex); BadptCol = BadptCol(tempindex);
 %     row=BadptRow; col=BadptCol;
-%      
+%
 %      % --- Find which elements ---
 %      BadptCoord = [];
 %     for tempk = 1:length(row) % iterate for each clicking points
 %         % Compute distance
-%         DistCoordAll = (coordinatesFEM(:,2)-col(tempk)).^2 + (coordinatesFEM(:,1)-row(tempk)).^2; 
+%         DistCoordAll = (coordinatesFEM(:,2)-col(tempk)).^2 + (coordinatesFEM(:,1)-row(tempk)).^2;
 %         [DistCoordAllSorted, DistCoordAllSortedInd] = sort(sqrt(DistCoordAll));
-%         ismember1 = []; ismember2 = []; ismember3 = []; 
+%         ismember1 = []; ismember2 = []; ismember3 = [];
 %         for templ = 1:size(elementsFEM,1)
 %             ismember1(templ) = ismember(DistCoordAllSortedInd(1),elementsFEM(templ,1:8));
 %             ismember2(templ) = ismember(DistCoordAllSortedInd(2),elementsFEM(templ,1:8));
@@ -372,10 +376,10 @@ end
 %     end
 %     % Set unique BadptCoord
 %     BadptCoord = unique(BadptCoord); BadptCoord = setdiff(BadptCoord,[0]);
-%     
-%     U(2*BadptCoord-1) = NaN; U(2*BadptCoord) = NaN; 
+%
+%     U(2*BadptCoord-1) = NaN; U(2*BadptCoord) = NaN;
 %     F(4*BadptCoord-3) = NaN; F(4*BadptCoord-2) = NaN; F(4*BadptCoord-1) = NaN; F(4*BadptCoord) = NaN;
-% 
+%
 %     % ------ inpaint nans using gridfit ------
 %     Coordxnodes = unique(coordinatesFEM(:,1)); Coordynodes = unique(coordinatesFEM(:,2));
 %     nanindex = find(isnan(U(1:2:end))==1); notnanindex = setdiff([1:1:size(coordinatesFEM,1)],nanindex);
@@ -385,7 +389,7 @@ end
 % %     [F21temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-2),Coordxnodes,Coordynodes,'regularizer','springs'); F21temp = F21temp';
 % %     [F12temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-1),Coordxnodes,Coordynodes,'regularizer','springs'); F12temp = F12temp';
 % %     [F22temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-0),Coordxnodes,Coordynodes,'regularizer','springs'); F22temp = F22temp';
-% 
+%
 %     [CoordxnodesGrid,CoordynodesGrid] = ndgrid(Coordxnodes,Coordynodes);
 %     Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), U(2*notnanindex-1));
 %     [u1temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %u1temp = u1temp';
@@ -399,8 +403,8 @@ end
 %     [F12temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F12temp = F12temp';
 %     Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-0));
 %     [F22temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F22temp = F22temp';
-%      
-%     
+%
+%
 %     for tempi = 1:size(coordinatesFEM,1)
 %         [row1,col1] = find(Coordxnodes==coordinatesFEM(tempi,1));
 %         [row2,col2] = find(Coordynodes==coordinatesFEM(tempi,2));
@@ -409,7 +413,7 @@ end
 %         F(4*tempi-3) = F11temp(row1,row2); F(4*tempi-2) = F21temp(row1,row2);
 %         F(4*tempi-1) = F12temp(row1,row2); F(4*tempi) = F22temp(row1,row2);
 %     end
-% 
+%
 %     close all; %Plotdisp_show(U,coordinatesFEM,elementsFEM);
 %     Ftemp = F(1:4:end);
 %     Sqx = zeros(4,size(elementsFEM,1)); Sqy = zeros(4,size(elementsFEM,1)); Sqc = zeros(4,size(elementsFEM,1));
@@ -426,15 +430,15 @@ end
 %     view(2); axis tight; axis equal; colorbar; xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
 %     set(gcf,'color','w'); colormap jet;
 %     title('Click bad F11 points and press -Enter- after done','fontweight','normal')
-%  
+%
 %     prompt = 'Do you point out more F11-bad points? (0-yes; 1-no) Input: ';
 %     ClearBadInitialPointsOrNot = input(prompt);
-%     
+%
 % end
-% 
-% 
-% 
-% 
+%
+%
+%
+%
 % %% ========= F21
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % % Have a look at integer search
@@ -448,9 +452,9 @@ end
 %     Sqc(1:4,j) = Ftemp(elementsFEM(j,1:4));
 % end
 % if size(elementsFEM,1)>2e4
-%     patch(Sqx,Sqy,Sqc,'facecolor','interp','edgecolor','none'); 
+%     patch(Sqx,Sqy,Sqc,'facecolor','interp','edgecolor','none');
 % else
-%     patch(Sqx,Sqy,Sqc,'facecolor','interp'); 
+%     patch(Sqx,Sqy,Sqc,'facecolor','interp');
 % end
 % view(2); axis tight; axis equal; colorbar; xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
 % set(gcf,'color','w'); colormap jet;
@@ -461,20 +465,20 @@ end
 % fprintf('Do you clear bad points by directly pointing F21-bad points? (0-yes; 1-no)  \n')
 % prompt = 'Input here: ';
 % ClearBadInitialPointsOrNot = input(prompt);
-% 
+%
 % while ClearBadInitialPointsOrNot == 0
-%      
-%     [row1, col1] = ginput; row = floor(col1); col = floor(row1); 
+%
+%     [row1, col1] = ginput; row = floor(col1); col = floor(row1);
 %     %row13 = row; col13 = col+2;     row22 = row-1; col22 = col+1;
 %     %row23 = row; col23 = col+1;     row24 = row+1; col24 = col+1;
-%     %row31 = row-2; col31 = col;     row32 = row-1; col32 = col; 
+%     %row31 = row-2; col31 = col;     row32 = row-1; col32 = col;
 %     %row34 = row+1; col34 = col;     row35 = row+2; col35 = col;
 %     %row42 = row-1; col42 = col-1;   row43 = row; col43 = col-1;
 %     %row44 = row+1; col44 = col-1;   row53 = row; col53 = col-2;
 %     %row = [row;row13;row22;row23;row24;row31;row32;row34;row35;row42;row43;row44;row53];
 %     %col = [col;col13;col22;col23;col24;col31;col32;col34;col35;col42;col43;col44;col53];
-%      
-%     BadptCol=[row]; BadptRow=[col]; 
+%
+%     BadptCol=[row]; BadptRow=[col];
 %     [tempindex1] = find(BadptRow<1+max(coordinatesFEM(:,1)));  [tempindex2] = find(BadptCol<1+max(coordinatesFEM(:,2)));
 %     [tempindex3] = find(BadptRow>min(coordinatesFEM(:,1)));  [tempindex4] = find(BadptCol>min(coordinatesFEM(:,2)));
 %     tempindex1 = reshape(tempindex1,length(tempindex1),1);
@@ -482,17 +486,17 @@ end
 %     tempindex3 = reshape(tempindex3,length(tempindex3),1);
 %     tempindex4 = reshape(tempindex4,length(tempindex4),1);
 %     tempindex = unique(intersect(tempindex4,intersect(tempindex3,intersect(tempindex1,tempindex2))));
-%  
-%     BadptRow = BadptRow(tempindex); BadptCol = BadptCol(tempindex); 
+%
+%     BadptRow = BadptRow(tempindex); BadptCol = BadptCol(tempindex);
 %     row=BadptRow; col=BadptCol;
-%      
+%
 %      % --- Find which elements ---
 %      BadptCoord = [];
 %     for tempk = 1:length(row) % iterate for each clicking points
 %         % Compute distance
-%         DistCoordAll = (coordinatesFEM(:,2)-col(tempk)).^2 + (coordinatesFEM(:,1)-row(tempk)).^2; 
+%         DistCoordAll = (coordinatesFEM(:,2)-col(tempk)).^2 + (coordinatesFEM(:,1)-row(tempk)).^2;
 %         [DistCoordAllSorted, DistCoordAllSortedInd] = sort(sqrt(DistCoordAll));
-%         ismember1 = []; ismember2 = []; ismember3 = []; 
+%         ismember1 = []; ismember2 = []; ismember3 = [];
 %         for templ = 1:size(elementsFEM,1)
 %             ismember1(templ) = ismember(DistCoordAllSortedInd(1),elementsFEM(templ,1:8));
 %             ismember2(templ) = ismember(DistCoordAllSortedInd(2),elementsFEM(templ,1:8));
@@ -503,10 +507,10 @@ end
 %     end
 %     % Set unique BadptCoord
 %     BadptCoord = unique(BadptCoord); BadptCoord = setdiff(BadptCoord,[0]);
-%     
-%     U(2*BadptCoord-1) = NaN; U(2*BadptCoord) = NaN; 
+%
+%     U(2*BadptCoord-1) = NaN; U(2*BadptCoord) = NaN;
 %     F(4*BadptCoord-3) = NaN; F(4*BadptCoord-2) = NaN; F(4*BadptCoord-1) = NaN; F(4*BadptCoord) = NaN;
-% 
+%
 %     % ------ inpaint nans using gridfit ------
 %     Coordxnodes = unique(coordinatesFEM(:,1)); Coordynodes = unique(coordinatesFEM(:,2));
 %     nanindex = find(isnan(U(1:2:end))==1); notnanindex = setdiff([1:1:size(coordinatesFEM,1)],nanindex);
@@ -516,7 +520,7 @@ end
 % %     [F21temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-2),Coordxnodes,Coordynodes,'regularizer','springs'); F21temp = F21temp';
 % %     [F12temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-1),Coordxnodes,Coordynodes,'regularizer','springs'); F12temp = F12temp';
 % %     [F22temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-0),Coordxnodes,Coordynodes,'regularizer','springs'); F22temp = F22temp';
-% 
+%
 %     [CoordxnodesGrid,CoordynodesGrid] = ndgrid(Coordxnodes,Coordynodes);
 %     Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), U(2*notnanindex-1));
 %     [u1temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %u1temp = u1temp';
@@ -530,8 +534,8 @@ end
 %     [F12temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F12temp = F12temp';
 %     Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-0));
 %     [F22temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F22temp = F22temp';
-%      
-%     
+%
+%
 %     for tempi = 1:size(coordinatesFEM,1)
 %         [row1,col1] = find(Coordxnodes==coordinatesFEM(tempi,1));
 %         [row2,col2] = find(Coordynodes==coordinatesFEM(tempi,2));
@@ -540,7 +544,7 @@ end
 %         F(4*tempi-3) = F11temp(row1,row2); F(4*tempi-2) = F21temp(row1,row2);
 %         F(4*tempi-1) = F12temp(row1,row2); F(4*tempi) = F22temp(row1,row2);
 %     end
-% 
+%
 %     close all; %Plotdisp_show(U,coordinatesFEM,elementsFEM);
 %     Ftemp = F(2:4:end);
 %     Sqx = zeros(4,size(elementsFEM,1)); Sqy = zeros(4,size(elementsFEM,1)); Sqc = zeros(4,size(elementsFEM,1));
@@ -557,15 +561,15 @@ end
 %     view(2); axis tight; axis equal; colorbar; xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
 %     set(gcf,'color','w'); colormap jet;
 %     title('Click bad F21 points and press -Enter- after done','fontweight','normal')
-%  
+%
 %     prompt = 'Do you point out more F21-bad points? (0-yes; 1-no) Input: ';
 %     ClearBadInitialPointsOrNot = input(prompt);
-%     
+%
 % end
-% 
-% 
-% 
-% 
+%
+%
+%
+%
 % %% ========= F12
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % % Have a look at integer search
@@ -579,9 +583,9 @@ end
 %     Sqc(1:4,j) = Ftemp(elementsFEM(j,1:4));
 % end
 % if size(elementsFEM,1)>2e4
-%     patch(Sqx,Sqy,Sqc,'facecolor','interp','edgecolor','none'); 
+%     patch(Sqx,Sqy,Sqc,'facecolor','interp','edgecolor','none');
 % else
-%     patch(Sqx,Sqy,Sqc,'facecolor','interp'); 
+%     patch(Sqx,Sqy,Sqc,'facecolor','interp');
 % end
 % view(2); axis tight; axis equal; colorbar; xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
 % set(gcf,'color','w'); colormap jet;
@@ -592,20 +596,20 @@ end
 % fprintf('Do you clear bad points by directly pointing F12-bad points? (0-yes; 1-no)  \n')
 % prompt = 'Input here: ';
 % ClearBadInitialPointsOrNot = input(prompt);
-% 
+%
 % while ClearBadInitialPointsOrNot == 0
-%      
-%     [row1, col1] = ginput; row = floor(col1); col = floor(row1); 
+%
+%     [row1, col1] = ginput; row = floor(col1); col = floor(row1);
 %     %row13 = row; col13 = col+2;     row22 = row-1; col22 = col+1;
 %     %row23 = row; col23 = col+1;     row24 = row+1; col24 = col+1;
-%     %row31 = row-2; col31 = col;     row32 = row-1; col32 = col; 
+%     %row31 = row-2; col31 = col;     row32 = row-1; col32 = col;
 %     %row34 = row+1; col34 = col;     row35 = row+2; col35 = col;
 %     %row42 = row-1; col42 = col-1;   row43 = row; col43 = col-1;
 %     %row44 = row+1; col44 = col-1;   row53 = row; col53 = col-2;
 %     %row = [row;row13;row22;row23;row24;row31;row32;row34;row35;row42;row43;row44;row53];
 %     %col = [col;col13;col22;col23;col24;col31;col32;col34;col35;col42;col43;col44;col53];
-%      
-%     BadptCol=[row]; BadptRow=[col]; 
+%
+%     BadptCol=[row]; BadptRow=[col];
 %     [tempindex1] = find(BadptRow<1+max(coordinatesFEM(:,1)));  [tempindex2] = find(BadptCol<1+max(coordinatesFEM(:,2)));
 %     [tempindex3] = find(BadptRow>min(coordinatesFEM(:,1)));  [tempindex4] = find(BadptCol>min(coordinatesFEM(:,2)));
 %     tempindex1 = reshape(tempindex1,length(tempindex1),1);
@@ -613,17 +617,17 @@ end
 %     tempindex3 = reshape(tempindex3,length(tempindex3),1);
 %     tempindex4 = reshape(tempindex4,length(tempindex4),1);
 %     tempindex = unique(intersect(tempindex4,intersect(tempindex3,intersect(tempindex1,tempindex2))));
-%  
-%     BadptRow = BadptRow(tempindex); BadptCol = BadptCol(tempindex); 
+%
+%     BadptRow = BadptRow(tempindex); BadptCol = BadptCol(tempindex);
 %     row=BadptRow; col=BadptCol;
-%      
+%
 %      % --- Find which elements ---
 %      BadptCoord = [];
 %     for tempk = 1:length(row) % iterate for each clicking points
 %         % Compute distance
-%         DistCoordAll = (coordinatesFEM(:,2)-col(tempk)).^2 + (coordinatesFEM(:,1)-row(tempk)).^2; 
+%         DistCoordAll = (coordinatesFEM(:,2)-col(tempk)).^2 + (coordinatesFEM(:,1)-row(tempk)).^2;
 %         [DistCoordAllSorted, DistCoordAllSortedInd] = sort(sqrt(DistCoordAll));
-%         ismember1 = []; ismember2 = []; ismember3 = []; 
+%         ismember1 = []; ismember2 = []; ismember3 = [];
 %         for templ = 1:size(elementsFEM,1)
 %             ismember1(templ) = ismember(DistCoordAllSortedInd(1),elementsFEM(templ,1:8));
 %             ismember2(templ) = ismember(DistCoordAllSortedInd(2),elementsFEM(templ,1:8));
@@ -634,10 +638,10 @@ end
 %     end
 %     % Set unique BadptCoord
 %     BadptCoord = unique(BadptCoord); BadptCoord = setdiff(BadptCoord,[0]);
-%     
-%     U(2*BadptCoord-1) = NaN; U(2*BadptCoord) = NaN; 
+%
+%     U(2*BadptCoord-1) = NaN; U(2*BadptCoord) = NaN;
 %     F(4*BadptCoord-3) = NaN; F(4*BadptCoord-2) = NaN; F(4*BadptCoord-1) = NaN; F(4*BadptCoord) = NaN;
-% 
+%
 %     % ------ inpaint nans using gridfit ------
 %     Coordxnodes = unique(coordinatesFEM(:,1)); Coordynodes = unique(coordinatesFEM(:,2));
 %     nanindex = find(isnan(U(1:2:end))==1); notnanindex = setdiff([1:1:size(coordinatesFEM,1)],nanindex);
@@ -647,7 +651,7 @@ end
 % %     [F21temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-2),Coordxnodes,Coordynodes,'regularizer','springs'); F21temp = F21temp';
 % %     [F12temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-1),Coordxnodes,Coordynodes,'regularizer','springs'); F12temp = F12temp';
 % %     [F22temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-0),Coordxnodes,Coordynodes,'regularizer','springs'); F22temp = F22temp';
-% 
+%
 %     [CoordxnodesGrid,CoordynodesGrid] = ndgrid(Coordxnodes,Coordynodes);
 %     Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), U(2*notnanindex-1));
 %     [u1temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %u1temp = u1temp';
@@ -661,8 +665,8 @@ end
 %     [F12temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F12temp = F12temp';
 %     Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-0));
 %     [F22temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F22temp = F22temp';
-%      
-%     
+%
+%
 %     for tempi = 1:size(coordinatesFEM,1)
 %         [row1,col1] = find(Coordxnodes==coordinatesFEM(tempi,1));
 %         [row2,col2] = find(Coordynodes==coordinatesFEM(tempi,2));
@@ -671,7 +675,7 @@ end
 %         F(4*tempi-3) = F11temp(row1,row2); F(4*tempi-2) = F21temp(row1,row2);
 %         F(4*tempi-1) = F12temp(row1,row2); F(4*tempi) = F22temp(row1,row2);
 %     end
-% 
+%
 %     close all; %Plotdisp_show(U,coordinatesFEM,elementsFEM);
 %     Ftemp = F(3:4:end);
 %     Sqx = zeros(4,size(elementsFEM,1)); Sqy = zeros(4,size(elementsFEM,1)); Sqc = zeros(4,size(elementsFEM,1));
@@ -688,15 +692,15 @@ end
 %     view(2); axis tight; axis equal; colorbar; xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
 %     set(gcf,'color','w'); colormap jet;
 %     title('Click bad F12 points and press -Enter- after done','fontweight','normal')
-%  
+%
 %     prompt = 'Do you point out more F12-bad points? (0-yes; 1-no) Input: ';
 %     ClearBadInitialPointsOrNot = input(prompt);
-%     
+%
 % end
-%   
-% 
-% 
-% 
+%
+%
+%
+%
 % %% ========= F22
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % % Have a look at integer search
@@ -710,9 +714,9 @@ end
 %     Sqc(1:4,j) = Ftemp(elementsFEM(j,1:4));
 % end
 % if size(elementsFEM,1)>2e4
-%     patch(Sqx,Sqy,Sqc,'facecolor','interp','edgecolor','none'); 
+%     patch(Sqx,Sqy,Sqc,'facecolor','interp','edgecolor','none');
 % else
-%     patch(Sqx,Sqy,Sqc,'facecolor','interp'); 
+%     patch(Sqx,Sqy,Sqc,'facecolor','interp');
 % end
 % view(2); axis tight; axis equal; colorbar; xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
 % set(gcf,'color','w'); colormap jet;
@@ -723,20 +727,20 @@ end
 % fprintf('Do you clear bad points by directly pointing F22-bad points? (0-yes; 1-no)  \n')
 % prompt = 'Input here: ';
 % ClearBadInitialPointsOrNot = input(prompt);
-% 
+%
 % while ClearBadInitialPointsOrNot == 0
-%      
-%     [row1, col1] = ginput; row = floor(col1); col = floor(row1); 
+%
+%     [row1, col1] = ginput; row = floor(col1); col = floor(row1);
 %     %row13 = row; col13 = col+2;     row22 = row-1; col22 = col+1;
 %     %row23 = row; col23 = col+1;     row24 = row+1; col24 = col+1;
-%     %row31 = row-2; col31 = col;     row32 = row-1; col32 = col; 
+%     %row31 = row-2; col31 = col;     row32 = row-1; col32 = col;
 %     %row34 = row+1; col34 = col;     row35 = row+2; col35 = col;
 %     %row42 = row-1; col42 = col-1;   row43 = row; col43 = col-1;
 %     %row44 = row+1; col44 = col-1;   row53 = row; col53 = col-2;
 %     %row = [row;row13;row22;row23;row24;row31;row32;row34;row35;row42;row43;row44;row53];
 %     %col = [col;col13;col22;col23;col24;col31;col32;col34;col35;col42;col43;col44;col53];
-%      
-%     BadptCol=[row]; BadptRow=[col]; 
+%
+%     BadptCol=[row]; BadptRow=[col];
 %     [tempindex1] = find(BadptRow<1+max(coordinatesFEM(:,1)));  [tempindex2] = find(BadptCol<1+max(coordinatesFEM(:,2)));
 %     [tempindex3] = find(BadptRow>min(coordinatesFEM(:,1)));  [tempindex4] = find(BadptCol>min(coordinatesFEM(:,2)));
 %     tempindex1 = reshape(tempindex1,length(tempindex1),1);
@@ -744,17 +748,17 @@ end
 %     tempindex3 = reshape(tempindex3,length(tempindex3),1);
 %     tempindex4 = reshape(tempindex4,length(tempindex4),1);
 %     tempindex = unique(intersect(tempindex4,intersect(tempindex3,intersect(tempindex1,tempindex2))));
-%  
-%     BadptRow = BadptRow(tempindex); BadptCol = BadptCol(tempindex); 
+%
+%     BadptRow = BadptRow(tempindex); BadptCol = BadptCol(tempindex);
 %     row=BadptRow; col=BadptCol;
-%      
+%
 %      % --- Find which elements ---
 %      BadptCoord = [];
 %     for tempk = 1:length(row) % iterate for each clicking points
 %         % Compute distance
-%         DistCoordAll = (coordinatesFEM(:,2)-col(tempk)).^2 + (coordinatesFEM(:,1)-row(tempk)).^2; 
+%         DistCoordAll = (coordinatesFEM(:,2)-col(tempk)).^2 + (coordinatesFEM(:,1)-row(tempk)).^2;
 %         [DistCoordAllSorted, DistCoordAllSortedInd] = sort(sqrt(DistCoordAll));
-%         ismember1 = []; ismember2 = []; ismember3 = []; 
+%         ismember1 = []; ismember2 = []; ismember3 = [];
 %         for templ = 1:size(elementsFEM,1)
 %             ismember1(templ) = ismember(DistCoordAllSortedInd(1),elementsFEM(templ,1:8));
 %             ismember2(templ) = ismember(DistCoordAllSortedInd(2),elementsFEM(templ,1:8));
@@ -765,10 +769,10 @@ end
 %     end
 %     % Set unique BadptCoord
 %     BadptCoord = unique(BadptCoord); BadptCoord = setdiff(BadptCoord,[0]);
-%     
-%     U(2*BadptCoord-1) = NaN; U(2*BadptCoord) = NaN; 
+%
+%     U(2*BadptCoord-1) = NaN; U(2*BadptCoord) = NaN;
 %     F(4*BadptCoord-3) = NaN; F(4*BadptCoord-2) = NaN; F(4*BadptCoord-1) = NaN; F(4*BadptCoord) = NaN;
-% 
+%
 %     % ------ inpaint nans using gridfit ------
 %     Coordxnodes = unique(coordinatesFEM(:,1)); Coordynodes = unique(coordinatesFEM(:,2));
 %     nanindex = find(isnan(U(1:2:end))==1); notnanindex = setdiff([1:1:size(coordinatesFEM,1)],nanindex);
@@ -778,7 +782,7 @@ end
 % %     [F21temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-2),Coordxnodes,Coordynodes,'regularizer','springs'); F21temp = F21temp';
 % %     [F12temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-1),Coordxnodes,Coordynodes,'regularizer','springs'); F12temp = F12temp';
 % %     [F22temp] = gridfit(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-0),Coordxnodes,Coordynodes,'regularizer','springs'); F22temp = F22temp';
-% 
+%
 %     [CoordxnodesGrid,CoordynodesGrid] = ndgrid(Coordxnodes,Coordynodes);
 %     Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), U(2*notnanindex-1));
 %     [u1temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); % u1temp = u1temp';
@@ -792,8 +796,8 @@ end
 %     [F12temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F12temp = F12temp';
 %     Ftemp = scatteredInterpolant(coordinatesFEM(notnanindex,1), coordinatesFEM(notnanindex,2), F(4*notnanindex-0));
 %     [F22temp] = Ftemp(CoordxnodesGrid,CoordynodesGrid); %F22temp = F22temp';
-%      
-%     
+%
+%
 %     for tempi = 1:size(coordinatesFEM,1)
 %         [row1,col1] = find(Coordxnodes==coordinatesFEM(tempi,1));
 %         [row2,col2] = find(Coordynodes==coordinatesFEM(tempi,2));
@@ -802,7 +806,7 @@ end
 %         F(4*tempi-3) = F11temp(row1,row2); F(4*tempi-2) = F21temp(row1,row2);
 %         F(4*tempi-1) = F12temp(row1,row2); F(4*tempi) = F22temp(row1,row2);
 %     end
-% 
+%
 %     close all; %Plotdisp_show(U,coordinatesFEM,elementsFEM);
 %     Ftemp = F(4:4:end);
 %     Sqx = zeros(4,size(elementsFEM,1)); Sqy = zeros(4,size(elementsFEM,1)); Sqc = zeros(4,size(elementsFEM,1));
@@ -819,15 +823,15 @@ end
 %     view(2); axis tight; axis equal; colorbar; xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
 %     set(gcf,'color','w'); colormap jet;
 %     title('Click bad F22 points and press -Enter- after done','fontweight','normal')
-%  
+%
 %     prompt = 'Do you point out more F22-bad points? (0-yes; 1-no) Input: ';
 %     ClearBadInitialPointsOrNot = input(prompt);
-%     
+%
 % end
 
 
 
-  
+
 end
 
 

@@ -1,4 +1,4 @@
-% Generate a quadtree mesh considering sample's complex geometry
+% Generate a quadtree mesh where is a hole in the center
 %
 % ----------------------------------------------
 % References
@@ -12,22 +12,28 @@
 % Last time updated: 02/2020.
 % ==============================================
 
-
-disp('--- Generate a quadtree mesh ---')
+disp('--- Generate a quadtree mesh ---') 
 %% ====== Remove finite elements where there is a hole ======
+ParHole = DICpara.ParHole;
+ImgRefMask = DICpara.ImgRefMask;
 coordinatesFEMQuadtree = DICmesh.coordinatesFEM;
 elementsFEMQuadtree = DICmesh.elementsFEM;
 irregular = zeros(0,3);
 
+% Define the hole geometry
+C = ParHole(1:2); % circle center
+R = ParHole(3); % circle radius
+h = DICmesh.elementMinSize; % 2; % minimize element size in the refined quadtree mesh
+
 while 1 % Generate a Quadtree mesh
-    [~,mark4] = funMarkEdge(coordinatesFEMQuadtree,elementsFEMQuadtree,Df.ImgRefMask,DICmesh.elementMinSize*2); % Don't delete "*2"
+    [~,mark4] = markCircle(coordinatesFEMQuadtree,[],elementsFEMQuadtree,C,R,h*2); % Don't delete "*2"
     mark4 = find(mark4);
     [coordinatesFEMQuadtree,elementsFEMQuadtree,irregular] = QrefineR(coordinatesFEMQuadtree,elementsFEMQuadtree,irregular,mark4);
     if isempty(mark4)
         break
     end
 end
-  
+
 
 %% %%%%% Plot refined mesh %%%%%
 figure; patch('Faces', elementsFEMQuadtree(:,1:4), 'Vertices', coordinatesFEMQuadtree, 'Facecolor','none','linewidth',1)
@@ -56,23 +62,14 @@ for tempj=1:size(irregular,1)
     [Lia, Locb] = ismember( [irregular(tempj,1:2)], elementsFEMQuadtree(:,[1,4]), 'rows' );
     if Lia>0, elementsFEMQuadtree(Locb,7)=irregular(tempj,3); end
 end
- 
+
 % Remove elements within the center hole
-[markInside4,markOutside4] = funMarkInside(coordinatesFEMQuadtree,elementsFEMQuadtree,Df.ImgRefMask);
+[~,markOutside4] = markCircleInside(coordinatesFEMQuadtree,elementsFEMQuadtree,C,R);
 elementsFEMQuadtree = elementsFEMQuadtree(markOutside4,:);
 
 
 %% Fine nodes near the edges
 
-% %%%%% Old codes: Erode ref image mask, and to find elements near holes' edges,
-% nhood = [1 1 1; 1 1 1; 1 1 1];
-% ImgRefMaskErode = DICpara.ImgRefMask;
-% for tempi = 1: floor(0.5*max([20,mean(DICpara.winsize),mean(DICpara.winstepsize)]))-1
-%     ImgRefMaskErode = imerode(ImgRefMaskErode, nhood);
-% end
-% % figure, imshow(ImgRefMaskErode');
-% [markEleHoleEdge4,markEleFarOutside4] = funMarkInside(coordinatesFEMQuadtree,elementsFEMQuadtree,ImgRefMaskErode);
-   
 % %%%%% New codes: Find elements which are refined %%%%%%
 elementsFEMQuadtreeSize = sqrt( ( coordinatesFEMQuadtree(elementsFEMQuadtree(:,1),1) - coordinatesFEMQuadtree(elementsFEMQuadtree(:,3),1) ).^2 + ...
         ( coordinatesFEMQuadtree(elementsFEMQuadtree(:,1),2) - coordinatesFEMQuadtree(elementsFEMQuadtree(:,3),2) ).^2 );
@@ -92,7 +89,8 @@ try
     if markCoordHoleEdge(1)==0, markCoordHoleEdge=markCoordHoleEdge(2:end); end
 catch
 end
- 
+
+
 % %%%%% New codes: Find elements near marked elements %%%%%%
 markEleHoleEdge4 = zeros(size(elementsFEMQuadtree,1),1);
 for eleInd = 1:size(elementsFEMQuadtree,1)
@@ -116,7 +114,6 @@ xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter
 title('Quadtree mesh','Interpreter','latex');
 a = gca; a.TickLabelInterpreter = 'latex';
  
-
 
 %% Initialize variable U for the generated quadtree mesh
 F_dispu = scatteredInterpolant( DICmesh.coordinatesFEM(:,1),DICmesh.coordinatesFEM(:,2),U0(1:2:end) );
@@ -149,4 +146,5 @@ clear  irregular C R h mark4 markOutside4 Lia Locb F_dispu F_dispv temp
 [U0,~] = funRemoveOutliersQuadtree(DICmesh,DICpara,U0,[U0;U0]);
 
 
-
+  
+  

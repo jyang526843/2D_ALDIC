@@ -1,15 +1,25 @@
-% ==============================================
-% function ReadImage
-% ----------------------------------------------
-%   This function is to load DIC images
-%   Images can be loaded by selecting images folder, inputing image name
-%   prefix, or directly selecting images manually.
-%
-% Author: Jin Yang.
-% Last updated 02/2020.
-% ==============================================
 function [file_name,Img,DICpara] = ReadImageQuadtree(varargin)
+%FUNCTION [file_name,Img,DICpara] = ReadImageQuadtree(varargin)
+% ----------------------------------------------
+%   This script is to load DIC images 
+%   Images can be loaded by:
+%       i) selecting a folder which included all the DIC raw images, 
+%       ii) inputing image file name prefix keywords
+%       iii) manually select DIC raw images
+%
+%   INPUT: No inputs are needed
+%
+%   OUTPUT: file_name    Loaded DIC raw image file name
+%           Img          Loaded DIC images
+%           DICpara      DIC parameters
+%
+% ----------------------------------------------
+% Author: Jin Yang.  
+% Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
+% Last time updated: 12/2020.
+% ==============================================
 
+%%
 fprintf('Choose method to load images:  \n')
 fprintf('     0: Select images folder;  \n')
 fprintf('     1: Use prefix of image names;  \n')
@@ -68,20 +78,8 @@ for i = 1:numImages
     Img{i} = double(Img{i})';
 end
 
-
-%f = imread(file_name{1});
-%g = imread(file_name{2});
-
-% % Decide rgb images or grayscale images
-%if (numberOfColorChannels==3)
-%    f = rgb2gray(f);
-%    g = rgb2gray(g);
-%end
-
-% % Field of the undeformed and deformed greyscale;
-%f = double(f'); g = double(g');
-
-% images are:
+% ====== COMMENT ======
+% Images physical world coordinates and image coordinates are different:
 % --------------------
 % --  This is image --
 % |                  |
@@ -99,9 +97,10 @@ end
 % |                             |
 % --------------------------------
  
+
 % ==============================================
 % Decide DIC subset parameters
-% Choose ZOI
+% Choose region of interest (ROI)
 fprintf('\n');
 disp('--- Define ROI corner points at the top-left and the bottom-right ---')
 imshow( (imread(file_name{1}))); 
@@ -120,12 +119,12 @@ gridxy.gridx = round(gridx); gridxy.gridy = round(gridy);
 fprintf('\n');
 fprintf('--- What is the subset size? --- \n');
 fprintf('Each subset has an area of [-winsize/2:winsize/2, -winsize/2:winsize/2] \n');
-prompt = 'Input an even number (E.g., 40): ';
+prompt = 'Input an even number (E.g., 32): ';
 winsize = input(prompt);
 
 % Choose subset size
 fprintf('--- What is the subset step? --- \n');
-prompt = 'Input an integer to be a power of 2 (E.g., 32):  ';
+prompt = 'Input an integer to be a power of 2 (E.g., 16):  ';
 winstepsize = input(prompt);
  
 
@@ -149,12 +148,12 @@ if numImages > 2
     
     % ==============================================
     % Decide DIC as accumulative or incremental mode?
-%     fprintf('--- Choose accumulative or incremental mode ---  \n')
-%     fprintf('     0: Cumulative (By default);  \n')
-%     fprintf('     1: Incremental;  \n')
-%     prompt = 'Input here: ';
-%     DICIncOrNot = input(prompt);
-    DICIncOrNot = 0;
+    % fprintf('--- Choose accumulative or incremental mode ---  \n')
+    % fprintf('     0: Cumulative (By default);  \n')
+    % fprintf('     1: Incremental;  \n')
+    % prompt = 'Input here: ';
+    % DICIncOrNot = input(prompt);
+    DICIncOrNot = 0; % To be implemented in the future for quadtree meshes.
 
     try
         switch DICIncOrNot
@@ -201,5 +200,13 @@ DICpara.Subpb2FDOrFEM = Subpb2FDOrFEM;
 DICpara.NewFFTSearch = NewFFTSearch;
 DICpara.ClusterNo = ClusterNo;
 DICpara.ImgSize = size(Img{1});
+
+ 
+
+
+
+clear ImgRef gridx gridy ImgRefGaussFilt ImgRefMaskThresholdInside ImgRefMaskThresholdOutside ...
+tempi tempxx tempyy dist2HoleCenter row col removeobjradius  ImgRefMasktemp
+
 
 end

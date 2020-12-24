@@ -1,14 +1,37 @@
-% ==============================================
-% function funSmoothDisp
-% Triple times smooth the field
-% ==============================================
 function U = funSmoothDispQuadtree(U,DICmesh,DICpara)
+%FUNCTION U = funSmoothDispQuadtree(U,DICmesh,DICpara)
+% Object: Smooth solved displacement fields by curvature regularization
+% ----------------------------------------------
+%
+%   INPUT: U                 Displacement vector: U = [Ux_node1, Uy_node1, Ux_node2, Uy_node2, ... , Ux_nodeN, Uy_nodeN]';
+%          DICmesh           DIC mesh
+%          DICpara           DIC parameters
+%
+%   OUTPUT: U                Smoothed displacement fields by curvature regularization
+%
+% ----------------------------------------------
+% Reference
+% [1] RegularizeNd. Matlab File Exchange open source. 
+% https://www.mathworks.com/matlabcentral/fileexchange/61436-regularizend
+% [2] Gridfit. Matlab File Exchange open source. 
+% https://www.mathworks.com/matlabcentral/fileexchange/8998-surface-fitting-using-gridfit
+% ----------------------------------------------
+% Author: Jin Yang.  
+% Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
+% Last time updated: 12/2020.
+% ==============================================
 
+
+%% Initialization
 h = DICmesh.elementMinSize;
 coordinatesFEM = DICmesh.coordinatesFEM;
 FilterSizeInput = DICpara.DispFilterSize;
 FilterStd = DICpara.DispFilterStd;
 U = full(U);
+try smoothness = DICpara.DispSmoothness; 
+catch smoothness = 5e-4;
+end
+
 
 %% prompt = 'Do you want to smooth displacement? (0-yes; 1-no)';
 DoYouWantToSmoothOnceMore = 0; % DoYouWantToSmoothOnceMore = input(prompt);
@@ -41,8 +64,10 @@ SmoothTimes = 1;
 while (DoYouWantToSmoothOnceMore==0)
     Coordxnodes = [min(coordinatesFEM(:,1)):h:max(coordinatesFEM(:,1))]'; 
     Coordynodes = [min(coordinatesFEM(:,2)):h:max(coordinatesFEM(:,2))]';
-    Iblur_10 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), U(1:2:end),Coordxnodes,Coordynodes,'regularizer','springs'); Iblur_10=Iblur_10';
-    Iblur_20 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), U(2:2:end),Coordxnodes,Coordynodes,'regularizer','springs'); Iblur_20=Iblur_20';
+    %Iblur_10 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), U(1:2:end),Coordxnodes,Coordynodes, 'regularizer','springs'); Iblur_10=Iblur_10';
+    %Iblur_20 = gridfit(coordinatesFEM(:,1), coordinatesFEM(:,2), U(2:2:end),Coordxnodes,Coordynodes,  'regularizer','springs'); Iblur_20=Iblur_20';
+    Iblur_10 = regularizeNd([coordinatesFEM(:,1), coordinatesFEM(:,2)],U(1:2:end),{Coordxnodes,Coordynodes},smoothness);
+    Iblur_20 = regularizeNd([coordinatesFEM(:,1), coordinatesFEM(:,2)],U(2:2:end),{Coordxnodes,Coordynodes},smoothness);
     
     imageFilter=fspecial('gaussian',FilterSizeInput,FilterStd);
      

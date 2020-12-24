@@ -1,28 +1,69 @@
-function [Strain,StrainGaussPt,CoordGaussPt] = funGlobalNodalStrainQuadtree(DICmesh,U,GaussPtOrder,waitBarDisplayOrNot)
+function [StrainNodalPt,StrainGaussPt,CoordGaussPt] = funGlobalNodalStrainQuadtree(...
+                                           DICmesh,U,GaussPtOrder,waitBarDisplayOrNot)
+%FUNCTION [StrainNodalPt,StrainGaussPt,CoordGaussPt] = funGlobalNodalStrainQuadtree( ...
+%                                             DICmesh,U,GaussPtOrder,waitBarDisplayOrNot)                 
+% Object: to compute strain fields by the FE-method
+% ----------------------------------------------
+%
+%	INPUT: DICmesh             DIC FE Q4 mesh: coordinatesFEM, elementsFEM
+%          U                   Disp vector: U = [Ux_node1, Uy_node1, ... , Ux_nodeN, Uy_nodeN]';
+%          GaussPtOrder        Gauss point order used in FE Q4 element 
+%          udual,vdual         Dual variables
+%          waitBarDisplayOrNot Display a waitbar or not
+%           
+%   OUTPUT: StrainNodalPt      Solved strains at the nodal points
+%           StrainGaussPt      Solved strains at the Gauss points
+%           CoordGaussPt       Coordinates of Gauss points
+%
+% ----------------------------------------------
+% Reference
+% [1] RegularizeNd. Matlab File Exchange open source. 
+% https://www.mathworks.com/matlabcentral/fileexchange/61436-regularizend
+% [2] Gridfit. Matlab File Exchange open source. 
+% https://www.mathworks.com/matlabcentral/fileexchange/8998-surface-fitting-using-gridfit
+% ----------------------------------------------
+% Author: Jin Yang.  
+% Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
+% Last time updated: 2018.03, 2020.12 
+% ==============================================
 
+
+%% Initialization
 coordinatesFEM = DICmesh.coordinatesFEM; 
-elementsFEM = DICmesh.elementsFEM;
+elementsFEM = DICmesh.elementsFEM; elementsFEM(:,5:8) = 0;
 h = DICmesh.elementMinSize;
 
 DIM = 2; NodesNumPerEle = 4;
 SizeCoords = size(coordinatesFEM,1);
+smoothness = 0; % an empirical value; if apply some smoothness, use "1e-3" by default
+
 
 %% ====== Initialize strain Gauss points ======
-Strain = 0; U = [U;zeros(DIM*NodesNumPerEle,1)]; % For zero entries in elements
-FStrainAvgTimes = zeros(4*SizeCoords,1); FStrain = zeros(4*SizeCoords,1);
+U = [U;zeros(DIM*NodesNumPerEle,1)]; % For zero entries in elements
 StrainGaussPt = zeros(4*size(elementsFEM,1),4); CoordGaussPt = zeros(4*size(elementsFEM,1),2);
 
 % ====== Gaussian quadrature parameter ======
 switch GaussPtOrder
-    case 2 % ------ 2*2 Gauss points ------
+    case 2 % 2*2 Gauss points 
         gqpt1 = -1/sqrt(3); gqpt2 = 1/sqrt(3); gqpt = [gqpt1,gqpt2]; 
         gqwt1 = 1; gqwt2 = 1; gqwt = [gqwt1,gqwt2];
-    case 3 % ------ 3*3 Gauss points ------
+    case 3 % 3*3 Gauss points 
         gqpt1 = 0; gqpt2 = sqrt(3/5); gqpt3 = -sqrt(3/5); gqpt = [gqpt1,gqpt2,gqpt3];
         gqwt1 = 8/9; gqwt2 = 5/9; gqwt3 = 5/9; gqwt = [gqwt1,gqwt2,gqwt3];
+    case 4 % 4*4 Gauss points 
+        gqpt1 = 0.339981; gqpt2 = -0.339981; gqpt3 = 0.861136; gqpt4 = -0.861136;  
+        gqwt1 = 0.652145; gqwt2 = 0.652145; gqwt3 = 0.347855; gqwt4 = 0.347855;
+        gqpt = [gqpt1,gqpt2,gqpt3,gqpt4]; gqwt = [gqwt1,gqwt2,gqwt3,gqwt4];
+    case 5 % 5*5 Gauss points 
+        gqpt1 = 0; gqpt2 = 0.538469; gqpt3 = -0.538469; gqpt4 = 0.90618; gqpt5 = -0.90618;
+        gqwt1 = 0.568889; gqwt2 = 0.478629; gqwt3 = 0.478629; gqwt4 = 0.236927; gqwt5 = 0.236927;
+        gqpt = [gqpt1,gqpt2,gqpt3,gqpt4,gqpt5]; gqwt = [gqwt1,gqwt2,gqwt3,gqwt4,gqwt5];
+    otherwise
+        disp('Not implemented yet!')
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%%
 if waitBarDisplayOrNot == 0
    hbar = waitbar(0, ['Update deformation gradient tensor F after solving Subproblem 2.']);
 end
@@ -30,10 +71,10 @@ end
 for eleInd = 1:size(elementsFEM,1) % eleInd is the element index
     
     if waitBarDisplayOrNot == 0
-    waitbar(eleInd/size(elementsFEM,1));
+        waitbar(eleInd/size(elementsFEM,1));
     end
     
-    StrainWithinEachElementGausspoint = zeros(4,4);
+    StrainWithinEachElementGausspoint = zeros(GaussPtOrder^2,4);
     
     % ----- Find four corner points -------
     pt1x = coordinatesFEM(elementsFEM(eleInd,1),1); pt1y = coordinatesFEM(elementsFEM(eleInd,1),2);
@@ -70,11 +111,9 @@ for eleInd = 1:size(elementsFEM,1) % eleInd is the element index
     mb = [-1;-1;1;1]; m = linsolve(lMatrix,mb);
 
     % ------ Find the element nodal indices ------
-    tempIndexU = [2*elementsFEM(eleInd,1)-1 2*elementsFEM(eleInd,1) 2*elementsFEM(eleInd,2)-1 2*elementsFEM(eleInd,2) ...
-            2*elementsFEM(eleInd,3)-1 2*elementsFEM(eleInd,3) 2*elementsFEM(eleInd,4)-1 2*elementsFEM(eleInd,4) ...
-            2*elementsFEM(eleInd,5)-1 2*elementsFEM(eleInd,5) 2*elementsFEM(eleInd,6)-1 2*elementsFEM(eleInd,6) ...
-            2*elementsFEM(eleInd,7)-1 2*elementsFEM(eleInd,7) 2*elementsFEM(eleInd,8)-1 2*elementsFEM(eleInd,8)];
-        
+    tempIndexU = 2*elementsFEM(eleInd,[1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8]);
+    tempIndexU(1:2:end) = tempIndexU(1:2:end)-1;   
+    
     % We don't want temp <= 0, instead, put them to the end
     for tempi = 5:8
         if elementsFEM(eleInd,tempi) == 0
@@ -90,26 +129,15 @@ for eleInd = 1:size(elementsFEM,1) % eleInd is the element index
        ptOfx(tempi) = gqpt(tempi)*0.5*(coordinatesFEM(pt2,1)-coordinatesFEM(pt1,1))+0.5*(coordinatesFEM(pt2,1)+coordinatesFEM(pt1,1));
        ptOfy(tempi) = gqpt(tempi)*0.5*(coordinatesFEM(pt2,2)-coordinatesFEM(pt1,2))+0.5*(coordinatesFEM(pt2,2)+coordinatesFEM(pt1,2));
     end
+    
+    % ------ Start computing strains at Gauss points ------
     for tempi = 1:length(ptOfx)
        for tempj = 1:length(ptOfy)
-    % ------ Start four Gauss points ------
-    %for tempi = 1:2
-    %    for tempj = 1:2
-            
+     
             % ------ Calculate ksi and eta ------
-            ksi = l(1)*ptOfx(tempi)*ptOfy(tempj) + l(2)*ptOfx(tempi) + l(3)*ptOfy(tempj) + l(4) ;
-            eta = m(1)*ptOfx(tempi)*ptOfy(tempj) + m(2)*ptOfx(tempi) + m(3)*ptOfy(tempj) + m(4) ;
-            % ksi = 2*tempj-3; eta = 2*tempi-3;
-            % if (tempi == 1) && (tempj == 1)
-            %     ksi = -1/sqrt(3); eta = -1/sqrt(3);
-            % elseif (tempi == 1) && (tempj == 2)
-            %     ksi = 1/sqrt(3); eta = -1/sqrt(3);
-            % elseif (tempi == 2) && (tempj == 1)
-            %     ksi = 1/sqrt(3); eta = 1/sqrt(3);
-            % elseif (tempi == 2) && (tempj == 2)
-            %     ksi = -1/sqrt(3); eta = 1/sqrt(3);
-            % end
-            
+            ksi = l(1)*ptOfx(tempi)*ptOfy(tempj) + l(2)*ptOfx(tempi) + l(3)*ptOfy(tempj) + l(4);
+            eta = m(1)*ptOfx(tempi)*ptOfy(tempj) + m(2)*ptOfx(tempi) + m(3)*ptOfy(tempj) + m(4);
+             
             % ------ Calculate N ------
             deltaPt5 = 0; deltaPt6 = 0; deltaPt7 = 0; deltaPt8 = 0;
             if elementsFEM(eleInd,5) ~= 0; deltaPt5 = 1; end
@@ -127,10 +155,8 @@ for eleInd = 1:size(elementsFEM,1) % eleInd is the element index
             N3 = (1+ksi)*(1+eta)*0.25 - 0.5*(N5+N6);
             N4 = (1-ksi)*(1+eta)*0.25 - 0.5*(N6+N7);
 
-             
             % ------ Build J matrix ------
-            % Comment: I didn't change Jacobian matrix J when enriched 
-            % functions are added.
+            % Jacobian matrix J doesn't change with added enriched functions  
             J11 = funDN1Dksi(ksi,eta,deltaPt7,deltaPt8)*pt1x + funDN2Dksi(ksi,eta,deltaPt8,deltaPt5)*pt2x + ...
                   funDN3Dksi(ksi,eta,deltaPt5,deltaPt6)*pt3x + funDN4Dksi(ksi,eta,deltaPt6,deltaPt7)*pt4x + ...
                   funDN5Dksi(ksi,eta,deltaPt5)*pt5x + funDN6Dksi(ksi,eta,deltaPt6)*pt6x + ...
@@ -176,127 +202,96 @@ for eleInd = 1:size(elementsFEM,1) % eleInd is the element index
         end
     end
     
-    %%%%%%%%%%%%%%%%%%% Replace with 9-Gauss point %%%%%%%%%%%%%%%%%%%%%%
-    switch GaussPtOrder
-        case 3
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    switch GaussPtOrder 
+        case 2 % 2*2 Gauss point 
+            StrainGaussPt((length(gqpt)^2*(eleInd-1)+1):length(gqpt)^2*eleInd,1:4) = StrainWithinEachElementGausspoint;
+            CoordGaussPt((length(gqpt)^2*(eleInd-1)+1):length(gqpt)^2*eleInd,1:2) = ...
+                    [ptOfx(1),ptOfy(1);ptOfx(1),ptOfy(2); 
+                     ptOfx(2),ptOfy(1);ptOfx(2),ptOfy(2)];
+        case 3 % 3*3 Gauss point 
             StrainGaussPt((length(gqpt)^2*(eleInd-1)+1):length(gqpt)^2*eleInd,1:4) = StrainWithinEachElementGausspoint;
             CoordGaussPt((length(gqpt)^2*(eleInd-1)+1):length(gqpt)^2*eleInd,1:2) = ...
                     [ptOfx(1),ptOfy(1);ptOfx(1),ptOfy(2);ptOfx(1),ptOfy(3);
                      ptOfx(2),ptOfy(1);ptOfx(2),ptOfy(2);ptOfx(2),ptOfy(3);
                      ptOfx(3),ptOfy(1);ptOfx(3),ptOfy(2);ptOfx(3),ptOfy(3)];
-        %%%%%%%%%%%%%%%%%%% Comment following 4-Gauss point %%%%%%%%%%%%%%%%%%%%%%
-        case 2
+        case 4 % 4*4 Gauss point
             StrainGaussPt((length(gqpt)^2*(eleInd-1)+1):length(gqpt)^2*eleInd,1:4) = StrainWithinEachElementGausspoint;
             CoordGaussPt((length(gqpt)^2*(eleInd-1)+1):length(gqpt)^2*eleInd,1:2) = ...
-                    [ptOfx(1),ptOfy(1);ptOfx(1),ptOfy(2); 
-                     ptOfx(2),ptOfy(1);ptOfx(2),ptOfy(2)];
-                 
-%             MatrixExtrapolation = [1+0.5*sqrt(3)  -0.5           1-0.5*sqrt(3)   -0.5;
-%                                     -0.5           1+0.5*sqrt(3)  -0.5            1-0.5*sqrt(3);
-%                                     1-0.5*sqrt(3)  -0.5           1+0.5*sqrt(3)   -0.5;
-%                                     -0.5           1-0.5*sqrt(3)  -0.5            1+0.5*sqrt(3)];
-%     
-%             % ------ Nodal points strain extrapolation using Gauss points -----
-%             StrainExxWithinEachElementNodalpoint =  MatrixExtrapolation * ...
-%                 [StrainWithinEachElementGausspoint(1,1);
-%                 StrainWithinEachElementGausspoint(2,1);
-%                 StrainWithinEachElementGausspoint(3,1);
-%                 StrainWithinEachElementGausspoint(4,1)];
-% 
-%             StrainExyWithinEachElementNodalpoint = MatrixExtrapolation * ...
-%                 [StrainWithinEachElementGausspoint(1,2);
-%                 StrainWithinEachElementGausspoint(2,2);
-%                 StrainWithinEachElementGausspoint(3,2);
-%                 StrainWithinEachElementGausspoint(4,2)];
-% 
-%             StrainEyxWithinEachElementNodalpoint = MatrixExtrapolation * ...
-%                 [StrainWithinEachElementGausspoint(1,3);
-%                 StrainWithinEachElementGausspoint(2,3);
-%                 StrainWithinEachElementGausspoint(3,3);
-%                 StrainWithinEachElementGausspoint(4,3)];
-% 
-%             StrainEyyWithinEachElementNodalpoint = MatrixExtrapolation * ...
-%                 [StrainWithinEachElementGausspoint(1,4);
-%                 StrainWithinEachElementGausspoint(2,4);
-%                 StrainWithinEachElementGausspoint(3,4);
-%                 StrainWithinEachElementGausspoint(4,4)];
-% 
-%             StrainWithinEachElementGausspoint(1,1) = StrainExxWithinEachElementNodalpoint(1);
-%             StrainWithinEachElementGausspoint(2,1) = StrainExxWithinEachElementNodalpoint(2);
-%             StrainWithinEachElementGausspoint(3,1) = StrainExxWithinEachElementNodalpoint(3);
-%             StrainWithinEachElementGausspoint(4,1) = StrainExxWithinEachElementNodalpoint(4);
-% 
-%             StrainWithinEachElementGausspoint(1,2) = StrainExyWithinEachElementNodalpoint(1);
-%             StrainWithinEachElementGausspoint(2,2) = StrainExyWithinEachElementNodalpoint(2);
-%             StrainWithinEachElementGausspoint(3,2) = StrainExyWithinEachElementNodalpoint(3);
-%             StrainWithinEachElementGausspoint(4,2) = StrainExyWithinEachElementNodalpoint(4);
-% 
-%             StrainWithinEachElementGausspoint(1,3) = StrainEyxWithinEachElementNodalpoint(1);
-%             StrainWithinEachElementGausspoint(2,3) = StrainEyxWithinEachElementNodalpoint(2);
-%             StrainWithinEachElementGausspoint(3,3) = StrainEyxWithinEachElementNodalpoint(3);
-%             StrainWithinEachElementGausspoint(4,3) = StrainEyxWithinEachElementNodalpoint(4);
-% 
-%             StrainWithinEachElementGausspoint(1,4) = StrainEyyWithinEachElementNodalpoint(1);
-%             StrainWithinEachElementGausspoint(2,4) = StrainEyyWithinEachElementNodalpoint(2);
-%             StrainWithinEachElementGausspoint(3,4) = StrainEyyWithinEachElementNodalpoint(3);
-%             StrainWithinEachElementGausspoint(4,4) = StrainEyyWithinEachElementNodalpoint(4);
-% 
-% 
-%             % ------ Find the element nodal indices for strain ------
-%             tempStrainIndex = [4*elements(j,1)-3  4*elements(j,1)-2  4*elements(j,1)-1  4*elements(j,1)  ...
-%                                4*elements(j,2)-3  4*elements(j,2)-2  4*elements(j,2)-1  4*elements(j,2) ...
-%                                4*elements(j,3)-3  4*elements(j,3)-2  4*elements(j,3)-1  4*elements(j,3) ...
-%                                4*elements(j,4)-3  4*elements(j,4)-2  4*elements(j,4)-1  4*elements(j,4)];
-% 
-%             FStrain(tempStrainIndex) = FStrain(tempStrainIndex) + ...
-%                [StrainWithinEachElementGausspoint(1,1); StrainWithinEachElementGausspoint(1,2); 
-%                 StrainWithinEachElementGausspoint(1,3); StrainWithinEachElementGausspoint(1,4); 
-%                 StrainWithinEachElementGausspoint(2,1); StrainWithinEachElementGausspoint(2,2); 
-%                 StrainWithinEachElementGausspoint(2,3); StrainWithinEachElementGausspoint(2,4); 
-%                 StrainWithinEachElementGausspoint(3,1); StrainWithinEachElementGausspoint(3,2); 
-%                 StrainWithinEachElementGausspoint(3,3); StrainWithinEachElementGausspoint(3,4); 
-%                 StrainWithinEachElementGausspoint(4,1); StrainWithinEachElementGausspoint(4,2); 
-%                 StrainWithinEachElementGausspoint(4,3); StrainWithinEachElementGausspoint(4,4)];
-% 
-%             FStrainAvgTimes(tempStrainIndex) = FStrainAvgTimes(tempStrainIndex) + ones(16,1);
+                    [ptOfx(1),ptOfy(1);ptOfx(1),ptOfy(2);ptOfx(1),ptOfy(3);ptOfx(1),ptOfy(4);
+                     ptOfx(2),ptOfy(1);ptOfx(2),ptOfy(2);ptOfx(2),ptOfy(3);ptOfx(2),ptOfy(4);
+                     ptOfx(3),ptOfy(1);ptOfx(3),ptOfy(2);ptOfx(3),ptOfy(3);ptOfx(3),ptOfy(4);
+                     ptOfx(4),ptOfy(1);ptOfx(4),ptOfy(2);ptOfx(4),ptOfy(3);ptOfx(4),ptOfy(4)];
+        case 5 % 5*5 Gauss point
+            StrainGaussPt((length(gqpt)^2*(eleInd-1)+1):length(gqpt)^2*eleInd,1:4) = StrainWithinEachElementGausspoint;
+            CoordGaussPt((length(gqpt)^2*(eleInd-1)+1):length(gqpt)^2*eleInd,1:2) = ...
+               [ptOfx(1),ptOfy(1);ptOfx(1),ptOfy(2);ptOfx(1),ptOfy(3);ptOfx(1),ptOfy(4);ptOfx(1),ptOfy(5);
+                ptOfx(2),ptOfy(1);ptOfx(2),ptOfy(2);ptOfx(2),ptOfy(3);ptOfx(2),ptOfy(4);ptOfx(2),ptOfy(5);
+                ptOfx(3),ptOfy(1);ptOfx(3),ptOfy(2);ptOfx(3),ptOfy(3);ptOfx(3),ptOfy(4);ptOfx(3),ptOfy(5);
+                ptOfx(4),ptOfy(1);ptOfx(4),ptOfy(2);ptOfx(4),ptOfy(3);ptOfx(4),ptOfy(4);ptOfx(4),ptOfy(5);
+                ptOfx(5),ptOfy(1);ptOfx(5),ptOfy(2);ptOfx(5),ptOfy(3);ptOfx(5),ptOfy(4);ptOfx(5),ptOfy(5);];
+        otherwise
+            disp('Not implemented yet!')
     end
     %%%%%%%%%%%%%%%%%%%%%%%% End of Comment %%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
 end
-if waitBarDisplayOrNot == 0
-    close(hbar);
-end
 
-% switch GaussPtOrder
-%     case 2
-%         Strain = FStrain./FStrainAvgTimes;
-%     case 3
-%         Strain = zeros(size(coordinates,1)*4,1);
-% end
+if waitBarDisplayOrNot==0, close(hbar); end
+ 
 
-% ====== Use gridfit and Gauss points to fit strain field ======
-Coordxnodes = [min(coordinatesFEM(:,1)):h:max(coordinatesFEM(:,1))]'; 
-Coordynodes = [min(coordinatesFEM(:,2)):h:max(coordinatesFEM(:,2))]';
-disp('** This may take a while when quadtree minimum element size is small. Please wait. ')
-Iblur_10 = gridfit(CoordGaussPt(:,1),CoordGaussPt(:,2),StrainGaussPt(:,1),Coordxnodes,Coordynodes); Iblur_10=Iblur_10';
-disp('**** Please keep waiting! ')
-Iblur_20 = gridfit(CoordGaussPt(:,1),CoordGaussPt(:,2),StrainGaussPt(:,2),Coordxnodes,Coordynodes); Iblur_20=Iblur_20';
-disp('****** Half way! Do not give up! ')
-Iblur_30 = gridfit(CoordGaussPt(:,1),CoordGaussPt(:,2),StrainGaussPt(:,3),Coordxnodes,Coordynodes); Iblur_30=Iblur_30';
-disp('******** Almost there! ')
-Iblur_40 = gridfit(CoordGaussPt(:,1),CoordGaussPt(:,2),StrainGaussPt(:,4),Coordxnodes,Coordynodes); Iblur_40=Iblur_40';    
-disp('********** Hoooooray!!! ********** ')
-Strain = 0*[U(1:end-DIM*NodesNumPerEle); U(1:end-DIM*NodesNumPerEle)]; 
-
-for tempi = 1:size(coordinatesFEM,1)
-      [row1,~] = find(Coordxnodes == coordinatesFEM(tempi,1));
-        [row2,~] = find(Coordynodes == coordinatesFEM(tempi,2));
-        Strain(4*tempi-3) = Iblur_10(row1,row2);
-        Strain(4*tempi-2) = Iblur_20(row1,row2);
-        Strain(4*tempi-1) = Iblur_30(row1,row2);
-        Strain(4*tempi-0) = Iblur_40(row1,row2);
-end
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if smoothness == 0 % No smoothness
     
+    Ftemp = scatteredInterpolant(CoordGaussPt(:,1), CoordGaussPt(:,2), StrainGaussPt(:,1),'linear');
+    F11 = Ftemp(coordinatesFEM(:,1),coordinatesFEM(:,2));
+    Ftemp = scatteredInterpolant(CoordGaussPt(:,1), CoordGaussPt(:,2), StrainGaussPt(:,2),'linear');
+    F21 = Ftemp(coordinatesFEM(:,1),coordinatesFEM(:,2));
+    Ftemp = scatteredInterpolant(CoordGaussPt(:,1), CoordGaussPt(:,2), StrainGaussPt(:,3),'linear');
+    F12 = Ftemp(coordinatesFEM(:,1),coordinatesFEM(:,2));
+    Ftemp = scatteredInterpolant(CoordGaussPt(:,1), CoordGaussPt(:,2), StrainGaussPt(:,4),'linear');
+    F22 = Ftemp(coordinatesFEM(:,1),coordinatesFEM(:,2));
+    
+    StrainNodalPt = [F11(:),F21(:),F12(:),F22(:)]'; StrainNodalPt = StrainNodalPt(:);
+    
+else %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    % ====== Use gridfit and Gauss points to fit strain field ======
+    Coordxnodes = [min(coordinatesFEM(:,1)):h:max(coordinatesFEM(:,1))]';
+    Coordynodes = [min(coordinatesFEM(:,2)):h:max(coordinatesFEM(:,2))]';
+    disp('** This may take a while when quadtree minimum element size is small. Please wait. ')
+    
+    Iblur_10 = regularizeNd([CoordGaussPt(:,1),CoordGaussPt(:,2)],StrainGaussPt(:,1),{Coordxnodes,Coordynodes},smoothness);
+    disp('|------> 25%                   | Please keep waiting! ')
+    Iblur_20 = regularizeNd([CoordGaussPt(:,1),CoordGaussPt(:,2)],StrainGaussPt(:,2),{Coordxnodes,Coordynodes},smoothness);
+    disp('|-------------> 50%            | Half way! Do not give up! ')
+    Iblur_30 = regularizeNd([CoordGaussPt(:,1),CoordGaussPt(:,2)],StrainGaussPt(:,3),{Coordxnodes,Coordynodes},smoothness);
+    disp('|--------------------> 75%     | Almost there! ')
+    Iblur_40 = regularizeNd([CoordGaussPt(:,1),CoordGaussPt(:,2)],StrainGaussPt(:,4),{Coordxnodes,Coordynodes},smoothness);
+    disp('|----------------------------->| Hooray!!! ')
+     
+    % Iblur_10 = gridfit(CoordGaussPt(:,1),CoordGaussPt(:,2),StrainGaussPt(:,1),Coordxnodes,Coordynodes ); Iblur_10=Iblur_10';
+    % disp('|------> 25%                   | Please keep waiting! ')
+    % Iblur_20 = gridfit(CoordGaussPt(:,1),CoordGaussPt(:,2),StrainGaussPt(:,2),Coordxnodes,Coordynodes ); Iblur_20=Iblur_20';
+    % disp('|-------------> 50%            | Half way! Do not give up! ')
+    % Iblur_30 = gridfit(CoordGaussPt(:,1),CoordGaussPt(:,2),StrainGaussPt(:,3),Coordxnodes,Coordynodes ); Iblur_30=Iblur_30';
+    % disp('|--------------------> 75%     | Almost there! ')
+    % Iblur_40 = gridfit(CoordGaussPt(:,1),CoordGaussPt(:,2),StrainGaussPt(:,4),Coordxnodes,Coordynodes ); Iblur_40=Iblur_40';
+    % disp('|----------------------------->| Hoooooray!!! ')
+     
+    StrainNodalPt = 0*[U(1:end-DIM*NodesNumPerEle); U(1:end-DIM*NodesNumPerEle)];
+    for tempi = 1:size(coordinatesFEM,1)
+        [row1,~] = find(Coordxnodes == coordinatesFEM(tempi,1));
+        [row2,~] = find(Coordynodes == coordinatesFEM(tempi,2));
+        StrainNodalPt(4*tempi-3) = Iblur_10(row1,row2);
+        StrainNodalPt(4*tempi-2) = Iblur_20(row1,row2);
+        StrainNodalPt(4*tempi-1) = Iblur_30(row1,row2);
+        StrainNodalPt(4*tempi-0) = Iblur_40(row1,row2);
+    end
+    
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 end
 
