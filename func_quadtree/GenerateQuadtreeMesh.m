@@ -94,7 +94,7 @@ catch
 end
 
 %%%%%% New codes: Find elements near marked elements %%%%%%
-for tempi = 1: 2+(round( 32 / mean(DICpara.winstepsize) )^2)
+for tempi = 1 : 2 % 2+(round( 32 / mean(DICpara.winstepsize) )^2)
     
     markEleHoleEdgeNeigh4 = zeros(size(elementsFEMQuadtree,1),1);
     for eleInd = 1:size(elementsFEMQuadtree,1)
