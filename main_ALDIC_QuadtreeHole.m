@@ -217,7 +217,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     if DICpara.DispSmoothness>1e-6, USubpb2 = funSmoothDispQuadtree(USubpb2,DICmesh,DICpara); end
     % ------- Don't smooth strain fields near the boundary --------
     for tempk=0:3, FSubpb2(4*DICmesh.markCoordHoleEdge-tempk) = FSubpb1(4*DICmesh.markCoordHoleEdge-tempk); end
-    if DICpara.StrainSmoothness>1e-6, FSubpb2 = funSmoothStrainQuadtree(FSubpb2,DICmesh,DICpara); end
+    if DICpara.StrainSmoothness>1e-6, FSubpb2 = funSmoothStrainQuadtree(0.1*FSubpb2+0.9*FSubpb1,DICmesh,DICpara); end
     for tempk=0:3, FSubpb2(4*DICmesh.markCoordHoleEdge-tempk) = FSubpb1(4*DICmesh.markCoordHoleEdge-tempk); end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      
@@ -278,7 +278,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
         if DICpara.DispSmoothness>1e-6, USubpb2 = funSmoothDispQuadtree(USubpb2,DICmesh,DICpara); end
         % ------- Don't change strain fields near the boundary --------
         for tempk=0:3, FSubpb2(4*DICmesh.markCoordHoleEdge-tempk) = FSubpb1(4*DICmesh.markCoordHoleEdge-tempk); end
-        if DICpara.StrainSmoothness>1e-6, FSubpb2 = funSmoothStrainQuadtree(FSubpb2,DICmesh,DICpara); end
+        if DICpara.StrainSmoothness>1e-6, FSubpb2 = funSmoothStrainQuadtree(0.1*FSubpb2+0.9*FSubpb1,DICmesh,DICpara); end
         for tempk=0:3, FSubpb2(4*DICmesh.markCoordHoleEdge-tempk) = FSubpb1(4*DICmesh.markCoordHoleEdge-tempk); end
          
 		save(['Subpb2_step',num2str(ALSolveStep)],'USubpb2','FSubpb2');
