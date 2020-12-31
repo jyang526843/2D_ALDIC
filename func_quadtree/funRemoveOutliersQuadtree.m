@@ -41,6 +41,7 @@ view(2); axis tight; axis equal; colorbar; xlabel('$x$ (pixels)','Interpreter','
 set(gcf,'color','w'); colormap jet;
 title('Click bad dispx-u points and press -Enter- after done','fontweight','normal')
 
+
 %% %%%%% Remove bad x-disp bad points %%%%%
 fprintf('Do you clear bad points by directly pointing x-disp bad points? (0-yes; 1-no)  \n')
 prompt = 'Input here: ';

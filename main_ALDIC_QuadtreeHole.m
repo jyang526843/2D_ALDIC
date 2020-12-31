@@ -15,11 +15,11 @@
 close all; clear; clc; clearvars -global
 fprintf('------------ Section 1 Start ------------ \n')
 setenv('MW_MINGW64_LOC','C:\TDM-GCC-64');
-mex -O ba_interp2.cpp; % mex set up ba_interp2.cpp script
+try mex -O ba_interp2.cpp; catch; end % mex set up ba_interp2.cpp script
 % [Comment]: If this line reports error but it works before, 
 % Change line 18 to: "try mex -O ba_interp2.cpp; catch; end"
 addpath("./func",'./src','./plotFiles','./func_quadtree','./func_quadtree/refinement','./plotFiles/export_fig-d966721/'); 
-addpath('./Images_ForQuadtree_Sample12/'); % TODO: addpath("./YOUR IMAGE FOLDER"); 
+addpath('./Images_Quadtree_demo/Images_Sample12'); % TODO: addpath("./YOUR IMAGE FOLDER"); 
 fprintf('------------ Section 1 Done ------------ \n \n')
 
 
@@ -121,7 +121,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     
     % ====== Compute f(X)-g(x+u) ======
     % PlotImgDiff(x0,y0,u,v,fNormalized,gNormalized);
-    ResultFEMeshEachFrame{ImgSeqNum-1} = struct( 'coordinatesFEM',DICmesh.coordinatesFEM,'elementsFEM',DICmesh.elementsFEM,'markCoordHoleEdge',DICmesh.markCoordHoleEdge);
+    ResultFEMeshEachFrame{ImgSeqNum-1} = struct( 'coordinatesFEM',DICmesh.coordinatesFEM,'elementsFEM',DICmesh.elementsFEM,'markCoordHoleEdge',DICmesh.markCoordHoleEdge );
     fprintf('------------ Section 3 Done ------------ \n \n')
 
 
@@ -144,15 +144,15 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     % ------  Manually find some bad points from Local Subset ICGN step ------
     % Comment these lines below if you don't have local bad points
     % %%%%% Comment START %%%%%%
-      [USubpb1,FSubpb1] = funRemoveOutliersQuadtree(DICmesh,DICpara,USubpb1,FSubpb1);
-      disp('--- Remove bad points done ---')
+         [USubpb1,FSubpb1] = funRemoveOutliersQuadtree(DICmesh,DICpara,USubpb1,FSubpb1);
+         disp('--- Remove bad points done ---')
     % %%%%% Comment END %%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     % ------ Plot ------
     USubpb1World = USubpb1; USubpb1World(2:2:end) = -USubpb1(2:2:end); FSubpb1World = FSubpb1; 
-    close all; Plotdisp_show(USubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4));
-    Plotstrain_show(FSubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4));
+    close all; Plotdisp_show(USubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4),DICpara,'EdgeColor');
+    Plotstrain_show(FSubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4),DICpara,'EdgeColor');
     save(['Subpb1_step',num2str(ALSolveStep)],'USubpb1','FSubpb1');
     fprintf('------------ Section 4 Done ------------ \n \n')
 
@@ -189,11 +189,12 @@ for ImgSeqNum = 2 : length(ImgNormalized)
             Err2(tempk) = norm(FSubpb1-FSubpb2,2);
         end
         
-        Err1Norm = (Err1-mean(Err1))/std(Err1); figure, plot(Err1Norm);
-        Err2Norm = (Err2-mean(Err2))/std(Err2); figure, plot(Err2Norm);
-        ErrSum = Err1Norm+Err2Norm; figure,plot(ErrSum); title('Tune the best \beta in the subproblem 2'); [~,indexOfbeta] = min(ErrSum); 
+        Err1Norm = (Err1-mean(Err1))/std(Err1); % figure, plot(Err1Norm);
+        Err2Norm = (Err2-mean(Err2))/std(Err2); % figure, plot(Err2Norm);
+        ErrSum = Err1Norm+Err2Norm; % figure, plot(ErrSum); title('Tune the best \beta in the subproblem 2'); 
+        [~,indexOfbeta] = min(ErrSum); 
      
-        try % Tune the best beta by a quadratic polynomial fitting
+        try % Tune the best beta by a quadratic polynomial 0fitting
             [fitobj] = fit(log10(betaList(indexOfbeta-1:1:indexOfbeta+1))',ErrSum(indexOfbeta-1:1:indexOfbeta+1),'poly2');
             p = coeffvalues(fitobj); beta = 10^(-p(2)/2/p(1));
         catch, beta = betaList(indexOfbeta);
@@ -214,8 +215,9 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     
     % ------- Smooth strain field --------
     if DICpara.DispSmoothness>1e-6, USubpb2 = funSmoothDispQuadtree(USubpb2,DICmesh,DICpara); end
-    if DICpara.StrainSmoothness>1e-6, FSubpb2 = funSmoothStrainQuadtree(FSubpb2,DICmesh,DICpara); end
     % ------- Don't smooth strain fields near the boundary --------
+    for tempk=0:3, FSubpb2(4*DICmesh.markCoordHoleEdge-tempk) = FSubpb1(4*DICmesh.markCoordHoleEdge-tempk); end
+    if DICpara.StrainSmoothness>1e-6, FSubpb2 = funSmoothStrainQuadtree(FSubpb2,DICmesh,DICpara); end
     for tempk=0:3, FSubpb2(4*DICmesh.markCoordHoleEdge-tempk) = FSubpb1(4*DICmesh.markCoordHoleEdge-tempk); end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      
@@ -224,8 +226,8 @@ for ImgSeqNum = 2 : length(ImgNormalized)
 
     % ------ Plot ------
     USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end); FSubpb2World = FSubpb2;  
-    close all; Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4));
-    Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4));
+    close all; Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4),DICpara,'EdgeColor');
+    Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4),DICpara,'EdgeColor');
 
     % ======= Update dual variables =======
     udual = FSubpb2 - FSubpb1; vdual = USubpb2 - USubpb1;
@@ -241,7 +243,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     % ==================== ADMM AL Loop ==========================
-    ALSolveStep = 1; tol2 = 1e-2; UpdateY = 1e4; CrackOrNot = 0; CrackPath1 = [0,0]; CrackPath2 = [0,0]; CrackTip = [0,0]; 
+    ALSolveStep = 1; tol2 = 1e-2; UpdateY = 1e4;  
     HPar = cell(21,1); for tempj = 1:21, HPar{tempj} = HtempPar(:,tempj); end
 
     while (ALSolveStep < 4)
@@ -274,13 +276,13 @@ for ImgSeqNum = 2 : length(ImgNormalized)
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % ------- Smooth strain field --------
         if DICpara.DispSmoothness>1e-6, USubpb2 = funSmoothDispQuadtree(USubpb2,DICmesh,DICpara); end
-        if DICpara.StrainSmoothness>1e-6, FSubpb2 = funSmoothStrainQuadtree(FSubpb2,DICmesh,DICpara); end
         % ------- Don't change strain fields near the boundary --------
+        for tempk=0:3, FSubpb2(4*DICmesh.markCoordHoleEdge-tempk) = FSubpb1(4*DICmesh.markCoordHoleEdge-tempk); end
+        if DICpara.StrainSmoothness>1e-6, FSubpb2 = funSmoothStrainQuadtree(FSubpb2,DICmesh,DICpara); end
         for tempk=0:3, FSubpb2(4*DICmesh.markCoordHoleEdge-tempk) = FSubpb1(4*DICmesh.markCoordHoleEdge-tempk); end
          
 		save(['Subpb2_step',num2str(ALSolveStep)],'USubpb2','FSubpb2');
-        
-
+         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % Compute norm of UpdateY
         USubpb2_Old = load(['Subpb2_step',num2str(ALSolveStep-1)],'USubpb2');
@@ -326,8 +328,8 @@ end
 
 %% ------ Plot ------
 USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end); FSubpb2World = FSubpb2; 
-close all; Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4));
-Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4));
+close all; Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4),DICpara,'EdgeColor');
+Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4),DICpara,'EdgeColor');
 
 % ------ Save results ------
 % Find img name and save all the results 
@@ -403,6 +405,8 @@ fprintf('------------ Section 8 Start ------------ \n')
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % This section is to compute strain fields and plot disp and strain results
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ------ Convert units from pixels to the physical world ------
+DICpara.um2px = funParaInput('ConvertUnit');
 % ------ Smooth displacements ------
 DICpara.DoYouWantToSmoothOnceMore = 1; % No need to smooth disp fields
 DICpara.smoothness = funParaInput('RegularizationSmoothness'); % Regularization to smooth strain fields           
@@ -462,7 +466,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     try markCoordHoleEdge = ResultFEMeshEachFrame{ImgSeqNum-1}.markCoordHoleEdge; catch; end
     DICmesh.coordinatesFEM = coordinatesFEM;
     DICmesh.elementsFEM = elementsFEM;
-    coordinatesFEMWorld = [coordinatesFEM(:,1),size(ImgNormalized{1},2)+1-coordinatesFEM(:,2)];
+    coordinatesFEMWorld = DICpara.um2px*[coordinatesFEM(:,1),size(ImgNormalized{1},2)+1-coordinatesFEM(:,2)];
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      
     % ------ Plotting and Compute Strain-------
@@ -471,7 +475,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     else
         ULocal = USubpb2; FLocal = FSubpb2;
     end
-    UWorld = ULocal; UWorld(2:2:end) = -UWorld(2:2:end); FWorld = FLocal; % close all; Plotuv(UWorld,x0,y0World);
+    UWorld = DICpara.um2px*ULocal; UWorld(2:2:end) = -UWorld(2:2:end); FWorld = FLocal; % close all; Plotuv(UWorld,x0,y0World);
      
     % ------ Smooth displacements ------
     %prompt = 'Do you want to smooth displacement? (0-yes; 1-no)';
@@ -487,14 +491,15 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     end
     
     % ----- Compute strain field ------
-    ComputeStrainQuadtree; % Compute strain
-    
+    ComputeStrainQuadtree;  
+     
     % ------ Plot disp and strain ------
     close all;
     if DICpara.OrigDICImgTransparency == 1
-         Plotdisp_show(UWorld,coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4));
+         Plotdisp_show(UWorld,coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4),DICpara,'NoEdgeColor');
         [strain_exx,strain_exy,strain_eyy,strain_principal_max,strain_principal_min,strain_maxshear,strain_vonMises] = ...
-                   Plotstrain0Quadtree(FStraintemp,coordinatesFEMWorld,elementsFEM(:,1:4));
+                   Plotstrain0Quadtree(FStraintemp,coordinatesFEMWorld,elementsFEM(:,1:4),DICpara);
+    
     else % Plot over raw DIC images
         if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image	
             PlotdispQuadtree(UWorld,coordinatesFEMWorld,elementsFEM(:,1:4),file_name{1,1},DICpara);
@@ -512,8 +517,8 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     end
  
     % ----- Save strain results ------
-    ResultStrain{ImgSeqNum-1} = struct('strainxCoord',coordinatesFEM(:,1),'strainyCoord',coordinatesFEM(:,2), ...
-            'dispu',ULocal(1:2:end),'dispv',ULocal(2:2:end), ...
+    ResultStrain{ImgSeqNum-1} = struct('strainxCoord',coordinatesFEMWorld(:,1),'strainyCoord',coordinatesFEMWorld(:,2), ...
+            'dispu',UWorld(1:2:end),'dispv',UWorld(2:2:end), ...
             'dudx',FStraintemp(1:4:end),'dvdx',FStraintemp(2:4:end),'dudy',FStraintemp(3:4:end),'dvdy',FStraintemp(4:4:end), ...
             'strain_exx',strain_exx,'strain_exy',strain_exy,'strain_eyy',strain_eyy, ...
             'strain_principal_max',strain_principal_max,'strain_principal_min',strain_principal_min, ...
@@ -527,6 +532,7 @@ end
 % ------ END of for-loop {ImgSeqNum = 2:length(ImgNormalized)} ------
 fprintf('------------ Section 8 Done ------------ \n \n')
 
+ 
 % ------ Save data again including solved strain fields ------
 results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
 save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh',...
@@ -544,9 +550,9 @@ DICpara.MaterialModel = funParaInput('MaterialModel');
 % ------ Define parameters in material models ------
 if (DICpara.MaterialModel == 1) || (DICpara.MaterialModel == 2) % Linear elasticity
     fprintf('Define Linear elasticity parameters \n')
-    fprintf("Young's modulus (unit: Pa). "); prompt = 'Input here: '; 
+    fprintf("Young's modulus (unit: Pa). \n "); prompt = 'Input here (e.g., 69e9): '; 
     DICpara.MaterialModelPara.YoungsModulus = input(prompt); 
-    fprintf("Poisson's ratio. "); prompt = 'Input here: '; 
+    fprintf("Poisson's ratio \n"); prompt = 'Input here (e.g., 0.3): '; 
     DICpara.MaterialModelPara.PoissonsRatio = input(prompt);
     fprintf('------------------------------------- \n');
 end
@@ -555,25 +561,31 @@ end
 for ImgSeqNum = 2 : length(ImgNormalized)
     
     disp(['Current image frame #: ', num2str(ImgSeqNum),'/',num2str(length(ImgNormalized))]); close all;
+    
+    coordinatesFEM = ResultFEMeshEachFrame{ImgSeqNum-1}.coordinatesFEM;
+    elementsFEM = ResultFEMeshEachFrame{ImgSeqNum-1}.elementsFEM;
+    coordinatesFEMWorldDef = DICpara.um2px*[coordinatesFEM(:,1),size(ImgNormalized{1},2)+1-coordinatesFEM(:,2)] + ...
+                             DICpara.Image2PlotResults*[ResultStrain{ImgSeqNum-1}.dispu, ResultStrain{ImgSeqNum-1}.dispv];
      
-    % ------ Plot disp and strain ------
-    if DICpara.OrigDICImgTransparency == 2
+    % ------ Plot stress ------
+    if DICpara.OrigDICImgTransparency == 1
         [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
                 stress_principal_min_xyplane, stress_maxshear_xyplane, ...
                 stress_maxshear_xyz3d, stress_vonMises]  =  Plotstress0Quadtree( ...
-            DICpara,ResultStrain{ImgSeqNum-1},coordinatesFEMWorld,elementsFEM(:,1:4)); 
+            DICpara,ResultStrain{ImgSeqNum-1},coordinatesFEMWorldDef,elementsFEM(:,1:4)); 
+        
     else % Plot over raw DIC images
         if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image	
             [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
                 stress_principal_min_xyplane, stress_maxshear_xyplane, ...
                 stress_maxshear_xyz3d, stress_vonMises] = PlotstressQuadtree( ...
-                DICpara,ResultStrain{ImgSeqNum-1},coordinatesFEMWorld,elementsFEM(:,1:4),file_name{1,1});
+                DICpara,ResultStrain{ImgSeqNum-1},coordinatesFEMWorldDef,elementsFEM(:,1:4),file_name{1,1});
              
         else % Plot over second or next deformed images
            [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
                 stress_principal_min_xyplane, stress_maxshear_xyplane, ...
                 stress_maxshear_xyz3d, stress_vonMises] = PlotstressQuadtree( ...
-                DICpara,ResultStrain{ImgSeqNum-1},coordinatesFEMWorld,elementsFEM(:,1:4),file_name{1,ImgSeqNum});
+                DICpara,ResultStrain{ImgSeqNum-1},coordinatesFEMWorldDef,elementsFEM(:,1:4),file_name{1,ImgSeqNum});
  
         end
     end
@@ -599,19 +611,24 @@ save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad',
                    'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrain','ResultStress');
 
 
-%% Section 10: Plot generated quadtree mesh 
+%% Section 10: Plot the generated quadtree mesh 
+v = VideoWriter('video_mesh.mp4');
+v.FrameRate = 5;
+open(v);
 figure,
 for ImgSeqNum = 2 : (1+size(ResultDisp,1))
     
     clf; patch('Faces', DICmesh.elementsFEM(:,1:4), 'Vertices', DICmesh.coordinatesFEMWorld + ...
         [ResultDisp{ImgSeqNum-1}.U(1:2:end), -ResultDisp{ImgSeqNum-1}.U(2:2:end)], 'Facecolor','none','linewidth',1)
     xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
-    title(['Frame #',num2str(ImgSeqNum)],'Interpreter','latex','fontweight','normal');
+    tt = title(['Frame #',num2str(ImgSeqNum)],'fontweight','normal');
+    set(tt,'Interpreter','latex','fontsize',10);
     axis equal; axis tight; set(gca,'fontsize',18); set(gcf,'color','w'); box on;
     a = gca; a.TickLabelInterpreter = 'latex';
     
-    pause(0.5);
+    frame = getframe(gcf);
+    writeVideo(v,frame);
     
 end
-
+close(v);
 

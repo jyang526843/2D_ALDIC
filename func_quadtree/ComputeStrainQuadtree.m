@@ -3,7 +3,11 @@
 % ----------------------------------
 % switch MethodToComputeStrain
 %   case 3: finite element Gauss points;
-% ==================================
+% ----------------------------------------------
+% Author: Jin Yang.
+% Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
+% Last time updated: 2020.12
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 switch DICpara.MethodToComputeStrain
 
@@ -80,7 +84,10 @@ switch DICpara.MethodToComputeStrain
         FSubpb2 = FLocal;
         try
             if DICpara.DoYouWantToSmoothOnceMore == 0
-               FSubpb2 = funSmoothStrainQuadtree(FSubpb2,DICmesh,DICpara);
+                FSubpb2 = funSmoothStrainQuadtree(FSubpb2,DICmesh,DICpara);
+                for tempk=0:3
+                    FSubpb2(4*DICmesh.markCoordHoleEdge-tempk) = FLocal(4*DICmesh.markCoordHoleEdge-tempk);
+                end
             end
         catch
         end

@@ -1,8 +1,8 @@
 function [StrainNodalPt,StrainGaussPt,CoordGaussPt] = funGlobalNodalStrainQuadtree(...
                                            DICmesh,U,GaussPtOrder,waitBarDisplayOrNot)
-%FUNCTION [StrainNodalPt,StrainGaussPt,CoordGaussPt] = funGlobalNodalStrainQuadtree( ...
+%FUNGLOBALNODALSTRAINQUADTREE:  to compute strain fields by the FE-method
+%   [StrainNodalPt,StrainGaussPt,CoordGaussPt] = funGlobalNodalStrainQuadtree( ...
 %                                             DICmesh,U,GaussPtOrder,waitBarDisplayOrNot)                 
-% Object: to compute strain fields by the FE-method
 % ----------------------------------------------
 %
 %	INPUT: DICmesh             DIC FE Q4 mesh: coordinatesFEM, elementsFEM
@@ -25,7 +25,7 @@ function [StrainNodalPt,StrainGaussPt,CoordGaussPt] = funGlobalNodalStrainQuadtr
 % Author: Jin Yang.  
 % Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
 % Last time updated: 2018.03, 2020.12 
-% ==============================================
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 %% Initialization

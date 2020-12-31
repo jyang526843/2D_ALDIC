@@ -1,6 +1,6 @@
 function F = funSmoothStrainQuadtree(F,DICmesh,DICpara)
-%FUNCTION F = funSmoothStrainQuadtree(F,DICmesh,DICpara)
-% Object: Smooth solved strain fields by curvature regularization
+%FUNSMOOTHSTRAINQUADTREE: to smooth solved strain fields by curvature regularization
+% 	F = funSmoothStrainQuadtree(F,DICmesh,DICpara)
 % ----------------------------------------------
 %
 %   INPUT: F                 Deformation gradient tensor: 
@@ -17,10 +17,10 @@ function F = funSmoothStrainQuadtree(F,DICmesh,DICpara)
 % [2] Gridfit. Matlab File Exchange open source. 
 % https://www.mathworks.com/matlabcentral/fileexchange/8998-surface-fitting-using-gridfit
 % ----------------------------------------------
-% Author: Jin Yang.  
+% Author: Jin Yang.
 % Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
-% Last time updated: 12/2020.
-% ==============================================
+% Last time updated: 2020.12
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 %% Initialization

@@ -45,7 +45,7 @@ fprintf('------------ Section 2 Done ------------ \n \n')
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % To solve each frame in an image sequence
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-for ImgSeqNum = 2 : length(ImgNormalized)
+for ImgSeqNum = 2 : length(ImgNormalized)  
     
     disp(['Current image frame #: ', num2str(ImgSeqNum),'/',num2str(length(ImgNormalized))]);
     gNormalized = ImgNormalized{ImgSeqNum}; % Load current deformed image frame 
@@ -138,7 +138,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % ------  Manually find some bad points from Local Subset ICGN step ------
     % Comment these lines below if you don't need to manually remove local bad points
-    % %%%%% Comment START %%%%%
+    % %%%%% Comment START %%%%%   
         close all; USubpb1World = USubpb1; USubpb1World(2:2:end) = -USubpb1(2:2:end);
         Plotuv(USubpb1World,DICmesh.x0,DICmesh.y0World);
         disp('--- Start to manually remove bad points ---')
@@ -419,7 +419,7 @@ Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
 results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
 save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh','ResultFEMeshEachFrame','ALSub1Time','ALSub2Time','ALSolveStep');
 
- 
+
 %% Section 7: Check convergence
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % This section is to check convergence of ADMM
@@ -486,6 +486,8 @@ fprintf('------------ Section 8 Start ------------ \n')
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % This section is to compute strain fields and plot disp and strain results
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ------ Convert units from pixels to the physical world ------
+DICpara.um2px = funParaInput('ConvertUnit');
 % ------ Smooth displacements ------
 DICpara.DoYouWantToSmoothOnceMore = funParaInput('SmoothDispOrNot');
 % ------ Choose strain computation method ------
@@ -546,8 +548,9 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     [x0,y0] = ndgrid(xList,yList);
     x0 = x0-reshape(UFEMesh(1:2:end),size(x0,1),size(x0,2));
     y0 = y0-reshape(UFEMesh(2:2:end),size(y0,1),size(y0,2));
-    y0World = (size(ImgNormalized{1},2)+1-y0);
-    coordinatesFEMWorld = [coordinatesFEM(:,1),size(ImgNormalized{1},2)+1-coordinatesFEM(:,2)];
+    x0World = DICpara.um2px*x0;
+    y0World = DICpara.um2px*y0; % Ignore this: (size(ImgNormalized{1},2)+1-y0);
+    coordinatesFEMWorld = DICpara.um2px*[coordinatesFEM(:,1),size(ImgNormalized{1},2)+1-coordinatesFEM(:,2)];
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      
     % ------ Plotting and Compute Strain-------
@@ -556,7 +559,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     else
         ULocal = USubpb2; FLocal = FSubpb2;
     end
-    UWorld = ULocal; UWorld(2:2:end) = -UWorld(2:2:end); FWorld = FLocal; % close all; Plotuv(UWorld,x0,y0World);
+    UWorld = DICpara.um2px*ULocal; UWorld(2:2:end) = -UWorld(2:2:end); FWorld = FLocal; % close all; Plotuv(UWorld,x0,y0World);
     
     % ------ Smooth displacements ------
     %prompt = 'Do you want to smooth displacement? (0-yes; 1-no)';
@@ -565,7 +568,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     try
         while DICpara.DoYouWantToSmoothOnceMore == 0 && SmoothTimes < 3
             ULocal = funSmoothDisp(ULocal,DICmesh,DICpara);
-            %close all; Plotuv(ULocal,x0,y0); %DICpara.DoYouWantToSmoothOnceMore = input(prompt);
+            %%DICpara.DoYouWantToSmoothOnceMore = input(prompt);
             SmoothTimes = SmoothTimes + 1;
         end
     catch
@@ -573,28 +576,30 @@ for ImgSeqNum = 2 : length(ImgNormalized)
      
     % ----- Compute strain field ------
     ComputeStrain; % Compute strain
-    % % ------- Add filter and plot strain field -------
-    %Plotstrain_Fij;
+    % %%%%% Add filter and plot strain field %%%%%
+    % %%%%% Plotstrain_Fij; %%%%%
     
     % ------ Plot disp and strain ------
+    close all; Plotuv(ULocal,x0,y0); 
+    
     if DICpara.OrigDICImgTransparency == 1
-        Plotdisp_show(UWorld,coordinatesFEMWorld,elementsFEM,'NoEdgeColor');
+        Plotdisp_show(UWorld,coordinatesFEMWorld,elementsFEM,DICpara);
         [strainxCoord,strainyCoord,dispu,dispv,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy,strain_principal_max, ...
             strain_principal_min,strain_maxshear,strain_vonMises]  =  Plotstrain0( ...
-            UWorld,FStraintemp,Rad,x0,y0,size(ImgNormalized{1}));
+            UWorld,FStraintemp,Rad,x0World,y0World,size(ImgNormalized{1}),DICpara);
     
     else % Plot over raw DIC images
         if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image
-            Plotdisp(UWorld,x0,y0,size(ImgNormalized{1}),file_name{1,1},DICpara);
+            Plotdisp(UWorld,x0World,y0World,size(ImgNormalized{1}),file_name{1,1},DICpara);
             [strainxCoord,strainyCoord,dispu,dispv,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy,strain_principal_max, ...
                 strain_principal_min,strain_maxshear,strain_vonMises]  =  Plotstrain( ...
-                UWorld,FStraintemp,Rad,x0,y0,size(ImgNormalized{1}),file_name{1,1},DICpara);
+                UWorld,FStraintemp,Rad,x0World,y0World,size(ImgNormalized{1}),file_name{1,1},DICpara);
         
         else % Plot over second or next deformed images
-            Plotdisp(UWorld,x0,y0,size(ImgNormalized{1}),file_name{1,ImgSeqNum},DICpara);
+            Plotdisp(UWorld,x0World,y0World,size(ImgNormalized{1}),file_name{1,ImgSeqNum},DICpara);
             [strainxCoord,strainyCoord,dispu,dispv,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy,strain_principal_max, ...
                 strain_principal_min,strain_maxshear,strain_vonMises]  =  Plotstrain( ...
-                UWorld,FStraintemp,Rad,x0,y0,size(ImgNormalized{1}),file_name{1,ImgSeqNum},DICpara);
+                UWorld,FStraintemp,Rad,x0World,y0World,size(ImgNormalized{1}),file_name{1,ImgSeqNum},DICpara);
         end
     end
     
@@ -643,12 +648,13 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     
     disp(['Current image frame #: ', num2str(ImgSeqNum),'/',num2str(length(ImgNormalized))]); close all;
     
-    % ------ Plot disp and strain ------
-    if DICpara.OrigDICImgTransparency == 0
+    % ------ Plot stress ------
+    if DICpara.OrigDICImgTransparency == 1
         [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
             stress_principal_min_xyplane, stress_maxshear_xyplane, ...
             stress_maxshear_xyz3d, stress_vonMises]  =  Plotstress0( ...
             DICpara,ResultStrain{ImgSeqNum-1},size(ImgNormalized{1}));
+        
     else % Plot over raw DIC images
         if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image
             [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...

@@ -89,33 +89,46 @@ yMin = min(DICmesh.coordinatesFEM(:,2)); yMax = max(DICmesh.coordinatesFEM(:,2))
 markEleHoleEdge4 =  union(row4,union(row3,union(row2,union(row1,markEleRefine4))));
 markCoordHoleEdge = unique(elementsFEMQuadtree(markEleHoleEdge4,:));
 try
-    if markCoordHoleEdge(1)==0, markCoordHoleEdge=markCoordHoleEdge(2:end); end
+    if markCoordHoleEdge(1)==0, markCoordHoleEdge = markCoordHoleEdge(2:end); end
 catch
 end
- 
-% %%%%% New codes: Find elements near marked elements %%%%%%
-markEleHoleEdge4 = zeros(size(elementsFEMQuadtree,1),1);
-for eleInd = 1:size(elementsFEMQuadtree,1)
-    markEleHoleEdge4(eleInd) = length(intersect(elementsFEMQuadtree(eleInd,:),markCoordHoleEdge));
+
+%%%%%% New codes: Find elements near marked elements %%%%%%
+for tempi = 1: 2+(round( 32 / mean(DICpara.winstepsize) )^2)
+    
+    markEleHoleEdgeNeigh4 = zeros(size(elementsFEMQuadtree,1),1);
+    for eleInd = 1:size(elementsFEMQuadtree,1)
+        markEleHoleEdgeNeigh4(eleInd) = length(intersect(elementsFEMQuadtree(eleInd,:),markCoordHoleEdge));
+    end
+    [markEleHoleEdgeNeigh4,~] = find(markEleHoleEdgeNeigh4>0);
+    %%%%%%%%%
+    markCoordHoleEdge = unique(elementsFEMQuadtree(markEleHoleEdgeNeigh4,:)) ;
+    try
+        if markCoordHoleEdge(1) == 0, markCoordHoleEdge = markCoordHoleEdge(2:end); end
+    catch
+    end
+    
 end
-[markEleHoleEdge4,col5] = find(markEleHoleEdge4>0);
-markCoordHoleEdge = unique(elementsFEMQuadtree(markEleHoleEdge4,:));
-try
-    if markCoordHoleEdge(1)==0, markCoordHoleEdge=markCoordHoleEdge(2:end); end
-catch
-end
+
 
 % %%%%% Store data structure %%%%%
 DICmesh.markCoordHoleEdge = markCoordHoleEdge;
 DICmesh.dirichlet = DICmesh.markCoordHoleEdge;
  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % %%%%% Plot %%%%%
-figure; patch('Faces', elementsFEMQuadtree(markEleHoleEdge4,1:4), 'Vertices', coordinatesFEMQuadtree, 'Facecolor','none','linewidth',1)
+figure; 
+patch('Faces', elementsFEMQuadtree(:,1:4), 'Vertices', coordinatesFEMQuadtree, 'Facecolor','white','linewidth',1);
+patch('Faces', elementsFEMQuadtree(markEleHoleEdge4,1:4), 'Vertices', coordinatesFEMQuadtree, 'Facecolor','yellow','linewidth',1);
+hold on; patch('Faces', elementsFEMQuadtree(markEleHoleEdgeNeigh4,1:4), 'Vertices', coordinatesFEMQuadtree, 'Facecolor','yellow','linewidth',1);
 axis equal; axis tight; set(gca,'fontsize',18); set(gcf,'color','w'); box on;
 xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
 title('Quadtree mesh','Interpreter','latex');
 a = gca; a.TickLabelInterpreter = 'latex';
- 
+
+lgd = legend('Quadtree mesh elements','Elements near the edge','interpreter','latex','location','northeastoutside');
+set(lgd,'fontsize',13);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 %% Initialize variable U for the generated quadtree mesh
@@ -126,7 +139,7 @@ U0 = 0*coordinatesFEMQuadtree(:);
 temp = F_dispu(coordinatesFEMQuadtree(:,1),coordinatesFEMQuadtree(:,2)); U0(1:2:end)=temp(:);
 temp = F_dispv(coordinatesFEMQuadtree(:,1),coordinatesFEMQuadtree(:,2)); U0(2:2:end)=temp(:);
 
-Plotdisp_show(U0,coordinatesFEMQuadtree,elementsFEMQuadtree(:,1:4));
+Plotdisp_show(U0,coordinatesFEMQuadtree,elementsFEMQuadtree(:,1:4),DICpara,'EdgeColor');
 
 DICmesh.coordinatesFEM = coordinatesFEMQuadtree;
 DICmesh.elementsFEM = elementsFEMQuadtree;

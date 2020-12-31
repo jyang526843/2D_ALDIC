@@ -1,12 +1,13 @@
 function [strain_exx,strain_exy,strain_eyy,strain_principal_max,strain_principal_min, ...
-    strain_maxshear,strain_vonMises] = Plotstrain0Quadtree(F,coordinatesFEMWorld,elementsFEM)
-%FUNCTION PLOTSTRAIN0QUADTREE: to compute and plot DIC solved strain fields
+    strain_maxshear,strain_vonMises] = Plotstrain0Quadtree(F,coordinatesFEMWorld,elementsFEM,DICpara)
+%PLOTSTRAIN0QUADTREE: to plot DIC solved strain fields in a quadtree mesh
 %   [strain_exx,strain_exy,strain_eyy,strain_principal_max,strain_principal_min, ...
 %    strain_maxshear,strain_vonMises] = Plotstrain0Quadtree(F,coordinatesFEM,elementsFEM)
 %
 %   INPUT: F                    DIC solved deformation gradient tensor
 %          coordinatesFEMWorld  coordinates of each points on the image domain
 %          elementsFEM          FE-elements
+%          DICpara              chosen DIC parameters
 %
 %   OUTPUT: strain_exx              strain xx-compoent
 %           strain_exy              strain xy-compoent
@@ -29,10 +30,16 @@ function [strain_exx,strain_exy,strain_eyy,strain_principal_max,strain_principal
 % ----------------------------------------------
 % Author: Jin Yang.
 % Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
-% Last time updated: 2020.11
-% ==============================================
+% Last time updated: 2020.12
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%% Initialization
 warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% convert pixel unit to the physical world unit %%%%%
+um2px = DICpara.um2px; 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Compute strain components
 
@@ -52,108 +59,193 @@ strain_vonMises = sqrt(strain_principal_max.^2 + strain_principal_min.^2 - ...
              strain_principal_max.*strain_principal_min + 3*strain_maxshear.^2);
          
          
-%% ====== 1) Strain exx ====== 
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+% ====== 1) Strain exx ====== 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;  
 show([],elementsFEM(:,1:4),coordinatesFEMWorld,strain_exx,'NoEdgeColor');
-%showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorld,strain_exx);
+% showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorld,strain_exx);
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('Strain $e_{xx}$','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
-if max(coordinatesFEMWorld(:,1)) < 200,set(gca,'XTick',[]); end
-if max(coordinatesFEMWorld(:,2)) < 200,set(gca,'YTick',[]); end
-xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+if max(coordinatesFEMWorld(:,1)) < um2px*200, set(gca,'XTick',[]); end
+if max(coordinatesFEMWorld(:,2)) < um2px*200, set(gca,'YTick',[]); end
+if um2px==1, xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+else, xlabel('$x$','Interpreter','latex'); ylabel('$y$','Interpreter','latex');
+end
 
 a = gca; a.TickLabelInterpreter = 'latex';
 b = colorbar; b.TickLabelInterpreter = 'latex';
  
-%% ====== 2) Strain exy ======
+%%%%%% TODO: manually modify colormap and caxis %%%%%%
+% colormap(jet);  % D Sample 
+% caxis([-0.1,0.1]) % foam
+% caxis([-0.004,0.004]); % Sample 12
+% caxis([0,0.1]); 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+% ====== 2) Strain exy ====== 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;  
 show([],elementsFEM(:,1:4),coordinatesFEMWorld,strain_exy,'NoEdgeColor');
 %showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorld,strain_exy);
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('Strain $e_{xy}$','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
-if max(coordinatesFEMWorld(:,1)) < 200,set(gca,'XTick',[]); end
-if max(coordinatesFEMWorld(:,2)) < 200,set(gca,'YTick',[]); end
-xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+if max(coordinatesFEMWorld(:,1)) < um2px*200, set(gca,'XTick',[]); end
+if max(coordinatesFEMWorld(:,2)) < um2px*200, set(gca,'YTick',[]); end
+if um2px==1, xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+else, xlabel('$x$','Interpreter','latex'); ylabel('$y$','Interpreter','latex');
+end
 
 a = gca; a.TickLabelInterpreter = 'latex';
 b = colorbar; b.TickLabelInterpreter = 'latex';
  
+%%%%%% TODO: manually modify colormap and caxis %%%%%%
+% colormap(jet);  % D Sample 
+% caxis([-0.1,0.1]) % foam
+% caxis([-0.004,0.004]); % Sample 12
+% caxis([0,0.1]); 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% ====== 3) Strain eyy ======
+
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+% ====== 3) Strain eyy ====== 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;  
 show([],elementsFEM(:,1:4),coordinatesFEMWorld,strain_eyy,'NoEdgeColor');
 %showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorld,strain_eyy);
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('Strain $e_{yy}$','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
-if max(coordinatesFEMWorld(:,1)) < 200,set(gca,'XTick',[]); end
-if max(coordinatesFEMWorld(:,2)) < 200,set(gca,'YTick',[]); end
-xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+if max(coordinatesFEMWorld(:,1)) < um2px*200, set(gca,'XTick',[]); end
+if max(coordinatesFEMWorld(:,2)) < um2px*200, set(gca,'YTick',[]); end
+if um2px==1, xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+else, xlabel('$x$','Interpreter','latex'); ylabel('$y$','Interpreter','latex');
+end
 
 a = gca; a.TickLabelInterpreter = 'latex';
 b = colorbar; b.TickLabelInterpreter = 'latex';
   
+%%%%%% TODO: manually modify colormap and caxis %%%%%%
+% colormap(jet);  % D Sample 
+% caxis([-0.1,0.1]) % foam
+% caxis([-0.004,0.004]); % Sample 12
+% caxis([0,0.1]); 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% ====== 4) Strain e_principal_max ======
+
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+% ====== 4) Strain e_principal_max ====== 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;  
 show([],elementsFEM(:,1:4),coordinatesFEMWorld,strain_principal_max,'NoEdgeColor');
 %showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorld,strain_principal_max);
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('Principal strain $e_{\max}$','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
-if max(coordinatesFEMWorld(:,1)) < 200,set(gca,'XTick',[]); end
-if max(coordinatesFEMWorld(:,2)) < 200,set(gca,'YTick',[]); end
-xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+if max(coordinatesFEMWorld(:,1)) < um2px*200, set(gca,'XTick',[]); end
+if max(coordinatesFEMWorld(:,2)) < um2px*200, set(gca,'YTick',[]); end
+if um2px==1, xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+else, xlabel('$x$','Interpreter','latex'); ylabel('$y$','Interpreter','latex');
+end
 
 a = gca; a.TickLabelInterpreter = 'latex';
 b = colorbar; b.TickLabelInterpreter = 'latex';
 
+%%%%%% TODO: manually modify colormap and caxis %%%%%%
+% colormap(jet);  % D Sample 
+% caxis([-0.1,0.1]) % foam
+% caxis([-0.004,0.004]); % Sample 12
+% caxis([0,0.1]); 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% ====== 5) Strain e_principal_min ======
+
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+% ====== 5) Strain e_principal_min ====== 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;  
 show([],elementsFEM(:,1:4),coordinatesFEMWorld,strain_principal_min,'NoEdgeColor');
 %showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorld,strain_principal_min);
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('Principal strain $e_{\min}$','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
-if max(coordinatesFEMWorld(:,1)) < 200,set(gca,'XTick',[]); end
-if max(coordinatesFEMWorld(:,2)) < 200,set(gca,'YTick',[]); end
-xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+if max(coordinatesFEMWorld(:,1)) < um2px*200, set(gca,'XTick',[]); end
+if max(coordinatesFEMWorld(:,2)) < um2px*200, set(gca,'YTick',[]); end
+if um2px==1, xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+else, xlabel('$x$','Interpreter','latex'); ylabel('$y$','Interpreter','latex');
+end
 
 a = gca; a.TickLabelInterpreter = 'latex';
 b = colorbar; b.TickLabelInterpreter = 'latex';
 
+%%%%%% TODO: manually modify colormap and caxis %%%%%%
+% colormap(jet);  % D Sample 
+% caxis([-0.1,0.1]) % foam
+% caxis([-0.004,0.004]); % Sample 12
+% caxis([0,0.1]); 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% ====== 6) Strain e_max_shear ======
+
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+% ====== 6) Strain e_max_shear ====== 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;  
 show([],elementsFEM(:,1:4),coordinatesFEMWorld,strain_maxshear,'NoEdgeColor');
 %showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorld,strain_maxshear);
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('Max shear strain','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
-if max(coordinatesFEMWorld(:,1)) < 200,set(gca,'XTick',[]); end
-if max(coordinatesFEMWorld(:,2)) < 200,set(gca,'YTick',[]); end
-xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+if max(coordinatesFEMWorld(:,1)) < um2px*200, set(gca,'XTick',[]); end
+if max(coordinatesFEMWorld(:,2)) < um2px*200, set(gca,'YTick',[]); end
+if um2px==1, xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+else, xlabel('$x$','Interpreter','latex'); ylabel('$y$','Interpreter','latex');
+end
 
 a = gca; a.TickLabelInterpreter = 'latex';
 b = colorbar; b.TickLabelInterpreter = 'latex';
  
+%%%%%% TODO: manually modify colormap and caxis %%%%%%
+% colormap(jet);  % D Sample 
+% caxis([-0.1,0.1]) % foam
+% caxis([-0.004,0.004]); % Sample 12
+% caxis([0,0.1]); 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% ====== 7) von Mises equivalent strain ======
+
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+% ====== 7) von Mises equivalent strain ====== 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;  
 show([],elementsFEM(:,1:4),coordinatesFEMWorld,strain_vonMises,'NoEdgeColor');
 %showQuadtree(elementsFEM(:,1:4),coordinatesFEMWorld,strain_vonMises);
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('von Mises equivalent strain','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
-if max(coordinatesFEMWorld(:,1)) < 200,set(gca,'XTick',[]); end
-if max(coordinatesFEMWorld(:,2)) < 200,set(gca,'YTick',[]); end
-xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+if max(coordinatesFEMWorld(:,1)) < um2px*200, set(gca,'XTick',[]); end
+if max(coordinatesFEMWorld(:,2)) < um2px*200, set(gca,'YTick',[]); end
+if um2px==1, xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+else, xlabel('$x$','Interpreter','latex'); ylabel('$y$','Interpreter','latex');
+end
 
 a = gca; a.TickLabelInterpreter = 'latex';
 b = colorbar; b.TickLabelInterpreter = 'latex';
 
- 
+%%%%%% TODO: manually modify colormap and caxis %%%%%%
+% colormap(jet);  % D Sample 
+% caxis([-0.1,0.1]) % foam
+% caxis([-0.004,0.004]); % Sample 12
+% caxis([0,0.1]); 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
 end
