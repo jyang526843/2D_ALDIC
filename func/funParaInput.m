@@ -40,7 +40,7 @@ switch paraName
     case 'Subpb2FDOrFEM' % Solve ALDIC Subproblem 2 via a 'dinite difference' or 'fnite element' solver?
         fprintf('\n'); 
         fprintf('--- Method to solve ALDIC global step Subproblem 2 ---    \n')
-        fprintf('    1: Finite difference(Recommended)   \n')
+        fprintf('    1: Finite difference (Recommend)   \n')
         fprintf('    2: Finite element method  \n')
         prompt = 'Input here: ';
         Subpb2FDOrFEM = input(prompt); paraInput = Subpb2FDOrFEM;
@@ -57,6 +57,19 @@ switch paraName
         % end
         paraInput = ClusterNo;
 
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%% Section 8 %%%%% 
+    case 'ConvertUnit' % Convert units from pixels to the physical world
+        fprintf("Convert units from pixels to the physical world. \n");
+        display('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%');
+        fprintf("Results in Section 8 (ResultStrain), Section 9 \n(ResultStress), and all the plots will be converted \nto the physical world unit instead of the pixel unit.  \n");
+        display('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%');
+        fprintf("If you want to keep the pixel unit, enter '1'. \n")
+        prompt = 'Input here (e.g., mm/px, um/px): ';
+        um2px = input(prompt);
+        paraInput = um2px;
+        fprintf('------------------------------------- \n');
     
     case 'SmoothDispOrNot' % Smooth displacements or not
         fprintf('Do you want to smooth displacement? (0-yes; 1-no) \n');
@@ -77,7 +90,7 @@ switch paraName
     case 'StrainMethodOp' % Choose strain computation method  
         fprintf('What method to use to compute strain? \n');
         fprintf('    0: Direct output from ALDIC; \n');
-        fprintf('    1: Finite difference(Recommended); \n');
+        fprintf('    1: Finite difference (Recommend); \n');
         fprintf('    2: Plane fitting; \n');
         fprintf('    3: Finite element; \n');
         prompt = 'Input here: ';
@@ -86,7 +99,7 @@ switch paraName
             disp('****** Wrong input! ******')
             fprintf('What method to use to compute strain? \n');
             fprintf('    0: Direct output from ALDIC; \n');
-            fprintf('    1: Finite difference(Recommended); \n');
+            fprintf('    1: Finite difference (Recommend); \n');
             fprintf('    2: Plane fitting; \n');
             fprintf('    3: Finite element; \n');
             prompt = 'Input here: ';
@@ -146,6 +159,8 @@ switch paraName
         fprintf('------------------------------------- \n');
         
         
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%% Section 9 %%%%%
     case 'MaterialModel' % Material model: plane stress or plane strain?
         fprintf('Material model to compute Cauchy stress fields: \n');
         fprintf('    1: Linear elasticity -- Plane stress \n');

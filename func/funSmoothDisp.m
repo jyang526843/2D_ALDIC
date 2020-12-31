@@ -1,5 +1,5 @@
 function ULocal = funSmoothDisp(ULocal,DICmesh,DICpara)
-%FUNCTION U = funSmoothDisp(U,DICmesh,DICpara)
+%FUNSMOOTHDISP: U = funSmoothDisp(U,DICmesh,DICpara)
 % Object: Smooth solved displacement field by gridfit
 % ----------------------------------------------
 %
