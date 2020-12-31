@@ -28,6 +28,13 @@ function Plotdisp(U,x,y,sizeOfImg,CurrentImg,DICpara)
 
 %% Initialization
 warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% convert pixel unit to the physical world unit %%%%%
+try um2px = DICpara.um2px; 
+catch um2px = 1;
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   
 OrigDICImgTransparency = DICpara.OrigDICImgTransparency; % Original raw DIC image transparency
 Image2PlotResults = DICpara.Image2PlotResults; % Choose image to plot over (first only, second and next images)
@@ -45,64 +52,71 @@ disp_u = gridfit(reshape(x,M*N,1),reshape(y,M*N,1),reshape(u,M*N,1),x2,y2);
 disp_v = gridfit(reshape(x,M*N,1),reshape(y,M*N,1),reshape(v,M*N,1),x2,y2);
  
 % Please don't delete this line, to deal with the image and physical world coordinates 
-[x2,y2]=ndgrid(x2,y2);x2=x2'; y2=y2';
+[x2,y2]=ndgrid(x2,y2); x2=x2'; y2=y2';
 
-
-%% ====== 1) dispx u ======
+ 
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ====== 1) dispx u ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fig1=figure; ax1=axes;  
-try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
-catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
+try h1 = imshow(  flipud(imread(CurrentImg)),'InitialMagnification','fit');
+catch h1 = surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
-
-axis equal; axis tight; box on; set(gca,'fontSize',18); view(2);  set(gca,'ydir','normal');
-hold on; ax2=axes; h2=surf(x2+Image2PlotResults*disp_u ,sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v),disp_u,'EdgeColor','none','LineStyle','none');
-set(gca,'fontSize',18); view(2); box on; %set(gca,'ydir','normal');
-alpha(h2,OrigDICImgTransparency); axis equal;  axis tight; colormap(coolwarm(32)); colormap jet; colormap(cMap);
+ 
+axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
+hold on; ax2=axes; h2 = surf( (x2+Image2PlotResults*disp_u)/um2px, ...
+    (sizeOfImg(2)+1)-((y2-Image2PlotResults*disp_v))/um2px, disp_u, 'EdgeColor','none','LineStyle','none');
+set(gca,'fontSize',18); view(2); box on; % set(gca,'ydir','normal');
+alpha(h2,OrigDICImgTransparency); axis equal;  axis tight; colormap(cMap);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); caxis([-1.7,.2]); % caxis([-0.025,0.025]); 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-linkaxes([ax1,ax2]);  % Link them together
-ax2.Visible = 'off';ax2.XTick = [];ax2.YTick = []; % Hide the top axes
+linkaxes([ax1,ax2]);  % Link axes together
+ax2.Visible = 'off'; ax2.XTick = []; ax2.YTick = []; % Hide the top axes
 colormap(ax1,'gray'); % Give each one its own colormap
-
-if x(M,N) < 200,set(gca,'XTick',[]); end
-if y(M,N) < 200,set(gca,'YTick',[]); end
 set([ax1,ax2],'Position',[.17 .11 .685 .815]);  
 ax1.Visible = 'on'; ax1.TickLabelInterpreter = 'latex'; 
+%%%%% convert pixel unit to the physical world unit %%%%%
+xticklabels(ax1, num2cell(round(um2px*ax1.XTick*100)/100, length(ax1.XTick) )' );
+yticklabels(ax1, num2cell(round(um2px*ax1.YTick*100)/100, length(ax1.YTick) )' );
 cb2 = colorbar('Position',[.17+0.685+0.012 .11 .03 .815]); cb2.TickLabelInterpreter = 'latex';
 
-xlabel( '$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
-title('$x-$displacement $u$','FontWeight','Normal','Interpreter','latex'); set(gcf,'color','w');
+% xlabel( '$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+% title('$x-$displacement $u$','FontWeight','Normal','Interpreter','latex'); set(gcf,'color','w');
 
 
  
-%% ====== 2) dispy v ======
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ====== 2) dispx v ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fig1=figure; ax1=axes;  
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
-axis equal; axis tight; box on; set(gca,'fontSize',18); view(2);  set(gca,'ydir','normal');
-hold on; ax2=axes; h2=surf(x2+Image2PlotResults*disp_u ,sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v),disp_v,'EdgeColor','none','LineStyle','none');
+axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
+hold on; ax2=axes; h2 = surf( (x2+Image2PlotResults*disp_u)/um2px, (sizeOfImg(2)+1)-((y2-Image2PlotResults*disp_v))/um2px, disp_v, 'EdgeColor','none','LineStyle','none');
 set(gca,'fontSize',18); view(2); box on; %set(gca,'ydir','normal');
-alpha(h2,OrigDICImgTransparency); axis equal;  axis tight; colormap(coolwarm(32)); colormap jet; colormap(cMap);
+alpha(h2,OrigDICImgTransparency); axis equal;  axis tight; colormap(cMap);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); caxis([5,12]); % caxis([-0.025,0.025]); 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-linkaxes([ax1,ax2]);  % Link them together
-ax2.Visible = 'off';ax2.XTick = [];ax2.YTick = []; % Hide the top axes
+linkaxes([ax1,ax2]);  % Link axes together
+ax2.Visible = 'off'; ax2.XTick = []; ax2.YTick = []; % Hide the top axes
 colormap(ax1,'gray'); % Give each one its own colormap
-
-if x(M,N) < 200,set(gca,'XTick',[]); end
-if y(M,N) < 200,set(gca,'YTick',[]); end
 set([ax1,ax2],'Position',[.17 .11 .685 .815]);  
 ax1.Visible = 'on'; ax1.TickLabelInterpreter = 'latex'; 
+%%%%% convert pixel unit to the physical world unit %%%%%
+xticklabels(ax1, num2cell(round(um2px*ax1.XTick*100)/100, length(ax1.XTick) )' );
+yticklabels(ax1, num2cell(round(um2px*ax1.YTick*100)/100, length(ax1.YTick) )' );
 cb2 = colorbar('Position',[.17+0.685+0.012 .11 .03 .815]); cb2.TickLabelInterpreter = 'latex';
 
-xlabel( '$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
-title('$y-$displacement $v$','FontWeight','Normal','Interpreter','latex'); set(gcf,'color','w');
+% xlabel( '$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+% title('$y-$displacement $v$','FontWeight','Normal','Interpreter','latex'); set(gcf,'color','w');
 
 
 

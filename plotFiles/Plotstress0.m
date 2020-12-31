@@ -1,7 +1,7 @@
-function [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
+function [stress_sxx, stress_sxy, stress_syy, stress_principal_max_xyplane, ...
     stress_principal_min_xyplane, stress_maxshear_xyplane, ...
     stress_maxshear_xyz3d, stress_vonMises] = Plotstress0(DICpara,ResultStrain,sizeOfImg)
-%FUNCTION PLOTSTRESS0: to compute and plot DIC solved stress fields 
+%PLOTSTRESS0: to compute and plot DIC solved stress fields 
 %   [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
 %    stress_principal_min_xyplane, stress_maxshear_xyplane, ...
 %    stress_maxshear_xyz3d, stress_vonMises]     = Plotstress0(DICpara,ResultStrain,sizeOfImg)
@@ -40,12 +40,18 @@ function [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
 % ----------------------------------------------
 % Author: Jin Yang.  
 % Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
-% Last time updated: 11/2020.
-% ==============================================
+% Last time updated: 2020.12.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 %% Initialization
 warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% convert pixel unit to the physical world unit %%%%%
+um2px = DICpara.um2px; 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 OrigDICImgTransparency = DICpara.OrigDICImgTransparency; % Original raw DIC image transparency
 Image2PlotResults = DICpara.Image2PlotResults; % Choose image to plot over (first only, second and next images)
    
@@ -53,15 +59,18 @@ Image2PlotResults = DICpara.Image2PlotResults; % Choose image to plot over (firs
 %% Load computed strain fields
 x2 = ResultStrain.strainxCoord; 
 y2 = ResultStrain.strainyCoord;
+[M,N] = size(x2);
 dudx = ResultStrain.dudx; dvdx = ResultStrain.dvdx; 
 dudy = ResultStrain.dudy; dvdy = ResultStrain.dvdy; 
 strain_exx = dudx; 
 strain_exy = 0.5*(dvdx + dudy); 
 strain_eyy = dvdy;
 
+
 %% Load displacement components to deform the reference image
 disp_u = ResultStrain.dispu; 
 disp_v = ResultStrain.dispv;
+
 
 %% Compute stress components
 
@@ -117,152 +126,197 @@ elseif DICpara.MaterialModel == 2
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
 elseif DICpara.MaterialModel == 3 % Neo-Hookean or other material models
     
+    disp('User needs to modify the code by yourself.'); pause; 
     % TODO: Please modify by yourself
     
 end
 
  
-
-         
-%% ====== 1) Stress sxx ======
+   
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ====== 1) Stress sxx ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;  
-surf(x2,sizeOfImg(2)+1-y2,stress_sxx,'EdgeColor','none','LineStyle','none')
+surf(x2, um2px*(sizeOfImg(2)+1)-y2,stress_sxx,'EdgeColor','none','LineStyle','none')
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('Stress $s_{xx}$','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
-if x2(end) < 200,set(gca,'XTick',[]); end
-if y2(end) < 200,set(gca,'YTick',[]); end
-xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+if x2(M,N)<um2px*200, set(gca,'XTick',[]); end
+if y2(M,N)<um2px*200, set(gca,'YTick',[]); end
+if um2px==1, xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+else, xlabel('$x$','Interpreter','latex'); ylabel('$y$','Interpreter','latex');
+end
 
 a = gca; a.TickLabelInterpreter = 'latex';
 b = colorbar; b.TickLabelInterpreter = 'latex';
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); caxis([-0.0,0.01]);  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-%% ====== 2) Strain sxy ======
+ 
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ====== 2) Strain sxy ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;  
-surf(x2,sizeOfImg(2)+1-y2,stress_sxy,'EdgeColor','none','LineStyle','none')
+surf(x2,um2px*(sizeOfImg(2)+1)-y2,stress_sxy,'EdgeColor','none','LineStyle','none')
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('Stress $s_{xy}$','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
-if x2(end) < 200,set(gca,'XTick',[]); end
-if y2(end) < 200,set(gca,'YTick',[]); end
-xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+if x2(M,N)<um2px*200, set(gca,'XTick',[]); end
+if y2(M,N)<um2px*200, set(gca,'YTick',[]); end
+if um2px==1, xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+else, xlabel('$x$','Interpreter','latex'); ylabel('$y$','Interpreter','latex');
+end
 
 a = gca; a.TickLabelInterpreter = 'latex';
 b = colorbar; b.TickLabelInterpreter = 'latex';
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); caxis([-0.0,0.01]);  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-%% ====== 3) Strain syy ======
+ 
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ====== 3) Strain syy ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;  
-surf(x2,sizeOfImg(2)+1-y2,stress_syy,'EdgeColor','none','LineStyle','none')
+surf(x2,um2px*(sizeOfImg(2)+1)-y2,stress_syy,'EdgeColor','none','LineStyle','none')
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('Stress $s_{yy}$','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
-if x2(end) < 200,set(gca,'XTick',[]); end
-if y2(end) < 200,set(gca,'YTick',[]); end
-xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+if x2(M,N)<um2px*200, set(gca,'XTick',[]); end
+if y2(M,N)<um2px*200, set(gca,'YTick',[]); end
+if um2px==1, xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+else, xlabel('$x$','Interpreter','latex'); ylabel('$y$','Interpreter','latex');
+end
 
 a = gca; a.TickLabelInterpreter = 'latex';
 b = colorbar; b.TickLabelInterpreter = 'latex';
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); caxis([-0.0,0.01]);  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-%% ====== 4) Strain stress_principal_max_xyplane ======
+ 
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ====== 4) Strain stress_principal_max_xyplane ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;  
-surf(x2,sizeOfImg(2)+1-y2,stress_principal_max_xyplane,'EdgeColor','none','LineStyle','none')
+surf(x2,um2px*(sizeOfImg(2)+1)-y2,stress_principal_max_xyplane,'EdgeColor','none','LineStyle','none')
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('$xy$-plane principal stress $s_{\max}$','FontWeight','Normal','Interpreter','latex'); 
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
-if x2(end) < 200,set(gca,'XTick',[]); end
-if y2(end) < 200,set(gca,'YTick',[]); end
-xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+if x2(M,N)<um2px*200, set(gca,'XTick',[]); end
+if y2(M,N)<um2px*200, set(gca,'YTick',[]); end
+if um2px==1, xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+else, xlabel('$x$','Interpreter','latex'); ylabel('$y$','Interpreter','latex');
+end
 
 a = gca; a.TickLabelInterpreter = 'latex';
 b = colorbar; b.TickLabelInterpreter = 'latex';
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); caxis([-0.0,0.01]);  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-%% ====== 5) Strain stress_principal_min_xyplane ======
+ 
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ====== 5) Strain stress_principal_min_xyplane ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;  
-surf(x2,sizeOfImg(2)+1-y2,stress_principal_min_xyplane,'EdgeColor','none','LineStyle','none')
+surf(x2,um2px*(sizeOfImg(2)+1)-y2,stress_principal_min_xyplane,'EdgeColor','none','LineStyle','none')
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('$xy$-plane principal stress $s_{\min}$','FontWeight','Normal','Interpreter','latex'); 
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
-if x2(end) < 200,set(gca,'XTick',[]); end
-if y2(end) < 200,set(gca,'YTick',[]); end
-xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+if x2(M,N)<um2px*200, set(gca,'XTick',[]); end
+if y2(M,N)<um2px*200, set(gca,'YTick',[]); end
+if um2px==1, xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+else, xlabel('$x$','Interpreter','latex'); ylabel('$y$','Interpreter','latex');
+end
 
 a = gca; a.TickLabelInterpreter = 'latex';
 b = colorbar; b.TickLabelInterpreter = 'latex';
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); caxis([-0.0,0.01]);  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-%% ====== 6) Strain stress_maxshear_xyplane ======
+ 
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ====== 6) Strain stress_maxshear_xyplane ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;  
-surf(x2,sizeOfImg(2)+1-y2,stress_maxshear_xyplane,'EdgeColor','none','LineStyle','none')
+surf(x2,um2px*(sizeOfImg(2)+1)-y2,stress_maxshear_xyplane,'EdgeColor','none','LineStyle','none')
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('$xy$-plane max shear stress','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
-if x2(end) < 200,set(gca,'XTick',[]); end
-if y2(end) < 200,set(gca,'YTick',[]); end
-xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+if x2(M,N)<um2px*200, set(gca,'XTick',[]); end
+if y2(M,N)<um2px*200, set(gca,'YTick',[]); end
+if um2px==1, xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+else, xlabel('$x$','Interpreter','latex'); ylabel('$y$','Interpreter','latex');
+end
 
 a = gca; a.TickLabelInterpreter = 'latex';
 b = colorbar; b.TickLabelInterpreter = 'latex';
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); caxis([-0.0,0.01]);  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-%% ====== 7) Strain stress_maxshear_xyz3d ======
+ 
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ====== 7) Strain stress_maxshear_xyz3d ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;  
-surf(x2,sizeOfImg(2)+1-y2,stress_maxshear_xyz3d,'EdgeColor','none','LineStyle','none')
+surf(x2,um2px*(sizeOfImg(2)+1)-y2,stress_maxshear_xyz3d,'EdgeColor','none','LineStyle','none')
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('$xyz$-3D max shear stress','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
-if x2(end) < 200,set(gca,'XTick',[]); end
-if y2(end) < 200,set(gca,'YTick',[]); end
-xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+if x2(M,N)<um2px*200, set(gca,'XTick',[]); end
+if y2(M,N)<um2px*200, set(gca,'YTick',[]); end
+if um2px==1, xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+else, xlabel('$x$','Interpreter','latex'); ylabel('$y$','Interpreter','latex');
+end
 
 a = gca; a.TickLabelInterpreter = 'latex';
 b = colorbar; b.TickLabelInterpreter = 'latex';
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); caxis([-0.0,0.01]);  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-%% ====== 8) von Mises stress ======
+ 
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ====== 8) von Mises stress ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;  
-surf(x2,sizeOfImg(2)+1-y2,stress_vonMises,'EdgeColor','none','LineStyle','none')
+surf(x2,um2px*(sizeOfImg(2)+1)-y2,stress_vonMises,'EdgeColor','none','LineStyle','none')
 set(gca,'fontSize',18); view(2); box on; set(gca,'ydir','normal');
 title('von Mises equivalent stress','FontWeight','Normal','Interpreter','latex');
 axis tight; axis equal; colorbar; colormap jet; set(gcf,'color','w');
-if x2(end) < 200,set(gca,'XTick',[]); end
-if y2(end) < 200,set(gca,'YTick',[]); end
-xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+if x2(M,N)<um2px*200, set(gca,'XTick',[]); end
+if y2(M,N)<um2px*200, set(gca,'YTick',[]); end
+if um2px==1, xlabel('$x$ (pixels)','Interpreter','latex'); ylabel('$y$ (pixels)','Interpreter','latex');
+else, xlabel('$x$','Interpreter','latex'); ylabel('$y$','Interpreter','latex');
+end
 
 a = gca; a.TickLabelInterpreter = 'latex';
 b = colorbar; b.TickLabelInterpreter = 'latex';
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); caxis([-0.0,0.01]);  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

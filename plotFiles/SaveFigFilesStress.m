@@ -34,35 +34,35 @@ if DICpara.MethodToSaveFig == 1
     
 elseif DICpara.MethodToSaveFig == 2
     %% pdf
-    filename = [imgname,'_WS',num2str(winsize),'_ST',num2str(DICpara.winstepsize),'_stress_sxx'];
+    filename = [imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_stress_sxx'];
     figure(1); if DICpara.OrigDICImgTransparency == 0, colormap coolwarm(32); caxis([-0.025,0.025]); end
     export_fig( gcf , '-pdf' , '-r300' , '-painters' , filename);
     
-    filename = [imgname,'_WS',num2str(winsize),'_ST',num2str(DICpara.winstepsize),'_stress_sxy'];
+    filename = [imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_stress_sxy'];
     figure(2); if DICpara.OrigDICImgTransparency == 0, colormap coolwarm(32); caxis([-0.025,0.025]); end
     export_fig( gcf , '-pdf' , '-r300' , '-painters' , filename);
     
-    filename = [imgname,'_WS',num2str(winsize),'_ST',num2str(DICpara.winstepsize),'_stress_syy'];
+    filename = [imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_stress_syy'];
     figure(3); if DICpara.OrigDICImgTransparency == 0, colormap coolwarm(32); caxis([-0.015,0.015]); end
     export_fig( gcf , '-pdf' , '-r300' , '-painters' , filename);
     
-    filename = [imgname,'_WS',num2str(winsize),'_ST',num2str(DICpara.winstepsize),'_stress_principal_max_xyplane'];
+    filename = [imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_stress_principal_max_xyplane'];
     figure(4); if DICpara.OrigDICImgTransparency == 0, colormap coolwarm(32); caxis([0,0.025]); end
     export_fig( gcf , '-pdf' , '-r300' , '-painters' , filename);
     
-    filename = [imgname,'_WS',num2str(winsize),'_ST',num2str(DICpara.winstepsize),'_stress_principal_min_xyplane'];
+    filename = [imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_stress_principal_min_xyplane'];
     figure(5); if DICpara.OrigDICImgTransparency == 0, colormap coolwarm(32); caxis([-0.025,0]); end
     export_fig( gcf , '-pdf' , '-r300' , '-painters' , filename);
     
-    filename = [imgname,'_WS',num2str(winsize),'_ST',num2str(DICpara.winstepsize),'_stress_maxshear_xyplane'];
+    filename = [imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_stress_maxshear_xyplane'];
     figure(6); if DICpara.OrigDICImgTransparency == 0, colormap coolwarm(32); caxis([0,0.07]); end
     export_fig( gcf , '-pdf' , '-r300' , '-painters' , filename);
     
-    filename = [imgname,'_WS',num2str(winsize),'_ST',num2str(DICpara.winstepsize),'_stress_maxshear_xyz3d'];
+    filename = [imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_stress_maxshear_xyz3d'];
     figure(7); if DICpara.OrigDICImgTransparency == 0, colormap coolwarm(32); caxis([0,0.07]); end
     export_fig( gcf , '-pdf' , '-r300' , '-painters' , filename);
     
-    filename = [imgname,'_WS',num2str(winsize),'_ST',num2str(DICpara.winstepsize),'_stress_vonMises'];
+    filename = [imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_stress_vonMises'];
     figure(8); if DICpara.OrigDICImgTransparency == 0, colormap coolwarm(32); caxis([0,0.07]); end
     export_fig( gcf , '-pdf' , '-r300' , '-painters' , filename);
     
