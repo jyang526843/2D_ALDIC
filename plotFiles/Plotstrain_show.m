@@ -1,4 +1,4 @@
-function Plotstrain_show(F,coordinatesFEM,elementsFEM,DICpara,EdgeColorOrNot)
+function Plotstrain_show(F,coordinatesFEM,elementsFEM,varargin)
 %FUNCTION Plotstrain_show(F,coordinatesFEM,elementsFEM)
 % To plot DIC solved strain components
 % ----------------------------------------------
@@ -21,6 +21,9 @@ function Plotstrain_show(F,coordinatesFEM,elementsFEM,DICpara,EdgeColorOrNot)
  
 %% Initialization
 warning off;  F = full(F);
+
+%%%%% Parse Inputs %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+[DICpara,EdgeColorOrNot] = parseargs(varargin);
 
 %%%%% convert pixel unit to the physical world unit %%%%%
 try um2px = DICpara.um2px; 
@@ -85,3 +88,21 @@ a = gca; a.TickLabelInterpreter = 'latex';
 b = colorbar; b.TickLabelInterpreter = 'latex';
 
 
+end
+
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+function [DICpara,EdgeColorOrNot] = parseargs(vargin)
+DICpara=[]; EdgeColorOrNot=[];  
+ 
+try 
+    DICpara=vargin{1};
+    try
+        EdgeColorOrNot=vargin{2};
+    catch
+    end
+catch
+    
+end
+
+end
