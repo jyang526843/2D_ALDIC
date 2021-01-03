@@ -1,4 +1,4 @@
-function Plotdisp_show(U,coordinatesFEM,elementsFEM,DICpara,EdgeColorOrNot)
+function Plotdisp_show(U,coordinatesFEM,elementsFEM,varargin)
 %PLOTDISP_SHOW: to plot DIC solved displacement components
 %   Plotdisp_show(U,coordinatesFEM,elementsFEM)
 % ----------------------------------------------
@@ -24,6 +24,9 @@ function Plotdisp_show(U,coordinatesFEM,elementsFEM,DICpara,EdgeColorOrNot)
 %% Initialization
 warning off;  U = full(U);
 
+%%%%% Parse Inputs %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+[DICpara,EdgeColorOrNot] = parseargs(varargin);
+ 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%% convert pixel unit to the physical world unit %%%%%
 try um2px = DICpara.um2px; 
@@ -80,3 +83,21 @@ b = colorbar; b.TickLabelInterpreter = 'latex';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  
+end
+
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+function [DICpara,EdgeColorOrNot] = parseargs(vargin)
+DICpara=[]; EdgeColorOrNot=[];  
+ 
+try 
+    DICpara=vargin{1};
+    try
+        EdgeColorOrNot=vargin{2};
+    catch
+    end
+catch
+    
+end
+
+end
