@@ -584,7 +584,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     
     if DICpara.OrigDICImgTransparency == 1
         EdgeColorOrNot = 'NoEdgeColor'; % {'EdgeColor','NoEdgeColor'}
-        Plotdisp_show(UWorld,coordinatesFEMWorld,elementsFEM,DICpara);
+        Plotdisp_show(UWorld,coordinatesFEMWorld,elementsFEM,DICpara,EdgeColorOrNot);
         [strainxCoord,strainyCoord,dispu,dispv,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy,strain_principal_max, ...
             strain_principal_min,strain_maxshear,strain_vonMises]  =  Plotstrain0( ...
             UWorld,FStraintemp,Rad,x0World,y0World,size(ImgNormalized{1}),DICpara);
