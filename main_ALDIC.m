@@ -583,6 +583,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     close all; Plotuv(ULocal,x0,y0); 
     
     if DICpara.OrigDICImgTransparency == 1
+        EdgeColorOrNot = 'NoEdgeColor'; % {'EdgeColor','NoEdgeColor'}
         Plotdisp_show(UWorld,coordinatesFEMWorld,elementsFEM,DICpara);
         [strainxCoord,strainyCoord,dispu,dispv,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy,strain_principal_max, ...
             strain_principal_min,strain_maxshear,strain_vonMises]  =  Plotstrain0( ...
