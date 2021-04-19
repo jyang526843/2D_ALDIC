@@ -43,8 +43,8 @@ M = size(x,1); N = size(x,2);
 u = U(1:2:end); v = U(2:2:end);
 u = reshape(u,M,N); v = reshape(v,M,N);
  
-if M < 9, x2 = x(:,1)'; else x2 = linspace(x(1,1),x(end,1),4*(length(x(:,1))-1)+1); end
-if N < 9, y2 = y(1,:);  else y2 = linspace(y(1,1),y(1,end),4*(length(y(1,:))-1)+1); end
+if M < 9, x2 = x(:,1)'; else x2 = linspace(x(1,1),x(end,1),4*(length(x(:,1))-1)+1); x2=x2(:)'; end % x2 = interp(x(:,1)',4);
+if N < 9, y2 = y(1,:); else y2 = linspace(y(1,1),y(1,end),4*(length(y(1,:))-1)+1); y2=y2(:)'; end % y2 = interp(y(1,:),4);
 
 
 %% Compute displacement components to manipulate the reference image
