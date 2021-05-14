@@ -42,6 +42,7 @@ Jin Yang (Caltech solid mechanics, PhD '19): jyang526@wisc.edu  -or-  aldicdvc@g
 <p align="center">
   <img width="538" height="301" src="https://github.com/jyang526843/2D_ALDIC_v3/blob/master/logo_aldic.png">
   <img width="245" height="176" src="https://github.com/jyang526843/2D_ALDIC_v3/blob/master/Example_aldic_foam_compression_strain_eyy.gif">
+  <img width="245" height="176" src="https://lh3.googleusercontent.com/tfnZ-9v5UU8vUiDCA9KePi-Q9IPsWXX-EHCqMiE3J_Qrkim9LHyjBpgkmGfzJ-eyDwwZ1ho1hyJci2pMgrBSyUenpHqSXLQfyoz1V2QKYCQq5d8qOkchYKOFozTuyZf2=w1280">
 </p>
 
 
