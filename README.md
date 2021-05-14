@@ -40,9 +40,10 @@ Jin Yang (Caltech solid mechanics, PhD '19): jyang526@wisc.edu  -or-  aldicdvc@g
 ##
  
 <p align="center">
-  <img width="538" height="301" src="https://github.com/jyang526843/2D_ALDIC_v3/blob/master/logo_aldic.png">
-  <img width="245" height="176" src="https://github.com/jyang526843/2D_ALDIC_v3/blob/master/Example_aldic_foam_compression_strain_eyy.gif">
-  <img width="600" height="338" src="https://github.com/jyang526843/2D_ALDIC/blob/master/results_ALDIC_Quadtree_demo/Demo1.gif">
+  <img width="538" height="301" src="https://github.com/jyang526843/2D_ALDIC_v3/blob/master/logo_aldic.png"></p>
+  <p align="center">
+  <img width="245" height="176" src="https://github.com/jyang526843/2D_ALDIC_v3/blob/master/Example_aldic_foam_compression_strain_eyy.gif"></p>
+  <p align="center"><img width="600" height="338" src="https://github.com/jyang526843/2D_ALDIC/blob/master/results_ALDIC_Quadtree_demo/Demo1.gif">
  <img width="600" height="338" src="https://github.com/jyang526843/2D_ALDIC/blob/master/results_ALDIC_Quadtree_demo/Demo2.gif">
  <img width="600" height="338" src="https://github.com/jyang526843/2D_ALDIC/blob/master/results_ALDIC_Quadtree_demo/Demo3.gif">
 </p>
