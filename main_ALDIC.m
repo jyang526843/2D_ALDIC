@@ -55,13 +55,22 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % This section is to find or update an initial guess of the unknown displacements.
     % The key idea is to either to use a new FFT-based cross correlation peak fitting,
-    % or use the results from the last frame as the new initial guess for the next frame;
+    % or use the results from previous frames to compute a new initial guess for the next frame;
     % Particularly in the incremental mode DIC, the reference image can also be updated, e.g.,
     % " fNormalized = ImgNormalized{ImgSeqNum-mod(ImgSeqNum-1,ImgSeqIncUnit)}; "
     %
     % DICpara.NewFFTSearch = 0; % If you want to apply the FFT-based cross correlation to 
     % compute the initial guess for each frame, please make sure that "DICpara.NewFFTSearch = 0". 
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    %%%%% One practical strategy is to let first 7 frames do the FFT-based 
+    %%%%% cross correlation and then let data driven method to estimate new 
+    %%%%% initial guesses for other frames 
+    if ImgSeqNum < 7 
+        DICpara.NewFFTSearch = 1; % Use FFT-based cross correlation to compute the initial guess
+    else
+        DICpara.NewFFTSearch = 0; % Apply data driven method to estimate initial guesses for later frames
+    end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if ImgSeqNum == 2 || DICpara.NewFFTSearch == 1 % Apply FFT-based cross correlation to compute the initial guess 
