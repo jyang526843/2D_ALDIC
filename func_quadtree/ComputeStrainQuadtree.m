@@ -134,6 +134,6 @@ for tempi = 1:4:length(FStrain)
 end
 
 FStraintemp = FStrainFinite;
-
+FStrainWorld = FStraintemp; FStrainWorld(2:4:end) = -FStrainWorld(2:4:end); FStrainWorld(3:4:end) = -FStrainWorld(3:4:end); 
 
 
