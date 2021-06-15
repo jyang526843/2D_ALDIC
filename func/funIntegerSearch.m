@@ -99,7 +99,7 @@ utemp = cj1temp; vtemp = cj1temp;
 xtemp = cj1temp; ytemp = cj1temp; Phitemp = cj1temp;
 
 %% ========== Start initial integer search ========== 
-hbar = waitbar(0,'FFT initial guess, it is fast and please wait.'); 
+hbar = waitbar(0,'FFT initial guess: it is fast and please wait.'); 
 % hbar = parfor_progressbar(temparrayLength,'Please wait for integer search!');
 
 % sizeOfx1 = floor((gridx(2)-gridx(1)-winsize)/winstepsize)+1;

@@ -73,7 +73,7 @@ while gridxWidthNewtemp/gridyWidthNewtemp > 0
 end
 
 %TotalNo = 3*(gridx(2)-gridx(1))*(gridy(2)-gridy(1))/winsize^2; 
-IterNo=0; hbar = waitbar(0,'FFT initial guess, it is fast and please wait.');
+IterNo=0; hbar = waitbar(0,'FFT initial guess: it is fast and please wait.');
 while gridxyRatioCurr > 0
     levelNo=levelNo+1;
     clear utempNew vtempNew Phitemp
