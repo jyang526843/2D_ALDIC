@@ -1,10 +1,7 @@
 % ---------------------------------------------
-% Augmented Lagrangian Digital Image Correlation (ALDIC_QuadtreeHole)
-% using with an adaptive quadtree mesh, which was automatically generated
+% Augmented Lagrangian Digital Image Correlation (ALDIC_Quadtree)
+% using an adaptive quadtree mesh, which was automatically generated
 % based on the DIC raw images
-% "main_ALDIC_QuadtreeHole.m" is consistent with "main_ALDIC_Quadtree.m",
-% while the first script only aims to solve the unknown displacement field  
-% of a 2D sample with an empty hole in the center.
 % 
 % Author: Jin Yang, PhD @Caltech
 % Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
@@ -15,9 +12,9 @@
 close all; clear; clc; clearvars -global
 fprintf('------------ Section 1 Start ------------ \n')
 setenv('MW_MINGW64_LOC','C:\TDM-GCC-64');
-try mex -O ba_interp2.cpp; catch; end % mex set up ba_interp2.cpp script
+try mex -O ba_interp2.cpp; catch; end  % mex set up ba_interp2.cpp script
 % [Comment]: If this line reports error but it works before, 
-% Change line 18 to: "try mex -O ba_interp2.cpp; catch; end"
+% Change line 15 to: "try mex -O ba_interp2.cpp; catch; end"
 addpath("./func",'./src','./plotFiles','./func_quadtree','./func_quadtree/refinement','./plotFiles/export_fig-d966721/'); 
 addpath('./Images_Quadtree_demo/Images_Sample12'); % TODO: addpath("./YOUR IMAGE FOLDER"); 
 fprintf('------------ Section 1 Done ------------ \n \n')
@@ -28,7 +25,7 @@ fprintf('------------ Section 2 Start ------------ \n')
 % ====== Read images ====== 
 [file_name,Img,DICpara] = ReadImageQuadtree; % Load DIC raw images
 [DICpara] = ReadImageMaskHole(DICpara,file_name); % Load and define an image mask (which is a binary image)
-% %%%%%% Uncomment the line below to change the DIC computing region (ROI) manually %%%%%%
+% %%%%%% Uncomment lines below to change the DIC computing region (ROI) manually %%%%%%
 % DICpara.gridxROIRange = [gridxROIRange1,gridxROIRange2]; DICpara.gridyROIRange = [Val1, Val2];
 % E.g., gridxROIRange = [224,918]; gridyROIRange = [787,1162];
 
@@ -41,7 +38,7 @@ Df = funImgGradient(fNormalized,fNormalized,DICpara.ImgRefMask); % Finite differ
       
 % ====== Initialize variable storage ======
 ResultDisp = cell(length(ImgNormalized)-1,1);    ResultDefGrad = cell(length(ImgNormalized)-1,1);
-ResultStrain = cell(length(ImgNormalized)-1,1);  ResultStress = cell(length(ImgNormalized)-1,1);
+ResultStrainWorld = cell(length(ImgNormalized)-1,1);  ResultStressWorld = cell(length(ImgNormalized)-1,1);
 ResultFEMeshEachFrame = cell(length(ImgNormalized)-1,1); % To store FE-mesh for each frame: needs future improvment to make it more efficient.
 ResultFEMesh = cell(ceil((length(ImgNormalized)-1)/DICpara.ImgSeqIncUnit),1); % For incremental DIC mode
 fprintf('------------ Section 2 Done ------------ \n \n')
@@ -86,7 +83,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
         % ====== Generate a quadtree mesh considering sample's complex geometry ======
         DICmesh.elementMinSize = 2; % min element size in the refined quadtree mesh
         GenerateQuadtreeMesh; % Generate a quadtree mesh
-    
+         
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     elseif mod(ImgSeqNum-2,DICpara.ImgSeqIncUnit) == 0 % To update ref image in incremental mode
         fNormalizedNewIndex = ImgSeqNum-mod(ImgSeqNum-2,DICpara.ImgSeqIncUnit)-1;
@@ -97,8 +94,8 @@ for ImgSeqNum = 2 : length(ImgNormalized)
         ResultFEMesh{1+floor(fNormalizedNewIndex/DICpara.ImgSeqIncUnit)} = ... % To save first mesh info
             struct( 'coordinatesFEM',DICmesh.coordinatesFEM,'elementsFEM',DICmesh.elementsFEM, ...
             'winsize',DICpara.winsize,'winstepsize',DICpara.winstepsize,'gridxyROIRange',DICpara.gridxyROIRange );
-   
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     else % Use the solved results from the last frame as the new initial guess
         if ImgSeqNum < 7 % Import previous U for ImgSeqNum [2,6] 
             U0 = ResultDisp{ImgSeqNum-2}.U;
@@ -150,7 +147,8 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     % ------ Plot ------
-    USubpb1World = USubpb1; USubpb1World(2:2:end) = -USubpb1(2:2:end); FSubpb1World = FSubpb1; 
+    USubpb1World = USubpb1; USubpb1World(2:2:end) = -USubpb1(2:2:end); 
+    FSubpb1World = FSubpb1; FSubpb1World(2:4:end) = -FSubpb1World(2:4:end); FSubpb1World(3:4:end) = -FSubpb1World(3:4:end); 
     close all; Plotdisp_show(USubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4),DICpara,'EdgeColor');
     Plotstrain_show(FSubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4),DICpara,'EdgeColor');
     save(['Subpb1_step',num2str(ALSolveStep)],'USubpb1','FSubpb1');
@@ -225,7 +223,8 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     save(['Subpb2_step',num2str(ALSolveStep)],'USubpb2','FSubpb2');
 
     % ------ Plot ------
-    USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end); FSubpb2World = FSubpb2;  
+    USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end); 
+    FSubpb2World = FSubpb2; FSubpb2World(2:4:end) = -FSubpb2World(2:4:end); FSubpb2World(3:4:end) = -FSubpb2World(3:4:end); 
     close all; Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4),DICpara,'EdgeColor');
     Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4),DICpara,'EdgeColor');
 
@@ -327,7 +326,8 @@ end
 
 
 %% ------ Plot ------
-USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end); FSubpb2World = FSubpb2; 
+USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end); 
+FSubpb2World = FSubpb2; FSubpb2World(2:4:end) = -FSubpb2World(2:4:end); FSubpb2World(3:4:end) = -FSubpb2World(3:4:end); 
 close all; Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4),DICpara,'EdgeColor');
 Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4),DICpara,'EdgeColor');
 
@@ -475,7 +475,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     else
         ULocal = USubpb2; FLocal = FSubpb2;
     end
-    UWorld = DICpara.um2px*ULocal; UWorld(2:2:end) = -UWorld(2:2:end); FWorld = FLocal; % close all; Plotuv(UWorld,x0,y0World);
+    UWorld = DICpara.um2px*ULocal; UWorld(2:2:end) = -UWorld(2:2:end);   % close all; Plotuv(UWorld,x0,y0World);
      
     % ------ Smooth displacements ------
     %prompt = 'Do you want to smooth displacement? (0-yes; 1-no)';
@@ -491,33 +491,33 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     end
     
     % ----- Compute strain field ------
-    ComputeStrainQuadtree;  
+    ComputeStrainQuadtree;  % run ComputeStrainQuadtree.m
      
     % ------ Plot disp and strain ------
     close all;
     if DICpara.OrigDICImgTransparency == 1
          Plotdisp_show(UWorld,coordinatesFEMWorld,DICmesh.elementsFEM(:,1:4),DICpara,'NoEdgeColor');
         [strain_exx,strain_exy,strain_eyy,strain_principal_max,strain_principal_min,strain_maxshear,strain_vonMises] = ...
-                   Plotstrain0Quadtree(FStraintemp,coordinatesFEMWorld,elementsFEM(:,1:4),DICpara);
+                   Plotstrain0Quadtree(FStrainWorld,coordinatesFEMWorld,elementsFEM(:,1:4),DICpara);
     
     else % Plot over raw DIC images
         if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image	
             PlotdispQuadtree(UWorld,coordinatesFEMWorld,elementsFEM(:,1:4),file_name{1,1},DICpara);
             [strain_exx,strain_exy,strain_eyy,strain_principal_max,strain_principal_min, ...
-                strain_maxshear,strain_vonMises] = PlotstrainQuadtree(UWorld,FStraintemp, ...
+                strain_maxshear,strain_vonMises] = PlotstrainQuadtree(UWorld,FStrainWorld, ...
                 coordinatesFEMWorld,elementsFEM(:,1:4),file_name{1,1},DICpara);
 
         else % Plot over second or next deformed images
             PlotdispQuadtree(UWorld,coordinatesFEMWorld,elementsFEM(:,1:4),file_name{1,ImgSeqNum},DICpara);
             [strain_exx,strain_exy,strain_eyy,strain_principal_max,strain_principal_min, ...
-                strain_maxshear,strain_vonMises] = PlotstrainQuadtree(UWorld,FStraintemp, ...
+                strain_maxshear,strain_vonMises] = PlotstrainQuadtree(UWorld,FStrainWorld, ...
                 coordinatesFEMWorld,elementsFEM(:,1:4),file_name{1,ImgSeqNum},DICpara);
         
         end
     end
  
     % ----- Save strain results ------
-    ResultStrain{ImgSeqNum-1} = struct('strainxCoord',coordinatesFEMWorld(:,1),'strainyCoord',coordinatesFEMWorld(:,2), ...
+    ResultStrainWorld{ImgSeqNum-1} = struct('strainxCoord',coordinatesFEMWorld(:,1),'strainyCoord',coordinatesFEMWorld(:,2), ...
             'dispu',UWorld(1:2:end),'dispv',UWorld(2:2:end), ...
             'dudx',FStraintemp(1:4:end),'dvdx',FStraintemp(2:4:end),'dudy',FStraintemp(3:4:end),'dvdy',FStraintemp(4:4:end), ...
             'strain_exx',strain_exx,'strain_exy',strain_exy,'strain_eyy',strain_eyy, ...
@@ -535,8 +535,8 @@ fprintf('------------ Section 8 Done ------------ \n \n')
  
 % ------ Save data again including solved strain fields ------
 results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
-save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh',...
-                   'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrain');
+save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh','ResultFEMeshEachFrame',...
+                   'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrainWorld');
 
 
 
@@ -565,27 +565,27 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     coordinatesFEM = ResultFEMeshEachFrame{ImgSeqNum-1}.coordinatesFEM;
     elementsFEM = ResultFEMeshEachFrame{ImgSeqNum-1}.elementsFEM;
     coordinatesFEMWorldDef = DICpara.um2px*[coordinatesFEM(:,1),size(ImgNormalized{1},2)+1-coordinatesFEM(:,2)] + ...
-                             DICpara.Image2PlotResults*[ResultStrain{ImgSeqNum-1}.dispu, ResultStrain{ImgSeqNum-1}.dispv];
+                             DICpara.Image2PlotResults*[ResultStrainWorld{ImgSeqNum-1}.dispu, ResultStrainWorld{ImgSeqNum-1}.dispv];
      
     % ------ Plot stress ------
     if DICpara.OrigDICImgTransparency == 1
         [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
                 stress_principal_min_xyplane, stress_maxshear_xyplane, ...
                 stress_maxshear_xyz3d, stress_vonMises]  =  Plotstress0Quadtree( ...
-            DICpara,ResultStrain{ImgSeqNum-1},coordinatesFEMWorldDef,elementsFEM(:,1:4)); 
+            DICpara,ResultStrainWorld{ImgSeqNum-1},coordinatesFEMWorldDef,elementsFEM(:,1:4)); 
         
     else % Plot over raw DIC images
         if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image	
             [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
                 stress_principal_min_xyplane, stress_maxshear_xyplane, ...
                 stress_maxshear_xyz3d, stress_vonMises] = PlotstressQuadtree( ...
-                DICpara,ResultStrain{ImgSeqNum-1},coordinatesFEMWorldDef,elementsFEM(:,1:4),file_name{1,1});
+                DICpara,ResultStrainWorld{ImgSeqNum-1},coordinatesFEMWorldDef,elementsFEM(:,1:4),file_name{1,1});
              
         else % Plot over second or next deformed images
            [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
                 stress_principal_min_xyplane, stress_maxshear_xyplane, ...
                 stress_maxshear_xyz3d, stress_vonMises] = PlotstressQuadtree( ...
-                DICpara,ResultStrain{ImgSeqNum-1},coordinatesFEMWorldDef,elementsFEM(:,1:4),file_name{1,ImgSeqNum});
+                DICpara,ResultStrainWorld{ImgSeqNum-1},coordinatesFEMWorldDef,elementsFEM(:,1:4),file_name{1,ImgSeqNum});
  
         end
     end
@@ -595,7 +595,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     SaveFigFilesStress; 
     
     % ----- Save strain results ------
-    ResultStress{ImgSeqNum-1} = struct('stressxCoord',ResultStrain{ImgSeqNum-1}.strainxCoord,'stressyCoord',ResultStrain{ImgSeqNum-1}.strainyCoord, ...
+    ResultStressWorld{ImgSeqNum-1} = struct('stressxCoord',ResultStrainWorld{ImgSeqNum-1}.strainxCoord,'stressyCoord',ResultStrainWorld{ImgSeqNum-1}.strainyCoord, ...
             'stress_sxx',stress_sxx,'stress_sxy',stress_sxy,'stress_syy',stress_syy, ...
             'stress_principal_max_xyplane',stress_principal_max_xyplane, 'stress_principal_min_xyplane',stress_principal_min_xyplane, ...
             'stress_maxshear_xyplane',stress_maxshear_xyplane,'stress_maxshear_xyz3d',stress_maxshear_xyz3d, ...
@@ -608,7 +608,7 @@ fprintf('------------ Section 9 Done ------------ \n \n')
 % ------ Save data again including solved stress fields ------
 results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
 save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh','ResultFEMeshEachFrame', ...
-                   'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrain','ResultStress');
+                   'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrainWorld','ResultStressWorld');
 
 
 %% Section 10: Plot the generated quadtree mesh 

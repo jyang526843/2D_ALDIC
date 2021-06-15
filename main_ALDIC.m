@@ -14,7 +14,7 @@ setenv('MW_MINGW64_LOC','C:\TDM-GCC-64');
 try mex -O ba_interp2.cpp; catch; end % mex set up ba_interp2.cpp script
 % [Comment]: If this line reports error but it works before, 
 % Change line 14 to: "try mex -O ba_interp2.cpp; catch; end"
-addpath("./func",'./src','./plotFiles','./func_quadtree','./func_quadtree/refinement','./plotFiles/export_fig-d966721/'); 
+addpath("./func",'./func/rbfinterp','./plotFiles','./func_quadtree','./func_quadtree/refinement','./plotFiles/export_fig-d966721/'); 
 % TODO: addpath("./YOUR IMAGE FOLDER"); 
 fprintf('------------ Section 1 Done ------------ \n \n')
 
@@ -36,7 +36,7 @@ Df = funImgGradient(fNormalized,fNormalized); % Finite difference to compute ima
 
 % ====== Initialize variable storage ======
 ResultDisp = cell(length(ImgNormalized)-1,1);    ResultDefGrad = cell(length(ImgNormalized)-1,1);
-ResultStrain = cell(length(ImgNormalized)-1,1);  ResultStress = cell(length(ImgNormalized)-1,1);
+ResultStrainWorld = cell(length(ImgNormalized)-1,1);  ResultStressWorld = cell(length(ImgNormalized)-1,1);
 ResultFEMeshEachFrame = cell(length(ImgNormalized)-1,1); % Needs future improvment: to store FE-mesh for each frame
 ResultFEMesh = cell(ceil((length(ImgNormalized)-1)/DICpara.ImgSeqIncUnit),1); % For incremental DIC mode
 fprintf('------------ Section 2 Done ------------ \n \n')
@@ -49,6 +49,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     
     disp(['Current image frame #: ', num2str(ImgSeqNum),'/',num2str(length(ImgNormalized))]);
     gNormalized = ImgNormalized{ImgSeqNum}; % Load current deformed image frame 
+     
     
     %% Section 3: Compute an initial guess of the unknown displacement field
     fprintf('\n'); fprintf('------------ Section 3 Start ------------ \n')
@@ -64,22 +65,45 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     %%%%% One practical strategy is to let first 7 frames do the FFT-based 
-    %%%%% cross correlation and then let data driven method to estimate new 
-    %%%%% initial guesses for other frames 
-    if ImgSeqNum < 7 
+    %%%%% cross correlation and then using the data driven method to estimate  
+    %%%%% initial guesses for other frames  
+    if ImgSeqNum == 2
+        DICpara.NewFFTSearch = 1; DICpara.InitFFTSearchMethod = [];
+    elseif ImgSeqNum < 7 
         DICpara.NewFFTSearch = 1; % Use FFT-based cross correlation to compute the initial guess
     else
         DICpara.NewFFTSearch = 0; % Apply data driven method to estimate initial guesses for later frames
     end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if ImgSeqNum == 2 || DICpara.NewFFTSearch == 1 % Apply FFT-based cross correlation to compute the initial guess 
-        % ====== Integer Search ======
-        [DICpara,x0temp,y0temp,u,v,cc]= IntegerSearch(fNormalized,gNormalized,file_name,DICpara);
+        
+        % ====== FFT-based cross correlation ======
+        % Switch the order of Img f and Img g
+        [DICpara,x0temp_f,y0temp_f,u_f,v_f,cc]= IntegerSearch(fNormalized,gNormalized,file_name,DICpara);
+        
         % ====== FEM mesh set up ======
+        xnodes = max([1+0.5*DICpara.winsize+ DICpara.SizeOfFFTSearchRegion(1), DICpara.gridxyROIRange.gridx(1) ])  ...
+            : DICpara.winstepsize : min([size(fNormalized,1)-0.5*DICpara.winsize-1- DICpara.SizeOfFFTSearchRegion(1),DICpara.gridxyROIRange.gridx(2) ]);
+        ynodes = max([1+0.5*DICpara.winsize+ DICpara.SizeOfFFTSearchRegion(2),DICpara.gridxyROIRange.gridy(1) ])  ...
+            : DICpara.winstepsize : min([size(fNormalized,2)-0.5*DICpara.winsize-1- DICpara.SizeOfFFTSearchRegion(2),DICpara.gridxyROIRange.gridy(2) ]);
+         
+        [x0temp,y0temp] = ndgrid(xnodes,ynodes);   u_f_NotNanInd = find(~isnan(u_f(:)));
+         
+        op1 = rbfcreate( [x0temp_f(u_f_NotNanInd),y0temp_f(u_f_NotNanInd)]',[u_f(u_f_NotNanInd)]','RBFFunction', 'thinplate'); %rbfcheck(op1);
+        u = rbfinterp( [x0temp(:),y0temp(:)]', op1 );
+        op2 = rbfcreate( [x0temp_f(u_f_NotNanInd),y0temp_f(u_f_NotNanInd)]',[v_f(u_f_NotNanInd)]','RBFFunction', 'thinplate'); %rbfcheck(op2);
+        v = rbfinterp([x0temp(:),y0temp(:)]', op2 );
+        x0temp = x0temp'; y0temp = y0temp'; u=u'; v=v';
+        
+        %%%%% Do some regularization to further decrease the noise %%%%%
+        % u = regularizeNd([x0temp(:),y0temp(:)],u(:),{xnodes',ynodes'},1e-3);
+        % v = regularizeNd([x0temp(:),y0temp(:)],v(:),{xnodes',ynodes'},1e-3);
+        
         [DICmesh] = MeshSetUp(x0temp,y0temp,DICpara); clear x0temp y0temp;
         % ====== Initial Value ======
-        U0 = Init(u,v,cc.max,DICmesh.x0,DICmesh.y0,0); %PlotuvInit; [x0temp,y0temp,u,v,cc]= IntegerSearchMg(fNormalized,gNormalized,file_name,DICpara);
+        U0 = Init(u,v,cc.max,DICmesh.x0,DICmesh.y0,0); % PlotuvInit; [x0temp,y0temp,u,v,cc]= IntegerSearchMg(fNormalized,gNormalized,file_name,DICpara);
         % ====== Deal with incremental mode ======
         fNormalizedNewIndex = ImgSeqNum-mod(ImgSeqNum-2,DICpara.ImgSeqIncUnit)-1;
         if DICpara.ImgSeqIncUnit == 1, fNormalizedNewIndex = fNormalizedNewIndex-1; end
@@ -109,6 +133,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
             for tempi = 1:nTime
                 T_data_u(tempi,:) = ResultDisp{ImgSeqNum-(2+nTime)+tempi, 1}.U(1:2:np*2)';
                 T_data_v(tempi,:) = ResultDisp{ImgSeqNum-(2+nTime)+tempi, 1}.U(2:2:np*2)';
+        
             end
             nB = 3; t_train = [ImgSeqNum-1-nTime:ImgSeqNum-2]'; t_pre = [ImgSeqNum-1]';
             [u_pred,~,~,~] = funPOR_GPR(T_data_u,t_train,t_pre,nB);
@@ -172,10 +197,11 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      
     % ------ Plot ------
-    USubpb1World = USubpb1; USubpb1World(2:2:end) = -USubpb1(2:2:end); FSubpb1World = FSubpb1;  
+    USubpb1World = USubpb1; USubpb1World(2:2:end) = -USubpb1(2:2:end); 
+    FSubpb1World = FSubpb1; FSubpb1World(2:4:end) = -FSubpb1World(2:4:end); FSubpb1World(3:4:end) = -FSubpb1World(3:4:end); 
     close all; Plotuv(USubpb1World,DICmesh.x0,DICmesh.y0World); 
-    Plotdisp_show(USubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
-    Plotstrain_show(FSubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
+    Plotdisp_show(USubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM,[],'NoEdgeColor');
+    Plotstrain_show(FSubpb1World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM,[],'NoEdgeColor');
     save(['Subpb1_step',num2str(ALSolveStep)],'USubpb1','FSubpb1');
     fprintf('------------ Section 4 Done ------------ \n \n')
     
@@ -283,9 +309,11 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     save(['Subpb2_step',num2str(ALSolveStep)],'USubpb2','FSubpb2');
     
     % ------ Plot ------
-    USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end); FSubpb2World = FSubpb2;
-    close all; Plotuv(USubpb2World,DICmesh.x0,DICmesh.y0World); Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
-    %Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
+    USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end); 
+    FSubpb2World = FSubpb2; FSubpb2World(2:4:end) = -FSubpb2World(2:4:end); FSubpb2World(3:4:end) = -FSubpb2World(3:4:end); 
+    close all; Plotuv(USubpb2World,DICmesh.x0,DICmesh.y0World); 
+    % Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM,[],'NoEdgeColor');
+    % Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM,[],'NoEdgeColor');
     
     % ======= Update dual variables =======
     if DICpara.Subpb2FDOrFEM == 1 %FD
@@ -417,7 +445,8 @@ end
 
 
 % ------ Plot ------
-USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end); FSubpb2World = FSubpb2;  
+USubpb2World = USubpb2; USubpb2World(2:2:end) = -USubpb2(2:2:end); 
+FSubpb2World = FSubpb2; FSubpb2World(2:4:end) = -FSubpb2World(2:4:end); FSubpb2World(3:4:end) = -FSubpb2World(3:4:end); 
 close all; Plotuv(USubpb2World,DICmesh.x0,DICmesh.y0World);
 Plotdisp_show(USubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
 Plotstrain_show(FSubpb2World,DICmesh.coordinatesFEMWorld,DICmesh.elementsFEM);
@@ -554,9 +583,9 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     elementsFEM = ResultFEMeshEachFrame{ImgSeqNum-1}.elementsFEM;
     xList = min(coordinatesFEM(:,1)):DICpara.winstepsize:max(coordinatesFEM(:,1)); M = length(xList);
     yList = min(coordinatesFEM(:,2)):DICpara.winstepsize:max(coordinatesFEM(:,2)); N = length(yList);
-    [x0,y0] = ndgrid(xList,yList);
-    x0 = x0-reshape(UFEMesh(1:2:end),size(x0,1),size(x0,2));
-    y0 = y0-reshape(UFEMesh(2:2:end),size(y0,1),size(y0,2));
+    [x0,y0] = ndgrid(xList,yList);  
+    x0 = x0-reshape(UFEMesh(1:2:end),size(x0,1),size(x0,2));  
+    y0 = y0-reshape(UFEMesh(2:2:end),size(y0,1),size(y0,2));  
     x0World = DICpara.um2px*x0;
     y0World = DICpara.um2px*y0; % Ignore this: (size(ImgNormalized{1},2)+1-y0);
     coordinatesFEMWorld = DICpara.um2px*[coordinatesFEM(:,1),size(ImgNormalized{1},2)+1-coordinatesFEM(:,2)];
@@ -568,7 +597,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     else
         ULocal = USubpb2; FLocal = FSubpb2;
     end
-    UWorld = DICpara.um2px*ULocal; UWorld(2:2:end) = -UWorld(2:2:end); FWorld = FLocal; % close all; Plotuv(UWorld,x0,y0World);
+    UWorld = DICpara.um2px*ULocal; UWorld(2:2:end) = -UWorld(2:2:end); % close all; Plotuv(UWorld,x0,y0World);
     
     % ------ Smooth displacements ------
     %prompt = 'Do you want to smooth displacement? (0-yes; 1-no)';
@@ -584,7 +613,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     end
      
     % ----- Compute strain field ------
-    ComputeStrain; % Compute strain
+    ComputeStrain; % run ComputeStrain.m
     % %%%%% Add filter and plot strain field %%%%%
     % %%%%% Plotstrain_Fij; %%%%%
     
@@ -592,29 +621,28 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     close all; Plotuv(ULocal,x0,y0); 
     
     if DICpara.OrigDICImgTransparency == 1
-        EdgeColorOrNot = 'NoEdgeColor'; % {'EdgeColor','NoEdgeColor'}
-        Plotdisp_show(UWorld,coordinatesFEMWorld,elementsFEM,DICpara,EdgeColorOrNot);
+        Plotdisp_show(UWorld,coordinatesFEMWorld,elementsFEM,DICpara);
         [strainxCoord,strainyCoord,dispu,dispv,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy,strain_principal_max, ...
             strain_principal_min,strain_maxshear,strain_vonMises]  =  Plotstrain0( ...
-            UWorld,FStraintemp,Rad,x0World,y0World,size(ImgNormalized{1}),DICpara);
+            UWorld,FStrainWorld,Rad,x0World,y0World,size(ImgNormalized{1}),DICpara);
     
     else % Plot over raw DIC images
         if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image
             Plotdisp(UWorld,x0World,y0World,size(ImgNormalized{1}),file_name{1,1},DICpara);
             [strainxCoord,strainyCoord,dispu,dispv,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy,strain_principal_max, ...
                 strain_principal_min,strain_maxshear,strain_vonMises]  =  Plotstrain( ...
-                UWorld,FStraintemp,Rad,x0World,y0World,size(ImgNormalized{1}),file_name{1,1},DICpara);
+                UWorld,FStrainWorld,Rad,x0World,y0World,size(ImgNormalized{1}),file_name{1,1},DICpara);
         
         else % Plot over second or next deformed images
             Plotdisp(UWorld,x0World,y0World,size(ImgNormalized{1}),file_name{1,ImgSeqNum},DICpara);
             [strainxCoord,strainyCoord,dispu,dispv,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_eyy,strain_principal_max, ...
                 strain_principal_min,strain_maxshear,strain_vonMises]  =  Plotstrain( ...
-                UWorld,FStraintemp,Rad,x0World,y0World,size(ImgNormalized{1}),file_name{1,ImgSeqNum},DICpara);
+                UWorld,FStrainWorld,Rad,x0World,y0World,size(ImgNormalized{1}),file_name{1,ImgSeqNum},DICpara);
         end
     end
     
     % ----- Save strain results ------
-    ResultStrain{ImgSeqNum-1} = struct('strainxCoord',strainxCoord,'strainyCoord',strainyCoord, ...
+    ResultStrainWorld{ImgSeqNum-1} = struct('strainxCoord',strainxCoord,'strainyCoord',strainyCoord, ...
         'dispu',dispu,'dispv',dispv,'dudx',dudx,'dvdx',dvdx,'dudy',dudy,'dvdy',dvdy, ...
         'strain_exx',strain_exx,'strain_exy',strain_exy,'strain_eyy',strain_eyy, ...
         'strain_principal_max',strain_principal_max,'strain_principal_min',strain_principal_min, ...
@@ -632,7 +660,7 @@ fprintf('------------ Section 8 Done ------------ \n \n')
 % ------ Save data again including solved strain fields ------
 results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
 save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh','ResultFEMeshEachFrame',...
-    'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrain');
+    'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrainWorld');
 
 
 
@@ -663,20 +691,20 @@ for ImgSeqNum = 2 : length(ImgNormalized)
         [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
             stress_principal_min_xyplane, stress_maxshear_xyplane, ...
             stress_maxshear_xyz3d, stress_vonMises]  =  Plotstress0( ...
-            DICpara,ResultStrain{ImgSeqNum-1},size(ImgNormalized{1}));
+            DICpara,ResultStrainWorld{ImgSeqNum-1},size(ImgNormalized{1}));
         
     else % Plot over raw DIC images
         if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image
             [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
                 stress_principal_min_xyplane, stress_maxshear_xyplane, ...
                 stress_maxshear_xyz3d, stress_vonMises] = Plotstress( ...
-                DICpara,ResultStrain{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,1});
+                DICpara,ResultStrainWorld{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,1});
             
         else % Plot over second or next deformed images
             [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
                 stress_principal_min_xyplane, stress_maxshear_xyplane, ...
                 stress_maxshear_xyz3d, stress_vonMises] = Plotstress( ...
-                DICpara,ResultStrain{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,ImgSeqNum});
+                DICpara,ResultStrainWorld{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,ImgSeqNum});
             
         end
     end
@@ -686,7 +714,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     SaveFigFilesStress;
     
     % ----- Save strain results ------
-    ResultStress{ImgSeqNum-1} = struct('stressxCoord',ResultStrain{ImgSeqNum-1}.strainxCoord,'stressyCoord',ResultStrain{ImgSeqNum-1}.strainyCoord, ...
+    ResultStressWorld{ImgSeqNum-1} = struct('stressxCoord',ResultStrainWorld{ImgSeqNum-1}.strainxCoord,'stressyCoord',ResultStrainWorld{ImgSeqNum-1}.strainyCoord, ...
         'stress_sxx',stress_sxx,'stress_sxy',stress_sxy,'stress_syy',stress_syy, ...
         'stress_principal_max_xyplane',stress_principal_max_xyplane, 'stress_principal_min_xyplane',stress_principal_min_xyplane, ...
         'stress_maxshear_xyplane',stress_maxshear_xyplane,'stress_maxshear_xyz3d',stress_maxshear_xyz3d, ...
@@ -699,7 +727,7 @@ fprintf('------------ Section 9 Done ------------ \n \n')
 % ------ Save data again including solved stress fields ------
 results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
 save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh','ResultFEMeshEachFrame',...
-    'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrain','ResultStress');
+    'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrainWorld','ResultStressWorld');
 
 
 
