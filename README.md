@@ -42,11 +42,9 @@ I also attach my EASF webinar to introduce AL-DIC/DVC algorithm and review other
 
 ## Citation
 * [1] Yang, J. (2019, March 6). 2D_ALDIC (Version 3.3). CaltechDATA. https://data.caltech.edu/records/1443
-* [2] Yang, J. and Bhattacharya, K. Augmented Lagrangian Digital Image Correlation. Exp.Mech. 59: 187, 2018. https://doi.org/10.1007/s11340-018-00457-0.   or 
-* Full text can be requested at: www.researchgate.net/publication/329456141_Augmented_Lagrangian_Digital_Image_Correlation  
+* [2] Yang, J. and Bhattacharya, K. Augmented Lagrangian Digital Image Correlation. Exp.Mech. 59: 187, 2018. https://doi.org/10.1007/s11340-018-00457-0. Full text can be requested at: www.researchgate.net/publication/329456141_Augmented_Lagrangian_Digital_Image_Correlation  
 % =========================================
-* [3] Yang, J. and Bhattacharya, K. Combining Image Compression with Digital Image Correlation. Exp.Mech. 59: 629-642, 2019. https://doi.org/10.1007/s11340-018-00459-y or
-* Full text can be requested at: https://www.researchgate.net/publication/330489954_Combining_Image_Compression_with_Digital_Image_Correlation
+* [3] Yang, J. and Bhattacharya, K. Combining Image Compression with Digital Image Correlation. Exp.Mech. 59: 629-642, 2019. https://doi.org/10.1007/s11340-018-00459-y. Full text can be requested at: https://www.researchgate.net/publication/330489954_Combining_Image_Compression_with_Digital_Image_Correlation
 * [4] Finite-element-based Global DIC code is also available at:
 https://www.mathworks.com/matlabcentral/fileexchange/82873-2d-finite-element-global-digital-image-correlation-fe-dic
 * [5] Besides 2D-DIC, our new code "ALDVC" (augmented Lagrangian Digital Volume Correlation) to track deformations in volumetric images is also available:
