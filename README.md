@@ -19,7 +19,7 @@ https://github.com/jyang526843/2D_ALDIC_v3/blob/master/Example_aldic_foam_compre
 AL-DIC MATLAB code was tested on MATLAB versions later than R2018a. Both single thread and parallel computing features are included in AL-DIC code. Please download and unzip the code to the MATLAB working path. Then, execute the mail file: main_ALDIC.m.
 
 ## Code manual 
-Code manual is available at:
+Full size code manual is available at:
 https://www.researchgate.net/publication/344796296_Augmented_Lagrangian_Digital_Image_Correlation_AL-DIC_Code_Manual
 
 
