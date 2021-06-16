@@ -115,7 +115,7 @@ if (InitFFTSearchMethod == 1) || (InitFFTSearchMethod == 2)
 %%    
 else % Multigrid search
     
-    tempSizeOfSearchRegion = 0;
+    tempSizeOfSearchRegion = [0,0];
     [x0,y0,u,v,cc] = funIntegerSearchMg(ImgRef,ImgDef,gridxROIRange,gridyROIRange,winsize,winstepsize,winstepsize);
 
     
