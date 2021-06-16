@@ -29,8 +29,9 @@ winstepsize = DICpara.winstepsize;
 try 
     if isempty(DICpara.InitFFTSearchMethod)
         InitFFTSearchMethod = funParaInput('InitFFTSearchMethod');
-    end
-     
+    else
+        InitFFTSearchMethod = DICpara.InitFFTSearchMethod;
+    end 
 catch
     InitFFTSearchMethod = funParaInput('InitFFTSearchMethod');
 end
