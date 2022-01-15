@@ -79,28 +79,30 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if ImgSeqNum == 2 || DICpara.NewFFTSearch == 1 % Apply FFT-based cross correlation to compute the initial guess 
         
-        % ====== FFT-based cross correlation ======
-        % Switch the order of Img f and Img g
-        [DICpara,x0temp_f,y0temp_f,u_f,v_f,cc]= IntegerSearch(fNormalized,gNormalized,file_name,DICpara);
+        % ====== Integer Search ======
+        [DICpara,x0temp,y0temp,u,v,cc]= IntegerSearch(fNormalized,gNormalized,file_name,DICpara);
+
+        % %%%%% Optional codes to increase the gridded measurement points %%%%%
+        % [DICpara,x0temp_f,y0temp_f,u_f,v_f,cc]= IntegerSearch(fNormalized,gNormalized,file_name,DICpara);
+        % 
+        % xnodes = max([1+0.5*DICpara.winsize+ DICpara.SizeOfFFTSearchRegion(1), DICpara.gridxyROIRange.gridx(1) ])  ...
+        %     : DICpara.winstepsize : min([size(fNormalized,1)-0.5*DICpara.winsize-1- DICpara.SizeOfFFTSearchRegion(1),DICpara.gridxyROIRange.gridx(2) ]);
+        % ynodes = max([1+0.5*DICpara.winsize+ DICpara.SizeOfFFTSearchRegion(2),DICpara.gridxyROIRange.gridy(1) ])  ...
+        %     : DICpara.winstepsize : min([size(fNormalized,2)-0.5*DICpara.winsize-1- DICpara.SizeOfFFTSearchRegion(2),DICpara.gridxyROIRange.gridy(2) ]);
+        %  
+        % [x0temp,y0temp] = ndgrid(xnodes,ynodes);   u_f_NotNanInd = find(~isnan(u_f(:)));
+        %  
+        % op1 = rbfcreate( [x0temp_f(u_f_NotNanInd),y0temp_f(u_f_NotNanInd)]',[u_f(u_f_NotNanInd)]','RBFFunction', 'thinplate'); %rbfcheck(op1);
+        % u = rbfinterp( [x0temp(:),y0temp(:)]', op1 );
+        % op2 = rbfcreate( [x0temp_f(u_f_NotNanInd),y0temp_f(u_f_NotNanInd)]',[v_f(u_f_NotNanInd)]','RBFFunction', 'thinplate'); %rbfcheck(op2);
+        % v = rbfinterp([x0temp(:),y0temp(:)]', op2 );
+        % x0temp = x0temp'; y0temp = y0temp'; u=u'; v=v';
+        
+        % %%%%% Do some regularization to further decrease the noise %%%%%
+        % % u = regularizeNd([x0temp(:),y0temp(:)],u(:),{xnodes',ynodes'},1e-3);
+        % % v = regularizeNd([x0temp(:),y0temp(:)],v(:),{xnodes',ynodes'},1e-3);
         
         % ====== FEM mesh set up ======
-        xnodes = max([1+0.5*DICpara.winsize+ DICpara.SizeOfFFTSearchRegion(1), DICpara.gridxyROIRange.gridx(1) ])  ...
-            : DICpara.winstepsize : min([size(fNormalized,1)-0.5*DICpara.winsize-1- DICpara.SizeOfFFTSearchRegion(1),DICpara.gridxyROIRange.gridx(2) ]);
-        ynodes = max([1+0.5*DICpara.winsize+ DICpara.SizeOfFFTSearchRegion(2),DICpara.gridxyROIRange.gridy(1) ])  ...
-            : DICpara.winstepsize : min([size(fNormalized,2)-0.5*DICpara.winsize-1- DICpara.SizeOfFFTSearchRegion(2),DICpara.gridxyROIRange.gridy(2) ]);
-         
-        [x0temp,y0temp] = ndgrid(xnodes,ynodes);   u_f_NotNanInd = find(~isnan(u_f(:)));
-         
-        op1 = rbfcreate( [x0temp_f(u_f_NotNanInd),y0temp_f(u_f_NotNanInd)]',[u_f(u_f_NotNanInd)]','RBFFunction', 'thinplate'); %rbfcheck(op1);
-        u = rbfinterp( [x0temp(:),y0temp(:)]', op1 );
-        op2 = rbfcreate( [x0temp_f(u_f_NotNanInd),y0temp_f(u_f_NotNanInd)]',[v_f(u_f_NotNanInd)]','RBFFunction', 'thinplate'); %rbfcheck(op2);
-        v = rbfinterp([x0temp(:),y0temp(:)]', op2 );
-        x0temp = x0temp'; y0temp = y0temp'; u=u'; v=v';
-        
-        %%%%% Do some regularization to further decrease the noise %%%%%
-        % u = regularizeNd([x0temp(:),y0temp(:)],u(:),{xnodes',ynodes'},1e-3);
-        % v = regularizeNd([x0temp(:),y0temp(:)],v(:),{xnodes',ynodes'},1e-3);
-        
         [DICmesh] = MeshSetUp(x0temp,y0temp,DICpara); clear x0temp y0temp;
         % ====== Initial Value ======
         U0 = Init(u,v,cc.max,DICmesh.x0,DICmesh.y0,0); % PlotuvInit; [x0temp,y0temp,u,v,cc]= IntegerSearchMg(fNormalized,gNormalized,file_name,DICpara);
