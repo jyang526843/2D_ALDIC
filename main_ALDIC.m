@@ -82,7 +82,7 @@ for ImgSeqNum = 2 : length(ImgNormalized)
         % ====== Integer Search ======
         [DICpara,x0temp,y0temp,u,v,cc]= IntegerSearch(fNormalized,gNormalized,file_name,DICpara);
 
-        % %%%%% Optional codes to increase the gridded measurement points %%%%%
+        % %%%%% Optional codes to measure more gridded measurement points %%%%%
         % [DICpara,x0temp_f,y0temp_f,u_f,v_f,cc]= IntegerSearch(fNormalized,gNormalized,file_name,DICpara);
         % 
         % xnodes = max([1+0.5*DICpara.winsize+ DICpara.SizeOfFFTSearchRegion(1), DICpara.gridxyROIRange.gridx(1) ])  ...
