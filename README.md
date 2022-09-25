@@ -2,7 +2,7 @@
 AL-DIC(Augmented Lagrangian DIC) is a fast, parallel-computing hybrid DIC algorithm, which combines advantages of local subset DIC method (fast computation speed, and parallel computing) and finite-element-based global DIC method (guarantee global kinematic compatibility and decrease noise).  
 
 Welcome to give the ALDIC code ratings and comments in the MATLAB File Exchange community: [![View Augmented Lagrangian Digital Image Correlation and Tracking on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://www.mathworks.com/matlabcentral/fileexchange/70499-augmented-lagrangian-digital-image-correlation-and-tracking)
-[![DOI](https://data.caltech.edu/badge/174234539.svg)](https://data.caltech.edu/badge/latestdoi/174234539)
+[![DOI](https://data.caltech.edu/badge/DOI/10.22002/D1.1910.svg)](https://doi.org/10.22002/D1.1910)
 
 ## Advantages of AL-DIC algorithm
 * [1] It’s a fast algorithm using distributed parallel computing.  
