@@ -666,7 +666,7 @@ save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad',
 
 
 
-%% Section 9: Compute stress or Poisson's ratio
+%% Section 9: Compute stress or Poisson's ration
 fprintf('------------ Section 9 Start ------------ \n')
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % This section is to compute stress fields and plot stress fields
@@ -722,7 +722,7 @@ if (DICpara.StressOrPoisson == 0) % Stress field calculation, original section
         % ------ Save figures for computed stress fields ------
         SaveFigFilesStress;
     
-        % ----- Save stress results ------
+        % ----- Save strain results ------
         ResultStressWorld{ImgSeqNum-1} = struct('stressxCoord',ResultStrainWorld{ImgSeqNum-1}.strainxCoord,'stressyCoord',ResultStrainWorld{ImgSeqNum-1}.strainyCoord, ...
             'stress_sxx',stress_sxx,'stress_sxy',stress_sxy,'stress_syy',stress_syy, ...
             'stress_principal_max_xyplane',stress_principal_max_xyplane, 'stress_principal_min_xyplane',stress_principal_min_xyplane, ...
@@ -755,22 +755,13 @@ elseif (DICpara.StressOrPoisson == 1) % Poisson ratio calculation (included by M
             
             end
         end
-        fprintf('Mean Poisson''s ratio: %.4f \n', mean(poisson(:)));
-        fprintf('Error (95%% CI): %.5f \n', 2*std(poisson(:)));
-
-         % ------ Save figures for computed stress fields ------
-         SaveFigFilesPoisson;
-
-         % ----- Save Poisson results ------
-         ResultPoissonWorld{ImgSeqNum-1} = struct('PoissonxCoord',ResultStrainWorld{ImgSeqNum-1}.strainxCoord,'PoissonyCoord',ResultStrainWorld{ImgSeqNum-1}.strainyCoord, ...
-            'Poisson',poisson);
+        fprintf('Mean Poisson'' ratio: %.4f \n', mean(poisson(:)));
+        fprintf('Error (95%% CI): %.5f \n', 2*std(poisson(:))/sqrt(length(poisson(:))));
      end
      % ------ END of for-loop {ImgSeqNum = 2:length(ImgNormalized)} -----
 
-     % ------ Save data again including Poisson fields ------
-     results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
-     save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh','ResultFEMeshEachFrame',...
-        'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrainWorld','ResultPoissonWorld');
+     % ------ Save figures for computed Poisson ratio fields ------
+     % SaveFigFilesPoisson; TO DO
 
 end
 

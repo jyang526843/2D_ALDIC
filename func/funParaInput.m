@@ -161,6 +161,16 @@ switch paraName
         
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%% Section 9 %%%%%
+
+    % MFO addition for Poisson`s calculation option, 2023.11
+    case 'StressOrPoisson' % calculation typ: stress field or Poisson ratio?
+        fprintf('Which calculation? \n');
+        fprintf('   0: Stress fields \n');
+        fprintf('   1: Poisson''s ratio \n');
+        prompt = 'Input here (0 or 1): '; StressOrPoisson = input(prompt);
+        paraInput = StressOrPoisson;
+        fprintf('------------------------------------- \n');
+
     case 'MaterialModel' % Material model: plane stress or plane strain?
         fprintf('Material model to compute Cauchy stress fields: \n');
         fprintf('    1: Linear elasticity -- Plane stress \n');
