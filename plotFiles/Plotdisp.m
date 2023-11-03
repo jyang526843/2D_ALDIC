@@ -27,7 +27,7 @@ function Plotdisp(U,x,y,sizeOfImg,CurrentImg,DICpara)
 
 
 %% Initialization
-warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
+warning off; load('colormap_RdYlBu.mat','cMap');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%% convert pixel unit to the physical world unit %%%%%

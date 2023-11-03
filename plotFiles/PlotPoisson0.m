@@ -23,7 +23,7 @@ function [poisson] = PlotPoisson0(DICpara,ResultStrain,sizeOfImg)
 
 
 %% Initialization
-warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
+warning off; load('colormap_RdYlBu.mat','cMap');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%% convert pixel unit to the physical world unit %%%%%

@@ -42,7 +42,7 @@ function [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
 
 
 %% Initialization
-warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
+warning off; load('colormap_RdYlBu.mat','cMap');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%% convert pixel unit to the physical world unit %%%%%
