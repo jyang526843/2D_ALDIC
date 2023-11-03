@@ -14,7 +14,9 @@ setenv('MW_MINGW64_LOC','C:\TDM-GCC-64');
 try mex -O ba_interp2.cpp; catch; end % mex set up ba_interp2.cpp script
 % [Comment]: If this line reports error but it works before, 
 % Change line 14 to: "try mex -O ba_interp2.cpp; catch; end"
-addpath('func','func/rbfinterp','plotFiles','func_quadtree','func_quadtree/refinement','plotFiles/export_fig-d966721'); 
+% addpath('func','func/rbfinterp','plotFiles','func_quadtree','func_quadtree/refinement','plotFiles/export_fig-d966721');
+myfilepath = fileparts(which('main_ALDIC.m'));
+addpath(genpath(myfilepath));
 % TODO: addpath("./YOUR IMAGE FOLDER"); 
 fprintf('------------ Section 1 Done ------------ \n \n')
 

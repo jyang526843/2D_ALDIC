@@ -49,7 +49,7 @@ fig1=figure; ax1=axes;
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
-
+title('$x-$displacement $u$','FontWeight','Normal','Interpreter','latex');
 axis equal; axis tight; box on; set(gca,'fontSize',18); view(2);  set(gca,'ydir','normal');
 hold on; ax2=axes; h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef/um2px,disp_u,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; axis equal;  axis tight;   
@@ -80,7 +80,7 @@ fig1=figure; ax1=axes;
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
-
+title('$y-$displacement $v$','FontWeight','Normal','Interpreter','latex');
 axis equal; axis tight; box on; set(gca,'fontSize',18); view(2);  set(gca,'ydir','normal');
 hold on; ax2=axes; h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef/um2px,disp_v,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; axis equal;  axis tight;   

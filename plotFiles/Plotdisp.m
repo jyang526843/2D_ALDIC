@@ -62,7 +62,7 @@ fig1=figure; ax1=axes;
 try h1 = imshow(  flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1 = surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
- 
+title('$x-$displacement $u$','FontWeight','Normal','Interpreter','latex');
 axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2 = surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     (sizeOfImg(2)+1)-((y2-Image2PlotResults*disp_v))/um2px, disp_u, 'EdgeColor','none','LineStyle','none');
@@ -95,7 +95,7 @@ fig1=figure; ax1=axes;
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
-
+title('$y-$displacement $v$','FontWeight','Normal','Interpreter','latex');
 axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2 = surf( (x2+Image2PlotResults*disp_u)/um2px, (sizeOfImg(2)+1)-((y2-Image2PlotResults*disp_v))/um2px, disp_v, 'EdgeColor','none','LineStyle','none');
 set(gca,'fontSize',18); view(2); box on; %set(gca,'ydir','normal');
