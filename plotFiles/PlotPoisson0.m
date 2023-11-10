@@ -41,10 +41,12 @@ y2 = ResultStrain.strainyCoord;
 dudx = ResultStrain.dudx;
 dvdy = ResultStrain.dvdy;
 %% Compute Poisson's ratios
-if dudx < 0 & dvdy > 0 
-    poisson = -dudx./dvdy;
-elseif dvdy < 0 & dudx > 0
-    poisson = -dvdy./dudx;
+if dudx < 0 & dvdy > 0 | dvdy < 0 & dudx > 0
+    if abs(dudx) < abs(dvdy)
+        poisson = -dudx./dvdy;
+    else 
+        poisson = -dvdy./dudx;
+    end
 else
     fprintf ('ERROR! Deformation mismatch at some points.');
     return;
