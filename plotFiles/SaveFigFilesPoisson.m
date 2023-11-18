@@ -11,7 +11,10 @@ if DICpara.MethodToSaveFig == 1
     print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_Poisson_ratio_field'],'-djpeg','-r300')
     
     figure(2);
-    print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_Poisson_ratio_histogram'],'-djpeg','-r300')      
+    print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_Poisson_ratio_histogram'],'-djpeg','-r300')
+
+    figure(3);
+    print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_Strain_eyy_histogram'],'-djpeg','-r300')
     
 elseif DICpara.MethodToSaveFig == 2
     %% pdf
@@ -22,6 +25,10 @@ elseif DICpara.MethodToSaveFig == 2
     filename = [imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_Poisson_ratio_histogram'];
     figure(2);
     export_fig( gcf , '-pdf' , '-r300' , '-painters' , filename);
+
+    filename = [imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_Strain_eyy_histogram'];
+    figure(2);
+    export_fig( gcf , '-pdf' , '-r300' , '-painters' , filename);
    
 else
     %% fig
@@ -29,6 +36,8 @@ else
     figure(1); colormap(coolwarm(128)); caxis([-0.05,0.1]); 
         savefig([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_Poisson_ratio_field']);
     figure(2); colormap(coolwarm(128)); caxis([-0.05,0.05]); 
-        savefig([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_Poisson_ratio_histogram']);    
+        savefig([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_Poisson_ratio_histogram']);
+    figure(3); colormap(coolwarm(128)); caxis([-0.05,0.05]); 
+        savefig([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_Strain_eyy_histogram']); 
     
 end

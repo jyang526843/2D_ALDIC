@@ -111,5 +111,18 @@ meanlabel = sprintf('Mean Poisson''s ratio: %.4f', mean(poisson(:)));
 errorlabel = sprintf('Error (95%% CI): %.5f', 2*std(poisson(:)));
 title({meanlabel,errorlabel});
 
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ====== 3) Strain eyy histogram ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% we trim 10% of eyy matrix borders
+figure;
+trimdvdy = dvdy(2*(trimh+1):hlen-2*trimh,2*(trimv+1):vlen-2*trimv);
+histogram(trimdvdy,'FaceColor','white');  
+xlabel('e_y_y','FontSize',12);
+ylabel('Count','FontSize',12);
+meanlabel = sprintf('Mean Strain e_y_y: %.5f', mean(trimdvdy(:)));
+errorlabel = sprintf('Error (95%% CI): %.5f', 2*std(trimdvdy(:)));
+title({meanlabel,errorlabel});
+
 end
  
