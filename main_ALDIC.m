@@ -738,7 +738,7 @@ if (DICpara.StressOrPoisson == 0) % Stress field calculation, original section
     save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh','ResultFEMeshEachFrame',...
         'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrainWorld','ResultStressWorld');
 
-elseif (DICpara.StressOrPoisson == 1) % Poisson ratio calculation (included by MFO)
+elseif (DICpara.StressOrPoisson == 1) % Poisson's ratio calculation (included by MFO)
 
      % ------ Start main part ------
      fprintf('Poisson''s ratio calculation. \n');
@@ -747,18 +747,39 @@ elseif (DICpara.StressOrPoisson == 1) % Poisson ratio calculation (included by M
         disp(['Current image frame #: ', num2str(ImgSeqNum),'/',num2str(length(ImgNormalized))]); close all;
         % ------ Plot Poisson ratio ------
         if DICpara.OrigDICImgTransparency == 1
-           [poisson]  =  PlotPoisson0(DICpara,ResultStrainWorld{ImgSeqNum-1},size(ImgNormalized{1}));
+           [poisson,trimdvdy,trimdudx]  =  PlotPoisson0(DICpara,ResultStrainWorld{ImgSeqNum-1},size(ImgNormalized{1}));
         
         else % Plot over raw DIC images
             if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image
-                [poisson] = PlotPoisson(DICpara,ResultStrainWorld{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,1});
+                [poisson,trimdvdy,trimdudx] = PlotPoisson(DICpara,ResultStrainWorld{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,1});
             else % Plot over second or next deformed images
-                [poisson] = PlotPoisson(DICpara,ResultStrainWorld{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,ImgSeqNum});
+                [poisson,trimdvdy,trimdudx] = PlotPoisson(DICpara,ResultStrainWorld{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,ImgSeqNum});
             
             end
         end
+        fprintf('---------- Poisson''s ratio from field average--------- \n')
         fprintf('Mean Poisson''s ratio: %.4f \n', mean(poisson(:)));
         fprintf('Error (95%% CI): %.5f \n', 2*std(poisson(:)));
+        fprintf('--------- Poisson''s ratio from strain fields average ------- \n');
+        meaneyy = mean(trimdvdy(:));
+        stdeyy = std(trimdvdy(:));
+        fprintf('Mean eyy: %.5f \n', meaneyy);
+        fprintf('Error (95%% CI): %.5f \n', 2*stdeyy);
+        meanexx = mean(trimdudx(:));
+        stdexx = std(trimdudx(:));
+        fprintf('Mean exx: %.5f \n', meanexx);
+        fprintf('Error (95%% CI): %.5f \n', 2*stdexx);
+        if abs(meanexx) < abs(meaneyy)
+            poisson_meane = -meanexx/meaneyy;
+            % propagating the std to Poisson's ratio
+            stdpoisson_meane = sqrt((1/meaneyy*stdexx)^2+(meanexx/meaneyy^2*stdeyy)^2);
+        else
+            poisson_meane = -meaneyy/meanexx;
+            % propagating the std to Poisson's ratio
+            stdpoisson_meane = sqrt((1/meanexx*stdeyy)^2+(meaneyy/meanexx^2*stdexx)^2);
+        end
+        fprintf('Poisson''s ratio: %.4f \n', poisson_meane);
+        fprintf('Error (95%% CI): %.5f \n', 2*stdpoisson_meane);
 
          % ------ Save figures for computed stress fields ------
          SaveFigFilesPoisson;

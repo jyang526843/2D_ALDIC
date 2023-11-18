@@ -1,4 +1,4 @@
-function [poisson] = PlotPoisson0(DICpara,ResultStrain,sizeOfImg)
+function [poisson,trimdvdy,trimdudx] = PlotPoisson0(DICpara,ResultStrain,sizeOfImg)
 %PLOTPOISSON0: to compute and plot DIC solved Poisson's ratio 
 %   [poisson]     = Plotstress0(DICpara,ResultStrain,sizeOfImg)
 %
@@ -41,15 +41,13 @@ y2 = ResultStrain.strainyCoord;
 dudx = ResultStrain.dudx;
 dvdy = ResultStrain.dvdy;
 %% Compute Poisson's ratios
-if dudx < 0 & dvdy > 0 | dvdy < 0 & dudx > 0
-    if abs(dudx) < abs(dvdy)
-        poisson = -dudx./dvdy;
-    else 
-        poisson = -dvdy./dudx;
-    end
-else
-    fprintf ('ERROR! Deformation mismatch at some points.');
-    return;
+if not((all(all(sign(dudx)<0)) | all(all(sign(dudx)>0))) & (all(all(sign(dvdy)<0)) | all(all(sign(dvdy)>0))))  
+    fprintf ('WARNING! Deformation mismatch at some points.\n');
+end
+if abs(mean(dudx)) < abs(mean(dvdy))
+    poisson = -dudx./dvdy;
+else 
+    poisson = -dvdy./dudx;
 end
 % trim borders, 5% each side 
 [hlen, vlen] = size(poisson);
@@ -114,6 +112,19 @@ xlabel('e_y_y','FontSize',12);
 ylabel('Count','FontSize',12);
 meanlabel = sprintf('Mean Strain e_y_y: %.5f', mean(trimdvdy(:)));
 errorlabel = sprintf('Error (95%% CI): %.5f', 2*std(trimdvdy(:)));
+title({meanlabel,errorlabel});
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ====== 4) Strain exx histogram ======
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% we trim 10% of eyy matrix borders
+figure;
+trimdudx = dudx(2*(trimh+1):hlen-2*trimh,2*(trimv+1):vlen-2*trimv);
+histogram(trimdudx,'FaceColor','white');  
+xlabel('e_x_x','FontSize',12);
+ylabel('Count','FontSize',12);
+meanlabel = sprintf('Mean Strain e_x_x: %.5f', mean(trimdudx(:)));
+errorlabel = sprintf('Error (95%% CI): %.5f', 2*std(trimdudx(:)));
 title({meanlabel,errorlabel});
 
 end

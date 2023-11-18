@@ -14,7 +14,10 @@ if DICpara.MethodToSaveFig == 1
     print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_Poisson_ratio_histogram'],'-djpeg','-r300')
 
     figure(3);
-    print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_Strain_eyy_histogram'],'-djpeg','-r300')
+    print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_strain_eyy_histogram'],'-djpeg','-r300')
+
+    figure(4);
+    print([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_strain_exx_histogram'],'-djpeg','-r300')
     
 elseif DICpara.MethodToSaveFig == 2
     %% pdf
@@ -26,8 +29,12 @@ elseif DICpara.MethodToSaveFig == 2
     figure(2);
     export_fig( gcf , '-pdf' , '-r300' , '-painters' , filename);
 
-    filename = [imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_Strain_eyy_histogram'];
-    figure(2);
+    filename = [imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_strain_eyy_histogram'];
+    figure(3);
+    export_fig( gcf , '-pdf' , '-r300' , '-painters' , filename);
+
+    filename = [imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_strain_exx_histogram'];
+    figure(4);
     export_fig( gcf , '-pdf' , '-r300' , '-painters' , filename);
    
 else
@@ -38,6 +45,8 @@ else
     figure(2); colormap(coolwarm(128)); caxis([-0.05,0.05]); 
         savefig([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_Poisson_ratio_histogram']);
     figure(3); colormap(coolwarm(128)); caxis([-0.05,0.05]); 
-        savefig([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_Strain_eyy_histogram']); 
+        savefig([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_strain_eyy_histogram']);
+    figure(4); colormap(coolwarm(128)); caxis([-0.05,0.05]); 
+        savefig([imgname,'_WS',num2str(DICpara.winsize),'_ST',num2str(DICpara.winstepsize),'_strain_exx_histogram']); 
     
 end
