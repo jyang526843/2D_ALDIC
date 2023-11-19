@@ -57,6 +57,19 @@ switch paraName
         % end
         paraInput = ClusterNo;
 
+    % Used to ask the user for manual correction of bad points
+    % before starting section 2
+    % Added by MFO, 2023.11
+    case 'RemoveBadPoints'
+        fprintf('\nManual correction of bad points after frame #7 ? \n');
+        fprintf('No = 0 and Yes = 1(default) \n');
+        prompt = 'Input here: ';
+        RemoveBadPoints = input(prompt);
+        if RemoveBadPoints ~= 0
+            RemoveBadPoints = 1;
+        end
+        paraInput = RemoveBadPoints;
+        fprintf('------------------------------------- \n');
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%% Section 8 %%%%% 
@@ -86,8 +99,7 @@ switch paraName
         paraInput = DoYouWantToSmoothOnceMore;
         fprintf('------------------------------------- \n');
         
-        
-    case 'StrainMethodOp' % Choose strain computation method  
+            case 'StrainMethodOp' % Choose strain computation method  
         fprintf('What method to use to compute strain? \n');
         fprintf('    0: Direct output from ALDIC; \n');
         fprintf('    1: Finite difference (Recommend); \n');

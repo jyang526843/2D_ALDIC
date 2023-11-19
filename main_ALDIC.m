@@ -47,6 +47,11 @@ fprintf('------------ Section 2 Done ------------ \n \n')
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % To solve each frame in an image sequence
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% We ask if the user wants to make corrections at each step befor starting
+% Addes by MFO, 2023.11
+DICpara.RemoveBadPoints = funParaInput('RemoveBadPoints');
+
 for ImgSeqNum = 2 : length(ImgNormalized)  
     
     disp(['Current image frame #: ', num2str(ImgSeqNum),'/',num2str(length(ImgNormalized))]);
@@ -176,7 +181,12 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % ------  Manually find some bad points from Local Subset ICGN step ------
     % Comment these lines below if you don't need to manually remove local bad points
-    % %%%%% Comment START %%%%%   
+    % %%%%% Comment START %%%%%
+    
+    % We have asked the user before starting about manual corrections of bad points
+    % No need to comment this block anymore
+    % Added by MFO, 2023.11
+    if (DICpara.RemoveBadPoints == 1)
         close all; USubpb1World = USubpb1; USubpb1World(2:2:end) = -USubpb1(2:2:end);
         Plotuv(USubpb1World,DICmesh.x0,DICmesh.y0World);
         disp('--- Start to manually remove bad points ---')
@@ -197,6 +207,8 @@ for ImgSeqNum = 2 : length(ImgNormalized)
         FSubpb1(3:4:end) = reshape(f12,size(DICmesh.coordinatesFEM,1),1); 
         FSubpb1(4:4:end) = reshape(f22,size(DICmesh.coordinatesFEM,1),1);
         disp('--- Remove bad points done ---')
+    end
+
     % %%%%% Comment END %%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      
@@ -521,6 +533,24 @@ fprintf('------------ Section 7 Done ------------ \n \n')
 % ------ clear temp variables ------
 clear a ALSub1BadPtNum ALSub1Timetemp atemp b btemp cc ConvItPerEletemp hbar Hbar
 
+%% ------ Choose what to compute after strain calculation and before starting all them ----- added by MFO, 2023.11
+DICpara.StressOrPoisson = funParaInput('StressOrPoisson');
+% If stress computation is chosen thus ask for model and constants before
+% starting all calculations
+if (DICpara.StressOrPoisson == 0) 
+    % ------ Choose material model ------
+    DICpara.MaterialModel = funParaInput('MaterialModel');
+    % ------ Define parameters in material models ------
+    if (DICpara.MaterialModel == 1) || (DICpara.MaterialModel == 2) % Linear elasticity
+        fprintf('Define Linear elasticity parameters \n')
+        fprintf("Young's modulus (unit: Pa): \n"); prompt = 'Input here (e.g., 69e9): '; 
+        DICpara.MaterialModelPara.YoungsModulus = input(prompt); 
+        fprintf("Poisson's ratio: \n"); prompt = 'Input here (e.g., 0.3): '; 
+        DICpara.MaterialModelPara.PoissonsRatio = input(prompt);
+        fprintf('------------------------------------- \n');
+
+    end
+end
 
 
 %% Section 8: Compute strains
@@ -667,7 +697,6 @@ save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad',
     'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrainWorld');
 
 
-
 %% Section 9: Compute stress or Poisson's ratio
 fprintf('------------ Section 9 Start ------------ \n')
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -676,23 +705,25 @@ fprintf('------------ Section 9 Start ------------ \n')
 % It was modified by MFO, 2023.11
 % Original section was for stress field only
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% ------ Choose what to compute -----
-DICpara.StressOrPoisson = funParaInput('StressOrPoisson');
 
 if (DICpara.StressOrPoisson == 0) % Stress field calculation, original section
     fprintf('Stress field calculation \n\n');
-    % ------ Choose material model ------
-    DICpara.MaterialModel = funParaInput('MaterialModel');
-    % ------ Define parameters in material models ------
-    if (DICpara.MaterialModel == 1) || (DICpara.MaterialModel == 2) % Linear elasticity
-        fprintf('Define Linear elasticity parameters \n')
-        fprintf("Young's modulus (unit: Pa): \n"); prompt = 'Input here (e.g., 69e9): '; 
-        DICpara.MaterialModelPara.YoungsModulus = input(prompt); 
-        fprintf("Poisson's ratio: \n"); prompt = 'Input here (e.g., 0.3): '; 
-        DICpara.MaterialModelPara.PoissonsRatio = input(prompt);
-        fprintf('------------------------------------- \n');
 
-    end
+    % We have chosen material model and constants before starting all
+    % calculations. Modified by MFO, 2023.11
+    %     % ------ Choose material model ------
+    %     DICpara.MaterialModel = funParaInput('MaterialModel');
+    %     % ------ Define parameters in material models ------
+    %     if (DICpara.MaterialModel == 1) || (DICpara.MaterialModel == 2) % Linear elasticity
+    %         fprintf('Define Linear elasticity parameters \n')
+    %         fprintf("Young's modulus (unit: Pa): \n"); prompt = 'Input here (e.g., 69e9): '; 
+    %         DICpara.MaterialModelPara.YoungsModulus = input(prompt); 
+    %         fprintf("Poisson's ratio: \n"); prompt = 'Input here (e.g., 0.3): '; 
+    %         DICpara.MaterialModelPara.PoissonsRatio = input(prompt);
+    %         fprintf('------------------------------------- \n');
+    % 
+    %     end
+
     % ------ Start main part ------
     for ImgSeqNum = 2 : length(ImgNormalized)
     
@@ -738,7 +769,7 @@ if (DICpara.StressOrPoisson == 0) % Stress field calculation, original section
     save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh','ResultFEMeshEachFrame',...
         'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrainWorld','ResultStressWorld');
 
-elseif (DICpara.StressOrPoisson == 1) % Poisson's ratio calculation (included by MFO)
+elseif (DICpara.StressOrPoisson == 1) % Poisson's ratio calculation (included by MFO, 2023.11)
 
      % ------ Start main part ------
      fprintf('Poisson''s ratio calculation. \n');
