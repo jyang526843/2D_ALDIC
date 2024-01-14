@@ -31,7 +31,7 @@ function [U,H,stepwithinwhile] = funICGN_Subpb1(x0,y0,Df,ImgRef,ImgDef,winsize,.
                                            
 %% Initialization
 warning('off');
-DfDxStartx = Df.DfAxis(1); DfDxStarty = Df.DfAxis(3);
+DfCropWidth = Df.DfCropWidth; 
 imgSize = Df.imgSize;
 
 
@@ -51,8 +51,8 @@ P0 = [FOld(1) FOld(2) FOld(3) FOld(4) UOld(1) UOld(2)]'; P = P0;
 %DfDx = imgfNormalizedbc.eval_Dx(XX,YY);
 %DfDy = imgfNormalizedbc.eval_Dy(XX,YY); 
 tempf = ImgRef([x(1):1:x(3)],[y(1):1:y(3)]);
-DfDx = Df.DfDx((x(1)-DfDxStartx):1:(x(3)-DfDxStartx), (y(1)-DfDxStarty):1:(y(3)-DfDxStarty));
-DfDy = Df.DfDy((x(1)-DfDxStartx):1:(x(3)-DfDxStartx), (y(1)-DfDxStarty):1:(y(3)-DfDxStarty));
+DfDx = Df.DfDx((x(1)-DfCropWidth):1:(x(3)-DfCropWidth), (y(1)-DfCropWidth):1:(y(3)-DfCropWidth));
+DfDy = Df.DfDy((x(1)-DfCropWidth):1:(x(3)-DfCropWidth), (y(1)-DfCropWidth):1:(y(3)-DfCropWidth));
 
 
 %% %%%%%%%% If there are >50% of the subset are painted with patterns %%%%%%%%%%%%
@@ -65,8 +65,8 @@ if length(DfDxImgMaskIndRow)<0.50*(winsize+1)^2
         y = [y0-winsize/2 ; y0+winsize/2 ; y0+winsize/2 ; y0-winsize/2]; % Update y
         [XX,YY] = ndgrid([x(1):1:x(3)],[y(1):1:y(3)]); 
         tempf = ImgRef([x(1):1:x(3)],[y(1):1:y(3)]);
-        DfDx = Df.DfDx((x(1)-DfDxStartx):1:(x(3)-DfDxStartx), (y(1)-DfDxStarty):1:(y(3)-DfDxStarty));
-        DfDy = Df.DfDy((x(1)-DfDxStartx):1:(x(3)-DfDxStartx), (y(1)-DfDxStarty):1:(y(3)-DfDxStarty));
+        DfDx = Df.DfDx((x(1)-DfCropWidth):1:(x(3)-DfCropWidth), (y(1)-DfCropWidth):1:(y(3)-DfCropWidth));
+        DfDy = Df.DfDy((x(1)-DfCropWidth):1:(x(3)-DfCropWidth), (y(1)-DfCropWidth):1:(y(3)-DfCropWidth));
     end
     
     meanf = mean(tempf(:)); bottomf = sqrt((length(tempf(:))-1)*var(tempf(:)));
@@ -210,7 +210,7 @@ if length(DfDxImgMaskIndRow)<0.50*(winsize+1)^2
             %                     %     tempCoordx(tempij) = tempCoordx(tempij)-winsize;
             %                     % end
             %                     % if tempCoordx(tempij)+1-x(1)>1 && tempCoordx(tempij)>x0-0.8*winsize
-            %                     %     b = b+ bottomf*([DfDx(tempCoordx(tempij)-DfDxStartx,tempCoordy(tempij)-DfDxStarty) DfDy(tempCoordx(tempij)-DfDxStartx,tempCoordy(tempij)-DfDxStarty)]*...
+            %                     %     b = b+ bottomf*([DfDx(tempCoordx(tempij)-DfCropWidth,tempCoordy(tempij)-DfCropWidth) DfDy(tempCoordx(tempij)-DfCropWidth,tempCoordy(tempij)-DfCropWidth)]*...
             %                     %         [tempCoordx(tempij)-x0 0 tempCoordy(tempij)-y0 0 1 0; 0 tempCoordx(tempij)-x0 0 tempCoordy(tempij)-y0 0 1])'* ...
             %                     %         ((tempf(tempCoordx(tempij)+1-x(1), tempCoordy(tempij)+1-y(1))-meanf)/bottomf - ...
             %                     %         (tempg(tempCoordx(tempij)+1-x(1), tempCoordy(tempij)+1-y(1))-meang)/bottomg);
@@ -220,7 +220,7 @@ if length(DfDxImgMaskIndRow)<0.50*(winsize+1)^2
             %                     end
             %                     if (tempCoordy(tempij)+1-y(1) > 1) && (tempCoordy(tempij)+1-y(1) < size(tempf,2)) ...
             %                         && (tempCoordx(tempij)*CrackPath2(1) + tempCoordy(tempij)*CrackPath2(2) + 1 > 0)
-            %                            b = b+ bottomf*([DfDx(tempCoordx(tempij)-DfDxStartx,tempCoordy(tempij)-DfDxStarty) DfDy(tempCoordx(tempij)-DfDxStartx,tempCoordy(tempij)-DfDxStarty)]*...
+            %                            b = b+ bottomf*([DfDx(tempCoordx(tempij)-DfCropWidth,tempCoordy(tempij)-DfCropWidth) DfDy(tempCoordx(tempij)-DfCropWidth,tempCoordy(tempij)-DfCropWidth)]*...
             %                             [tempCoordx(tempij)-x0 0 tempCoordy(tempij)-y0 0 1 0; 0 tempCoordx(tempij)-x0 0 tempCoordy(tempij)-y0 0 1])'* ...
             %                             ((tempf(tempCoordx(tempij)+1-x(1), tempCoordy(tempij)+1-y(1))-meanf)/bottomf - ...
             %                             (tempg(tempCoordx(tempij)+1-x(1), tempCoordy(tempij)+1-y(1))-meang)/bottomg);
@@ -231,7 +231,7 @@ if length(DfDxImgMaskIndRow)<0.50*(winsize+1)^2
             %                     %     tempCoordx(tempij) = tempCoordx(tempij)+winsize;
             %                     % end
             %                     % if tempCoordx(tempij)<size(DfDx,1) && tempCoordx(tempij)+1-x(1)<size(tempf,1) && tempCoordx(tempij)<x0+0.5*winsize
-            %                     %     b = b+ bottomf*([DfDx(tempCoordx(tempij)-DfDxStartx,tempCoordy(tempij)-DfDxStarty) DfDy(tempCoordx(tempij)-DfDxStartx,tempCoordy(tempij)-DfDxStarty)]*...
+            %                     %     b = b+ bottomf*([DfDx(tempCoordx(tempij)-DfCropWidth,tempCoordy(tempij)-DfCropWidth) DfDy(tempCoordx(tempij)-DfCropWidth,tempCoordy(tempij)-DfCropWidth)]*...
             %                     %         [tempCoordx(tempij)-x0 0 tempCoordy(tempij)-y0 0 1 0; 0 tempCoordx(tempij)-x0 0 tempCoordy(tempij)-y0 0 1])'* ...
             %                     %         ((tempf(tempCoordx(tempij)+1-x(1), tempCoordy(tempij)+1-y(1))-meanf)/bottomf - ...
             %                     %         (tempg(tempCoordx(tempij)+1-x(1), tempCoordy(tempij)+1-y(1))-meang)/bottomg);
@@ -239,16 +239,16 @@ if length(DfDxImgMaskIndRow)<0.50*(winsize+1)^2
             %                     if tempCoordx(tempij)*CrackPathCen(1) + tempCoordy(tempij)*CrackPathCen(2) + 1 > 0
             %                         tempCoordy(tempij) = tempCoordy(tempij)+winsize;
             %                     end
-            %                     if (tempCoordy(tempij)-DfDxStarty < size(DfDy,2)) && (tempCoordy(tempij)+1-y(1) < size(tempf,2)) ...
+            %                     if (tempCoordy(tempij)-DfCropWidth < size(DfDy,2)) && (tempCoordy(tempij)+1-y(1) < size(tempf,2)) ...
             %                         && (tempCoordx(tempij)*CrackPath1(1) + tempCoordy(tempij)*CrackPath1(2) + 1 < 0)
-            %                             b = b + bottomf*([DfDx(tempCoordx(tempij)-DfDxStartx,tempCoordy(tempij)-DfDxStarty) DfDy(tempCoordx(tempij)-DfDxStartx,tempCoordy(tempij)-DfDxStarty)]*...
+            %                             b = b + bottomf*([DfDx(tempCoordx(tempij)-DfCropWidth,tempCoordy(tempij)-DfCropWidth) DfDy(tempCoordx(tempij)-DfCropWidth,tempCoordy(tempij)-DfCropWidth)]*...
             %                             [tempCoordx(tempij)-x0 0 tempCoordy(tempij)-y0 0 1 0; 0 tempCoordx(tempij)-x0 0 tempCoordy(tempij)-y0 0 1])'* ...
             %                             ((tempf(tempCoordx(tempij)+1-x(1), tempCoordy(tempij)+1-y(1))-meanf)/bottomf - ...
             %                             (tempg(tempCoordx(tempij)+1-x(1), tempCoordy(tempij)+1-y(1))-meang)/bottomg);
             %                     end
             %                 end
             %             else
-            %                 b = b + bottomf*([DfDx(tempCoordx(tempij)-DfDxStartx,tempCoordy(tempij)-DfDxStarty) DfDy(tempCoordx(tempij)-DfDxStartx,tempCoordy(tempij)-DfDxStarty)]*...
+            %                 b = b + bottomf*([DfDx(tempCoordx(tempij)-DfCropWidth,tempCoordy(tempij)-DfCropWidth) DfDy(tempCoordx(tempij)-DfCropWidth,tempCoordy(tempij)-DfCropWidth)]*...
             %                     [tempCoordx(tempij)-x0 0 tempCoordy(tempij)-y0 0 1 0; 0 tempCoordx(tempij)-x0 0 tempCoordy(tempij)-y0 0 1])'* ...
             %                     ((tempf(tempCoordx(tempij)+1-x(1), tempCoordy(tempij)+1-y(1))-meanf)/bottomf - ...
             %                     (tempg(tempCoordx(tempij)+1-x(1), tempCoordy(tempij)+1-y(1))-meang)/bottomg);
