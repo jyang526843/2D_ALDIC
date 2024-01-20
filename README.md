@@ -49,7 +49,7 @@ https://www.mathworks.com/matlabcentral/fileexchange/82873-2d-finite-element-glo
 https://www.mathworks.com/matlabcentral/fileexchange/77019-augmented-lagrangian-digital-volume-correlation-aldvc
 
 ## Contact and support
-Jin Yang (Caltech solid mechanics, PhD '19): jyang526@wisc.edu  -or-  aldicdvc@gmail.com
+Dr. Jin Yang (Caltech majoring in solid mechanics, PhD '19): jin.yang@austin.utexas.edu  -or-  aldicdvc@gmail.com
 I appreciate your comments and ratings to help me further improve this code. If you have other questions, feel free to email me.
 
 
