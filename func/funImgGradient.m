@@ -67,7 +67,7 @@ else
     
     % Assemble data set
     DfAxis = [DfDxStartx,DfDxEndx,DfDxStarty,DfDxEndy];
-    Df.DfWidthCrop = 3;
+    Df.DfCropWidth = 3;
     Df.DfAxis = DfAxis; Df.imgSize = imgSize;
     Df.DfDx = DfDxNormalized;
     Df.DfDy = DfDyNormalized;
