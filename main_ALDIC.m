@@ -3,7 +3,7 @@
 % working with an adaptive quadtree mesh
 % 
 % Author: Jin Yang, PhD @Caltech
-% Contact and support: jyang526@wisc.edu -or- aldicdvc@gmail.com
+% Contact and support: jin.yang@austin.utexas.edu -or- aldicdvc@gmail.com
 % Date: 2015.04,06,07; 2016.03,04; 2020.11;2021.12
 % ---------------------------------------------
 
