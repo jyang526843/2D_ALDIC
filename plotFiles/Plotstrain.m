@@ -43,7 +43,7 @@ function [x2,y2,disp_u,disp_v,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_e
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%
-warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
+warning off; load('colormap_RdYlBu.mat','cMap');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%% convert pixel unit to the physical world unit %%%%%
@@ -109,6 +109,7 @@ try h1=imshow( flipud(imread(CurrentImg) ),'InitialMagnification','fit');
 catch h1=surf( flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
+title('Strain $e_{xx}$','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, strain_exx, 'EdgeColor','none','LineStyle','none');
@@ -139,6 +140,7 @@ try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf( flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
+title('Strain $e_{xy}$','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, strain_exy,'EdgeColor','none','LineStyle','none');
@@ -169,6 +171,7 @@ try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf( flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
+title('Strain $e_{yy}$','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, strain_eyy,'EdgeColor','none','LineStyle','none');
@@ -199,6 +202,7 @@ try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
+title('Principal strain $e_{\max}$','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, strain_principal_max,'EdgeColor','none','LineStyle','none');
@@ -229,6 +233,7 @@ try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
+title('Principal strain $e_{\min}$','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, strain_principal_min,'EdgeColor','none','LineStyle','none');
@@ -259,6 +264,7 @@ try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
+title('Max shear strain','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, strain_maxshear,'EdgeColor','none','LineStyle','none');
@@ -289,6 +295,7 @@ try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
+title('von Mises equivalent strain','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2);  set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, strain_vonMises,'EdgeColor','none','LineStyle','none');

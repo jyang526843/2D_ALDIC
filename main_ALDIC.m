@@ -14,7 +14,9 @@ setenv('MW_MINGW64_LOC','C:\TDM-GCC-64');
 try mex -O ba_interp2.cpp; catch; end % mex set up ba_interp2.cpp script
 % [Comment]: If this line reports error but it works before, 
 % Change line 14 to: "try mex -O ba_interp2.cpp; catch; end"
-addpath("./func",'./func/rbfinterp','./plotFiles','./func_quadtree','./func_quadtree/refinement','./plotFiles/export_fig-d966721/'); 
+% addpath('func','func/rbfinterp','plotFiles','func_quadtree','func_quadtree/refinement','plotFiles/export_fig-d966721');
+myfilepath = fileparts(which('main_ALDIC.m'));
+addpath(genpath(myfilepath));
 % TODO: addpath("./YOUR IMAGE FOLDER"); 
 fprintf('------------ Section 1 Done ------------ \n \n')
 
@@ -45,6 +47,11 @@ fprintf('------------ Section 2 Done ------------ \n \n')
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % To solve each frame in an image sequence
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% We ask if the user wants to make corrections at each step befor starting
+% Addes by MFO, 2023.11
+DICpara.RemoveBadPoints = funParaInput('RemoveBadPoints');
+
 for ImgSeqNum = 2 : length(ImgNormalized)  
     
     disp(['Current image frame #: ', num2str(ImgSeqNum),'/',num2str(length(ImgNormalized))]);
@@ -174,7 +181,12 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % ------  Manually find some bad points from Local Subset ICGN step ------
     % Comment these lines below if you don't need to manually remove local bad points
-    % %%%%% Comment START %%%%%   
+    % %%%%% Comment START %%%%%
+    
+    % We have asked the user before starting about manual corrections of bad points
+    % No need to comment this block anymore
+    % Added by MFO, 2023.11
+    if (DICpara.RemoveBadPoints == 1)
         close all; USubpb1World = USubpb1; USubpb1World(2:2:end) = -USubpb1(2:2:end);
         Plotuv(USubpb1World,DICmesh.x0,DICmesh.y0World);
         disp('--- Start to manually remove bad points ---')
@@ -195,6 +207,8 @@ for ImgSeqNum = 2 : length(ImgNormalized)
         FSubpb1(3:4:end) = reshape(f12,size(DICmesh.coordinatesFEM,1),1); 
         FSubpb1(4:4:end) = reshape(f22,size(DICmesh.coordinatesFEM,1),1);
         disp('--- Remove bad points done ---')
+    end
+
     % %%%%% Comment END %%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      
@@ -519,6 +533,24 @@ fprintf('------------ Section 7 Done ------------ \n \n')
 % ------ clear temp variables ------
 clear a ALSub1BadPtNum ALSub1Timetemp atemp b btemp cc ConvItPerEletemp hbar Hbar
 
+%% ------ Choose what to compute after strain calculation and before starting all them ----- added by MFO, 2023.11
+DICpara.StressOrPoisson = funParaInput('StressOrPoisson');
+% If stress computation is chosen thus ask for model and constants before
+% starting all calculations
+if (DICpara.StressOrPoisson == 0) 
+    % ------ Choose material model ------
+    DICpara.MaterialModel = funParaInput('MaterialModel');
+    % ------ Define parameters in material models ------
+    if (DICpara.MaterialModel == 1) || (DICpara.MaterialModel == 2) % Linear elasticity
+        fprintf('Define Linear elasticity parameters \n')
+        fprintf("Young's modulus (unit: Pa): \n"); prompt = 'Input here (e.g., 69e9): '; 
+        DICpara.MaterialModelPara.YoungsModulus = input(prompt); 
+        fprintf("Poisson's ratio: \n"); prompt = 'Input here (e.g., 0.3): '; 
+        DICpara.MaterialModelPara.PoissonsRatio = input(prompt);
+        fprintf('------------------------------------- \n');
+
+    end
+end
 
 
 %% Section 8: Compute strains
@@ -665,71 +697,140 @@ save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad',
     'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrainWorld');
 
 
-
-%% Section 9: Compute stress
+%% Section 9: Compute stress or Poisson's ratio
 fprintf('------------ Section 9 Start ------------ \n')
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % This section is to compute stress fields and plot stress fields
+% or to compute Poisson ratio with histograms and statistics
+% It was modified by MFO, 2023.11
+% Original section was for stress field only
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% ------ Choose material model ------
-DICpara.MaterialModel = funParaInput('MaterialModel');
-% ------ Define parameters in material models ------
-if (DICpara.MaterialModel == 1) || (DICpara.MaterialModel == 2) % Linear elasticity
-    fprintf('Define Linear elasticity parameters \n')
-    fprintf("Young's modulus (unit: Pa): \n"); prompt = 'Input here (e.g., 69e9): '; 
-    DICpara.MaterialModelPara.YoungsModulus = input(prompt); 
-    fprintf("Poisson's ratio: \n"); prompt = 'Input here (e.g., 0.3): '; 
-    DICpara.MaterialModelPara.PoissonsRatio = input(prompt);
-    fprintf('------------------------------------- \n');
+
+if (DICpara.StressOrPoisson == 0) % Stress field calculation, original section
+    fprintf('Stress field calculation \n\n');
+
+    % We have chosen material model and constants before starting all
+    % calculations. Modified by MFO, 2023.11
+    %     % ------ Choose material model ------
+    %     DICpara.MaterialModel = funParaInput('MaterialModel');
+    %     % ------ Define parameters in material models ------
+    %     if (DICpara.MaterialModel == 1) || (DICpara.MaterialModel == 2) % Linear elasticity
+    %         fprintf('Define Linear elasticity parameters \n')
+    %         fprintf("Young's modulus (unit: Pa): \n"); prompt = 'Input here (e.g., 69e9): '; 
+    %         DICpara.MaterialModelPara.YoungsModulus = input(prompt); 
+    %         fprintf("Poisson's ratio: \n"); prompt = 'Input here (e.g., 0.3): '; 
+    %         DICpara.MaterialModelPara.PoissonsRatio = input(prompt);
+    %         fprintf('------------------------------------- \n');
+    % 
+    %     end
+
+    % ------ Start main part ------
+    for ImgSeqNum = 2 : length(ImgNormalized)
+    
+        disp(['Current image frame #: ', num2str(ImgSeqNum),'/',num2str(length(ImgNormalized))]); close all;
+    
+        % ------ Plot stress ------
+        if DICpara.OrigDICImgTransparency == 1
+           [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
+                stress_principal_min_xyplane, stress_maxshear_xyplane, ...
+                stress_maxshear_xyz3d, stress_vonMises]  =  Plotstress0( ...
+                DICpara,ResultStrainWorld{ImgSeqNum-1},size(ImgNormalized{1}));
+        
+        else % Plot over raw DIC images
+            if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image
+                [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
+                    stress_principal_min_xyplane, stress_maxshear_xyplane, ...
+                    stress_maxshear_xyz3d, stress_vonMises] = Plotstress( ...
+                    DICpara,ResultStrainWorld{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,1});
+            
+            else % Plot over second or next deformed images
+                [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
+                    stress_principal_min_xyplane, stress_maxshear_xyplane, ...
+                    stress_maxshear_xyz3d, stress_vonMises] = Plotstress( ...
+                    DICpara,ResultStrainWorld{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,ImgSeqNum});
+            
+            end
+         end
+        
+        % ------ Save figures for computed stress fields ------
+        SaveFigFilesStress;
+    
+        % ----- Save stress results ------
+        ResultStressWorld{ImgSeqNum-1} = struct('stressxCoord',ResultStrainWorld{ImgSeqNum-1}.strainxCoord,'stressyCoord',ResultStrainWorld{ImgSeqNum-1}.strainyCoord, ...
+            'stress_sxx',stress_sxx,'stress_sxy',stress_sxy,'stress_syy',stress_syy, ...
+            'stress_principal_max_xyplane',stress_principal_max_xyplane, 'stress_principal_min_xyplane',stress_principal_min_xyplane, ...
+            'stress_maxshear_xyplane',stress_maxshear_xyplane,'stress_maxshear_xyz3d',stress_maxshear_xyz3d, ...
+            'stress_vonMises',stress_vonMises);
+    
+    end
+    % ------ END of for-loop {ImgSeqNum = 2:length(ImgNormalized)} ------
+    % ------ Save data again including solved stress fields ------
+    results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
+    save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh','ResultFEMeshEachFrame',...
+        'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrainWorld','ResultStressWorld');
+
+elseif (DICpara.StressOrPoisson == 1) % Poisson's ratio calculation (included by MFO, 2023.11)
+
+     % ------ Start main part ------
+     fprintf('Poisson''s ratio calculation. \n');
+
+     for ImgSeqNum = 2 : length(ImgNormalized)
+        disp(['Current image frame #: ', num2str(ImgSeqNum),'/',num2str(length(ImgNormalized))]); close all;
+        % ------ Plot Poisson ratio ------
+        if DICpara.OrigDICImgTransparency == 1
+           [poisson,trimdvdy,trimdudx]  =  PlotPoisson0(DICpara,ResultStrainWorld{ImgSeqNum-1},size(ImgNormalized{1}));
+        
+        else % Plot over raw DIC images
+            if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image
+                [poisson,trimdvdy,trimdudx] = PlotPoisson(DICpara,ResultStrainWorld{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,1});
+            else % Plot over second or next deformed images
+                [poisson,trimdvdy,trimdudx] = PlotPoisson(DICpara,ResultStrainWorld{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,ImgSeqNum});
+            
+            end
+        end
+        fprintf('---------- Poisson''s ratio from field average--------- \n')
+        fprintf('Mean Poisson''s ratio: %.4f \n', mean(poisson(:)));
+        fprintf('Error (95%% CI): %.5f \n', 2*std(poisson(:)));
+        fprintf('--------- Poisson''s ratio from strain fields average ------- \n');
+        meaneyy = mean(trimdvdy(:));
+        stdeyy = std(trimdvdy(:));
+        fprintf('Mean eyy: %.5f \n', meaneyy);
+        fprintf('Error (95%% CI): %.5f \n', 2*stdeyy);
+        meanexx = mean(trimdudx(:));
+        stdexx = std(trimdudx(:));
+        fprintf('Mean exx: %.5f \n', meanexx);
+        fprintf('Error (95%% CI): %.5f \n', 2*stdexx);
+        if abs(meanexx) < abs(meaneyy)
+            poisson_meane = -meanexx/meaneyy;
+            % propagating the std to Poisson's ratio
+            stdpoisson_meane = sqrt((1/meaneyy*stdexx)^2+(meanexx/meaneyy^2*stdeyy)^2);
+        else
+            poisson_meane = -meaneyy/meanexx;
+            % propagating the std to Poisson's ratio
+            stdpoisson_meane = sqrt((1/meanexx*stdeyy)^2+(meaneyy/meanexx^2*stdexx)^2);
+        end
+        fprintf('Poisson''s ratio: %.4f \n', poisson_meane);
+        fprintf('Error (95%% CI): %.5f \n', 2*stdpoisson_meane);
+
+         % ------ Save figures for computed stress fields ------
+         SaveFigFilesPoisson;
+
+         % ----- Save Poisson results ------
+         ResultPoissonWorld{ImgSeqNum-1} = struct('PoissonxCoord',ResultStrainWorld{ImgSeqNum-1}.strainxCoord,'PoissonyCoord',ResultStrainWorld{ImgSeqNum-1}.strainyCoord, ...
+            'Poisson',poisson);
+     end
+     % ------ END of for-loop {ImgSeqNum = 2:length(ImgNormalized)} -----
+
+     % ------ Save data again including Poisson fields ------
+     results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
+     save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh','ResultFEMeshEachFrame',...
+        'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrainWorld','ResultPoissonWorld');
+
 end
 
-% ------ Start main part ------
-for ImgSeqNum = 2 : length(ImgNormalized)
-    
-    disp(['Current image frame #: ', num2str(ImgSeqNum),'/',num2str(length(ImgNormalized))]); close all;
-    
-    % ------ Plot stress ------
-    if DICpara.OrigDICImgTransparency == 1
-        [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
-            stress_principal_min_xyplane, stress_maxshear_xyplane, ...
-            stress_maxshear_xyz3d, stress_vonMises]  =  Plotstress0( ...
-            DICpara,ResultStrainWorld{ImgSeqNum-1},size(ImgNormalized{1}));
-        
-    else % Plot over raw DIC images
-        if DICpara.Image2PlotResults == 0 % Plot over the first image; "file_name{1,1}" corresponds to the first image
-            [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
-                stress_principal_min_xyplane, stress_maxshear_xyplane, ...
-                stress_maxshear_xyz3d, stress_vonMises] = Plotstress( ...
-                DICpara,ResultStrainWorld{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,1});
-            
-        else % Plot over second or next deformed images
-            [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
-                stress_principal_min_xyplane, stress_maxshear_xyplane, ...
-                stress_maxshear_xyz3d, stress_vonMises] = Plotstress( ...
-                DICpara,ResultStrainWorld{ImgSeqNum-1},size(ImgNormalized{1}),file_name{1,ImgSeqNum});
-            
-        end
-    end
-    
-    
-    % ------ Save figures for computed stress fields ------
-    SaveFigFilesStress;
-    
-    % ----- Save strain results ------
-    ResultStressWorld{ImgSeqNum-1} = struct('stressxCoord',ResultStrainWorld{ImgSeqNum-1}.strainxCoord,'stressyCoord',ResultStrainWorld{ImgSeqNum-1}.strainyCoord, ...
-        'stress_sxx',stress_sxx,'stress_sxy',stress_sxy,'stress_syy',stress_syy, ...
-        'stress_principal_max_xyplane',stress_principal_max_xyplane, 'stress_principal_min_xyplane',stress_principal_min_xyplane, ...
-        'stress_maxshear_xyplane',stress_maxshear_xyplane,'stress_maxshear_xyz3d',stress_maxshear_xyz3d, ...
-        'stress_vonMises',stress_vonMises);
-    
-end
-% ------ END of for-loop {ImgSeqNum = 2:length(ImgNormalized)} ------
 fprintf('------------ Section 9 Done ------------ \n \n')
 
-% ------ Save data again including solved stress fields ------
-results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
-save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh','ResultFEMeshEachFrame',...
-    'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrainWorld','ResultStressWorld');
+
 
 
 

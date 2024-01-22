@@ -34,7 +34,7 @@ function [strain_exx,strain_exy,strain_eyy,strain_principal_max,strain_principal
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Initialization
-warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
+warning off; load('colormap_RdYlBu.mat','cMap');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%% convert pixel unit to the physical world unit %%%%%

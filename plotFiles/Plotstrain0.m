@@ -43,7 +43,7 @@ function [x2,y2,disp_u,disp_v,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_e
 %%%%% convert pixel unit to the physical world unit %%%%%
 um2px = DICpara.um2px; 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
+warning off; load('colormap_RdYlBu.mat','cMap');
 
 %% Compute strain components
 
