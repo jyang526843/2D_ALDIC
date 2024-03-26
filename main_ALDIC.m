@@ -188,7 +188,6 @@ for ImgSeqNum = 2 : length(ImgNormalized)
     % Added by MFO, 2023.11
     if (DICpara.RemoveBadPoints == 1)
         close all; USubpb1World = USubpb1; USubpb1World(2:2:end) = -USubpb1(2:2:end);
-        Plotuv(USubpb1World,DICmesh.x0,DICmesh.y0World);
         disp('--- Start to manually remove bad points ---')
         u = reshape(USubpb1(1:2:end),size(DICmesh.x0,1),size(DICmesh.x0,2)); 
         v = reshape(USubpb1(2:2:end),size(DICmesh.x0,1),size(DICmesh.x0,2));
