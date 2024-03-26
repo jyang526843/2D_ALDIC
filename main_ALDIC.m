@@ -533,25 +533,6 @@ fprintf('------------ Section 7 Done ------------ \n \n')
 % ------ clear temp variables ------
 clear a ALSub1BadPtNum ALSub1Timetemp atemp b btemp cc ConvItPerEletemp hbar Hbar
 
-%% ------ Choose what to compute after strain calculation and before starting all them ----- added by MFO, 2023.11
-DICpara.StressOrPoisson = funParaInput('StressOrPoisson');
-% If stress computation is chosen thus ask for model and constants before
-% starting all calculations
-if (DICpara.StressOrPoisson == 0) 
-    % ------ Choose material model ------
-    DICpara.MaterialModel = funParaInput('MaterialModel');
-    % ------ Define parameters in material models ------
-    if (DICpara.MaterialModel == 1) || (DICpara.MaterialModel == 2) % Linear elasticity
-        fprintf('Define Linear elasticity parameters \n')
-        fprintf("Young's modulus (unit: Pa): \n"); prompt = 'Input here (e.g., 69e9): '; 
-        DICpara.MaterialModelPara.YoungsModulus = input(prompt); 
-        fprintf("Poisson's ratio: \n"); prompt = 'Input here (e.g., 0.3): '; 
-        DICpara.MaterialModelPara.PoissonsRatio = input(prompt);
-        fprintf('------------------------------------- \n');
-
-    end
-end
-
 
 %% Section 8: Compute strains
 fprintf('------------ Section 8 Start ------------ \n')
@@ -695,6 +676,28 @@ fprintf('------------ Section 8 Done ------------ \n \n')
 results_name = ['results_',imgname,'_ws',num2str(DICpara.winsize),'_st',num2str(DICpara.winstepsize),'.mat'];
 save(results_name, 'file_name','DICpara','DICmesh','ResultDisp','ResultDefGrad','ResultFEMesh','ResultFEMeshEachFrame',...
     'ALSub1Time','ALSub2Time','ALSolveStep','ResultStrainWorld');
+
+
+
+%% ------ Choose what to compute after strain calculation and before starting all them ----- added by MFO, 2023.11
+DICpara.StressOrPoisson = funParaInput('StressOrPoisson');
+% If stress computation is chosen thus ask for model and constants before
+% starting all calculations
+if (DICpara.StressOrPoisson == 0) 
+    % ------ Choose material model ------
+    DICpara.MaterialModel = funParaInput('MaterialModel');
+    % ------ Define parameters in material models ------
+    if (DICpara.MaterialModel == 1) || (DICpara.MaterialModel == 2) % Linear elasticity
+        fprintf('Define Linear elasticity parameters \n')
+        fprintf("Young's modulus (unit: Pa): \n"); prompt = 'Input here (e.g., 69e9): '; 
+        DICpara.MaterialModelPara.YoungsModulus = input(prompt); 
+        fprintf("Poisson's ratio: \n"); prompt = 'Input here (e.g., 0.3): '; 
+        DICpara.MaterialModelPara.PoissonsRatio = input(prompt);
+        fprintf('------------------------------------- \n');
+
+    end
+end
+
 
 
 %% Section 9: Compute stress or Poisson's ratio
