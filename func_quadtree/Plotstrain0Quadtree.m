@@ -34,7 +34,7 @@ function [strain_exx,strain_exy,strain_eyy,strain_principal_max,strain_principal
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Initialization
-warning off; load('colormap_RdYlBu.mat','cMap');
+warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%% convert pixel unit to the physical world unit %%%%%
@@ -56,8 +56,8 @@ strain_principal_max = 0.5*(strain_exx+strain_eyy) + strain_maxshear;
 strain_principal_min = 0.5*(strain_exx+strain_eyy) - strain_maxshear;
 % equivalent von Mises strain
 strain_vonMises = sqrt(strain_principal_max.^2 + strain_principal_min.^2 - ...
-             strain_principal_max.*strain_principal_min + 3*strain_maxshear.^2);
-         
+             strain_principal_max.*strain_principal_min   );
+% There was a mistake before in computing "strain_vonMises":   previous "+ 3*strain_maxshear.^2" term should not be included.
          
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 % ====== 1) Strain exx ====== 

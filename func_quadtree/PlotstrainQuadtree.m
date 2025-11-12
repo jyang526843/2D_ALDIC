@@ -41,7 +41,7 @@ function [strain_exx,strain_exy,strain_eyy,strain_principal_max,strain_principal
 
 
 %% Initialization
-warning off; load('colormap_RdYlBu.mat','cMap');
+warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%% convert pixel unit to the physical world unit %%%%%
@@ -70,8 +70,8 @@ strain_principal_max = 0.5*(strain_exx+strain_eyy) + strain_maxshear;
 strain_principal_min = 0.5*(strain_exx+strain_eyy) - strain_maxshear;
 % equivalent von Mises strain
 strain_vonMises = sqrt(strain_principal_max.^2 + strain_principal_min.^2 - ...
-             strain_principal_max.*strain_principal_min + 3*strain_maxshear.^2);
-
+             strain_principal_max.*strain_principal_min );
+% There was a mistake before in computing "strain_vonMises":   previous "+ 3*strain_maxshear.^2" term should not be included.
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ====== 1) Strain exx ======
@@ -80,11 +80,11 @@ fig1=figure; ax1=axes;
 try h1=imshow( flipud(imread(CurrentImg) ),'InitialMagnification','fit');
 catch h1=surf( flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
-title('Strain $e_{xx}$','FontWeight','Normal','Interpreter','latex');
+
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef/um2px,strain_exx,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; axis equal;  axis tight;   
-alpha(h2,OrigDICImgTransparency); colormap jet; caxis auto;
+alpha(h2,OrigDICImgTransparency); colormap(jet); caxis auto;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); caxis([0,0.5]) % D Sample 
@@ -112,11 +112,11 @@ fig1=figure; ax1=axes;
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf( flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
-title('Strain $e_{xy}$','FontWeight','Normal','Interpreter','latex');
+
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef/um2px,strain_exy,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; axis equal;  axis tight;   
-alpha(h2,OrigDICImgTransparency); colormap jet; caxis auto;
+alpha(h2,OrigDICImgTransparency); colormap(jet); caxis auto;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); caxis([-0.08,0.08]) % D Sample 
@@ -144,11 +144,11 @@ fig1=figure; ax1=axes;
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf( flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
-title('Strain $e_{yy}$','FontWeight','Normal','Interpreter','latex');
+
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef/um2px,strain_eyy,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; axis equal;  axis tight;   
-alpha(h2,OrigDICImgTransparency); colormap jet; caxis auto;
+alpha(h2,OrigDICImgTransparency); colormap(jet); caxis auto;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); caxis([-0.15,0]) % D Sample 
@@ -176,11 +176,11 @@ fig1=figure; ax1=axes;
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
-title('Principal strain $e_{\max}$','FontWeight','Normal','Interpreter','latex');
+
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef/um2px,strain_principal_max,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; axis equal;  axis tight;   
-alpha(h2,OrigDICImgTransparency); colormap jet; caxis auto;
+alpha(h2,OrigDICImgTransparency); colormap(jet); caxis auto;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet);  caxis auto; % D Sample 
@@ -208,11 +208,11 @@ fig1=figure; ax1=axes;
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
-title('Principal strain $e_{\min}$','FontWeight','Normal','Interpreter','latex');
+
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef/um2px,strain_principal_min,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; axis equal;  axis tight;   
-alpha(h2,OrigDICImgTransparency); colormap jet; caxis auto;
+alpha(h2,OrigDICImgTransparency); colormap(jet); caxis auto;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet);  caxis auto; % D Sample 
@@ -240,11 +240,11 @@ fig1=figure; ax1=axes;
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
-title('Max shear strain','FontWeight','Normal','Interpreter','latex');
+
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef/um2px,strain_maxshear,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; axis equal;  axis tight;   
-alpha(h2,OrigDICImgTransparency); colormap jet; caxis auto;
+alpha(h2,OrigDICImgTransparency); colormap(jet); caxis auto;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet);  caxis auto; % D Sample 
@@ -271,11 +271,11 @@ fig1=figure; ax1=axes;
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
-title('von Mises equivalent strain','FontWeight','Normal','Interpreter','latex');
+
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2);  set(gca,'ydir','normal');
 hold on; ax2=axes; h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef/um2px,strain_vonMises,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; axis equal;  axis tight;   
-alpha(h2,OrigDICImgTransparency); colormap jet; caxis auto;
+alpha(h2,OrigDICImgTransparency); colormap(jet); caxis auto;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet);  caxis auto; % D Sample 
