@@ -70,8 +70,8 @@ u0 = reshape(u,M+2*Rad,N+2*Rad); v0 = reshape(v,M+2*Rad,N+2*Rad);
 u = u0(1+Rad:end-Rad,1+Rad:end-Rad); v = v0(1+Rad:end-Rad,1+Rad:end-Rad);
 
 % imagesc([x(1,1) x(end,1)], [y(1,1) y(1,end)], flipud(g)); hold on;
-if M < 9, x2 = x(:,1)'; else x2 = linspace(x(1,1),x(end,1),4*(length(x(:,1))-1)+1); end
-if N < 9, y2 = y(1,:);  else y2 = linspace(y(1,1),y(1,end),4*(length(y(1,:))-1)+1); end
+if M < 9, x2 = x(:,1)'; else x2 = linspace(x(1,1),x(end,1),4*(length(x(:,1))-1)+1); x2=x2(:)'; end  
+if N < 9, y2 = y(1,:); else y2 = linspace(y(1,1),y(1,end),4*(length(y(1,:))-1)+1); y2=y2(:)'; end  
 
 
 %% Compute displacement components to manipulate the reference image
@@ -102,6 +102,7 @@ strain_vonMises = 2/3 * sqrt(strain_principal_max.^2 + strain_principal_min.^2 -
 %                                   - strain_principal_max.*strain_principal_min );"
 % Link: https://help.csiamerica.com/help/sap2000/26/26.0.0/SAP2000/WebHelp/Menus/Display/Show_Forces_Stresses/Von_Mises_Stress.htm
 
+ 
 % Please don't delete this line, to deal with the image and physical world coordinates       
 [x2,y2]=ndgrid(x2,y2); x2=x2'; y2=y2';
 

@@ -43,7 +43,7 @@ function [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
 
 
 %% Initialization
-warning off; load('colormap_RdYlBu.mat','cMap');
+warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%% convert pixel unit to the physical world unit %%%%%
@@ -136,11 +136,11 @@ fig1=figure; ax1=axes;
 try h1=imshow( flipud(imread(CurrentImg) ),'InitialMagnification','fit');
 catch h1=surf( flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
-title('Stress $s_{xx}$','FontWeight','Normal','Interpreter','latex');
+
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef/um2px,stress_sxx,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; axis equal;  axis tight;   
-alpha(h2,OrigDICImgTransparency); colormap jet; caxis auto;
+alpha(h2,OrigDICImgTransparency); colormap(jet); caxis auto;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); 
@@ -166,11 +166,11 @@ fig1=figure; ax1=axes;
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf( flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
-title('Stress $s_{xy}$','FontWeight','Normal','Interpreter','latex');
+
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef/um2px,stress_sxy,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; axis equal;  axis tight;   
-alpha(h2,OrigDICImgTransparency); colormap jet; caxis auto;
+alpha(h2,OrigDICImgTransparency); colormap(jet); caxis auto;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); 
@@ -197,11 +197,11 @@ fig1=figure; ax1=axes;
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf( flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
-title('Stress $s_{yy}$','FontWeight','Normal','Interpreter','latex');
+
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef/um2px,stress_syy,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; axis equal;  axis tight;   
-alpha(h2,OrigDICImgTransparency); colormap jet; caxis auto;
+alpha(h2,OrigDICImgTransparency); colormap(jet); caxis auto;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); 
@@ -229,11 +229,11 @@ fig1=figure; ax1=axes;
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
-title('$xy$-plane principal stress $s_{\max}$','FontWeight','Normal','Interpreter','latex');
+
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef/um2px,stress_principal_max_xyplane,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; axis equal;  axis tight;   
-alpha(h2,OrigDICImgTransparency); colormap jet; caxis auto;
+alpha(h2,OrigDICImgTransparency); colormap(jet); caxis auto;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); 
@@ -261,11 +261,11 @@ fig1=figure; ax1=axes;
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
-title('$xy$-plane principal stress $s_{\min}$','FontWeight','Normal','Interpreter','latex');
+
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef/um2px,stress_principal_min_xyplane,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; axis equal;  axis tight;   
-alpha(h2,OrigDICImgTransparency); colormap jet; caxis auto;
+alpha(h2,OrigDICImgTransparency); colormap(jet); caxis auto;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); 
@@ -293,11 +293,11 @@ fig1=figure; ax1=axes;
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
-title('$xy$-plane max shear stress','FontWeight','Normal','Interpreter','latex');
+
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef/um2px,stress_maxshear_xyplane,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; axis equal;  axis tight;   
-alpha(h2,OrigDICImgTransparency); colormap jet; caxis auto;
+alpha(h2,OrigDICImgTransparency); colormap(jet); caxis auto;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); 
@@ -324,11 +324,11 @@ fig1=figure; ax1=axes;
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
-title('$xyz$-3D max shear stress','FontWeight','Normal','Interpreter','latex');
+
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef/um2px,stress_maxshear_xyz3d,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; axis equal;  axis tight;   
-alpha(h2,OrigDICImgTransparency); colormap jet; caxis auto;
+alpha(h2,OrigDICImgTransparency); colormap(jet); caxis auto;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); 
@@ -355,11 +355,11 @@ fig1=figure; ax1=axes;
 try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
-title('von Mises equivalent stress','FontWeight','Normal','Interpreter','latex');
+
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2);  set(gca,'ydir','normal');
 hold on; ax2=axes; h2=show([],elementsFEM(:,1:4),coordinatesFEMWorldDef/um2px,stress_vonMises,'NoEdgeColor');
 set(gca,'fontSize',18); view(2); box on; axis equal;  axis tight;   
-alpha(h2,OrigDICImgTransparency); colormap jet; caxis auto;
+alpha(h2,OrigDICImgTransparency); colormap(jet); caxis auto;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%% TODO: manually modify colormap and caxis %%%%%%
 % colormap(jet); 

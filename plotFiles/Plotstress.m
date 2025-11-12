@@ -46,7 +46,7 @@ function [stress_sxx,stress_sxy,stress_syy, stress_principal_max_xyplane, ...
 
 
 %% Initialization
-warning off; load('colormap_RdYlBu.mat','cMap');
+warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%% convert pixel unit to the physical world unit %%%%%
@@ -143,7 +143,6 @@ try h1=imshow( flipud(imread(CurrentImg) ),'InitialMagnification','fit');
 catch h1=surf( flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
-title('Stress $s_{xx}$','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, stress_sxx,'EdgeColor','none','LineStyle','none');
@@ -174,7 +173,6 @@ try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf( flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
-title('Stress $s_{xy}$','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, stress_sxy,'EdgeColor','none','LineStyle','none');
@@ -205,7 +203,6 @@ try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf( flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
-title('Stress $s_{yy}$','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, stress_syy,'EdgeColor','none','LineStyle','none');
@@ -236,7 +233,6 @@ try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
-title('$xy$-plane principal stress $s_{\max}$','FontWeight','Normal','Interpreter','latex'); 
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, stress_principal_max_xyplane,'EdgeColor','none','LineStyle','none');
@@ -267,7 +263,6 @@ try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
-title('$xy$-plane principal stress $s_{\min}$','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, stress_principal_min_xyplane,'EdgeColor','none','LineStyle','none');
@@ -298,7 +293,6 @@ try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
-title('$xy$-plane max shear stress','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, stress_maxshear_xyplane,'EdgeColor','none','LineStyle','none');
@@ -329,7 +323,6 @@ try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
-title('$xyz$-3D max shear stress','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, stress_maxshear_xyz3d,'EdgeColor','none','LineStyle','none');
@@ -360,7 +353,6 @@ try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
-title('von Mises equivalent stress','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2);  set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, stress_vonMises,'EdgeColor','none','LineStyle','none');
