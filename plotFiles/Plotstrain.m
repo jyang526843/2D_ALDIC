@@ -43,7 +43,7 @@ function [x2,y2,disp_u,disp_v,dudx,dvdx,dudy,dvdy,strain_exx,strain_exy,strain_e
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%
-warning off; load('colormap_RdYlBu.mat','cMap');
+warning off; load('./plotFiles/colormap_RdYlBu.mat','cMap');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%% convert pixel unit to the physical world unit %%%%%
@@ -70,8 +70,8 @@ u0 = reshape(u,M+2*Rad,N+2*Rad); v0 = reshape(v,M+2*Rad,N+2*Rad);
 u = u0(1+Rad:end-Rad,1+Rad:end-Rad); v = v0(1+Rad:end-Rad,1+Rad:end-Rad);
 
 % imagesc([x(1,1) x(end,1)], [y(1,1) y(1,end)], flipud(g)); hold on;
-if M < 9, x2 = x(:,1)'; else x2 = linspace(x(1,1),x(end,1),4*(length(x(:,1))-1)+1); x2=x2(:)'; end  
-if N < 9, y2 = y(1,:); else y2 = linspace(y(1,1),y(1,end),4*(length(y(1,:))-1)+1); y2=y2(:)'; end  
+if M < 9, x2 = x(:,1)'; else x2 = linspace(x(1,1),x(end,1),4*(length(x(:,1))-1)+1); end
+if N < 9, y2 = y(1,:);  else y2 = linspace(y(1,1),y(1,end),4*(length(y(1,:))-1)+1); end
 
 
 %% Compute displacement components to manipulate the reference image
@@ -93,10 +93,15 @@ strain_maxshear = sqrt((0.5*(strain_exx-strain_eyy)).^2 + strain_exy.^2);
 % Principal strain
 strain_principal_max = 0.5*(strain_exx+strain_eyy) + strain_maxshear;
 strain_principal_min = 0.5*(strain_exx+strain_eyy) - strain_maxshear;
-% equivalent von Mises strain
-strain_vonMises = sqrt(strain_principal_max.^2 + strain_principal_min.^2 - ...
-             strain_principal_max.*strain_principal_min + 3*strain_maxshear.^2);
- 
+% 2D equivalent von Mises strain
+strain_vonMises = 2/3 * sqrt(strain_principal_max.^2 + strain_principal_min.^2 - ...
+             strain_principal_max.*strain_principal_min );
+% There was a mistake before in computing "strain_vonMises":   previous "+ 3*strain_maxshear.^2" term should not be included.
+% Please be careful on computing von Mises strain, there can be a different formula to use 
+% Some people define it as: " sqrt(strain_principal_max.^2 + strain_principal_min.^2 ...
+%                                   - strain_principal_max.*strain_principal_min );"
+% Link: https://help.csiamerica.com/help/sap2000/26/26.0.0/SAP2000/WebHelp/Menus/Display/Show_Forces_Stresses/Von_Mises_Stress.htm
+
 % Please don't delete this line, to deal with the image and physical world coordinates       
 [x2,y2]=ndgrid(x2,y2); x2=x2'; y2=y2';
 
@@ -109,7 +114,6 @@ try h1=imshow( flipud(imread(CurrentImg) ),'InitialMagnification','fit');
 catch h1=surf( flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
-title('Strain $e_{xx}$','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, strain_exx, 'EdgeColor','none','LineStyle','none');
@@ -140,7 +144,6 @@ try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf( flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
-title('Strain $e_{xy}$','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, strain_exy,'EdgeColor','none','LineStyle','none');
@@ -171,7 +174,6 @@ try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf( flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
-title('Strain $e_{yy}$','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, strain_eyy,'EdgeColor','none','LineStyle','none');
@@ -202,7 +204,6 @@ try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
-title('Principal strain $e_{\max}$','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, strain_principal_max,'EdgeColor','none','LineStyle','none');
@@ -233,7 +234,6 @@ try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
-title('Principal strain $e_{\min}$','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, strain_principal_min,'EdgeColor','none','LineStyle','none');
@@ -264,7 +264,6 @@ try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
-title('Max shear strain','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2); set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, strain_maxshear,'EdgeColor','none','LineStyle','none');
@@ -295,7 +294,6 @@ try h1=imshow( flipud(imread(CurrentImg)),'InitialMagnification','fit');
 catch h1=surf(  flipud( imread(CurrentImg) ),'EdgeColor','none','LineStyle','none');
 end
 
-title('von Mises equivalent strain','FontWeight','Normal','Interpreter','latex');
 axis on; axis equal; axis tight; box on; set(gca,'fontSize',18); view(2);  set(gca,'ydir','normal');
 hold on; ax2=axes; h2=surf( (x2+Image2PlotResults*disp_u)/um2px, ...
     sizeOfImg(2)+1-(y2-Image2PlotResults*disp_v)/um2px, strain_vonMises,'EdgeColor','none','LineStyle','none');
